@@ -15,7 +15,9 @@ touches the radio except the reply itself.
 import time
 from typing import Any
 
-from ..f1_data import (calendar_text, fit, gp_name, gp_name_of, next_race_text, now_text, pack, results_text, winner_text)
+from ..f1_data import (calendar_text, driver_text, find_driver, fit, gp_name, gp_name_of, grid_text, live_active,
+                       live_only_text, next_race_text, now_text, pack, pit_text, results_text, weather_text, weekend_text,
+                       winner_text)
 from ..mesh_community import is_bot_name, without_bots
 from ..models import MeshMessage
 from .base_command import BaseCommand
@@ -27,6 +29,13 @@ LIVE = {"nu", "live", "now"}
 PREDICT = {"voorspel", "voorspelling", "predict", "gok"}
 GAME = {"spel", "game", "punten"}
 CALENDAR = {"kalender", "calendar", "agenda", "races", "kalendar"}
+WEEKEND = {"weekend", "schema", "schedule", "sessies", "sessions", "tijden", "times"}
+SPRINT = {"sprint"}
+DRIVER = {"coureur", "rijder", "driver", "fahrer", "pilote", "pilot"}
+GRID = {"grid", "startgrid", "opstelling", "start", "startopstelling"}
+ME = {"ik", "me", "mij", "mijn", "mine", "moi", "ich"}
+WEATHER = {"weer", "weather", "wetter", "meteo", "météo"}
+PIT = {"pit", "pits", "pitstop", "pitstops", "boxenstopp"}
 MAX_BYTES = 130
 
 
@@ -39,8 +48,8 @@ class F1Command(BaseCommand):
     category = "general"
 
     short_description = "Formula 1 info and prediction game"
-    usage = "f1 [stand|team|uitslag|nu|kalender|voorspel <code>|spel]"
-    examples = ["f1", "f1 stand", "f1 uitslag", "f1 kalender", "f1 voorspel VER", "f1 spel"]
+    usage = "f1 [stand|team|uitslag|sprint|weekend|grid|coureur <code>|nu|weer|pit|kalender|voorspel <code>|spel|ik]"
+    examples = ["f1", "f1 stand", "f1 uitslag", "f1 weekend", "f1 grid", "f1 coureur VER", "f1 voorspel VER", "f1 ik"]
 
     def __init__(self, bot: Any):
         super().__init__(bot)
@@ -104,6 +113,33 @@ class F1Command(BaseCommand):
                     message,
                     pack(self.translate("commands.f1.constructors_header"), [f"{t['pos']} {t['name']} {t['points']}" for t in snap["teams"][:10]]),
                 )
+            if sub in ME:
+                return await self._me(message, service, snap)
+            if sub in WEEKEND:
+                return await self._reply(message, weekend_text(snap.get("next"), service.tz, self.translate))
+            if sub in SPRINT:
+                last = snap.get("sprint")
+                if not last:
+                    return await self.send_response(message, self.translate("commands.f1.no_sprint"))
+                return await self._reply(message, results_text(
+                    f"{self.translate('commands.f1.sprint_label')} {gp_name_of(last, self.translate)}", last["results"]))
+            if sub in DRIVER:
+                if len(args) < 2:
+                    return await self.send_response(message, self.translate("commands.f1.driver_usage"))
+                d = find_driver(snap, " ".join(args[1:]))
+                if not d:
+                    return await self.send_response(message, fit(self.translate("commands.f1.driver_unknown", q=" ".join(args[1:])[:20]), MAX_BYTES))
+                return await self.send_response(message, driver_text(d, snap, self.translate))
+            if sub in GRID:
+                return await self._reply(message, grid_text(snap, snap.get("next"), now, service.tz, self.translate))
+            if sub in WEATHER or sub in PIT:
+                if not live_active(snap):
+                    return await self.send_response(message, live_only_text(snap, now, service.tz, self.translate))
+                if sub in WEATHER:
+                    if not snap.get("weather"):
+                        return await self.send_response(message, self.translate("commands.f1.no_weather"))
+                    return await self.send_response(message, weather_text(snap, self.translate))
+                return await self.send_response(message, pit_text(snap, self.translate))
             if sub in RESULT:
                 last = snap.get("last_race")
                 if not last:
@@ -119,10 +155,7 @@ class F1Command(BaseCommand):
                 lines = now_text(snap, self.translate)
                 if lines:
                     return await self._reply(message, lines)
-                return await self._reply(
-                    message,
-                    [self.translate("commands.f1.no_session")] + next_race_text(snap.get("next"), now, service.tz, self.translate)[:1],
-                )
+                return await self.send_response(message, live_only_text(snap, now, service.tz, self.translate))
             if sub in ("", "volgende", "next", "race"):
                 return await self._reply(message, next_race_text(snap.get("next"), now, service.tz, self.translate))
             return await self.send_response(message, self.translate("commands.f1.usage"))
@@ -131,6 +164,25 @@ class F1Command(BaseCommand):
             return await self.send_response(message, self.translate("commands.f1.error", error=str(e)))
 
     # ------------------------------------------------------------------ the game
+    async def _me(self, message: MeshMessage, service: Any, snap: dict) -> bool:
+        """Your own place in the prediction game (by DM: the key says who you are)."""
+        if not service.game_enabled or service.game is None:
+            return await self.send_response(message, self.translate("commands.f1.game_off"))
+        if not message.is_dm:
+            return await self.send_response(message, self.translate("commands.f1.me_dm_only"))
+        nxt = snap.get("next")
+        season = (nxt or {}).get("season") or snap.get("standings_season") or ""
+        key = message.sender_pubkey or ""
+        pts, races = service.game.points_of(season, key)
+        pick = service.game.pick_of(nxt["season"], nxt["round"], key) if nxt else None
+        if not races and not pick:
+            return await self.send_response(message, self.translate("commands.f1.me_none"))
+        table = without_bots(self.bot, service.game.standings(season, 999), 999)
+        place = 1 + sum(1 for _n, p, _r in table if p > pts)
+        text = self.translate("commands.f1.me", season=season, points=pts, races=races, place=place, players=max(len(table), place))
+        text += self.translate("commands.f1.your_pick", pick=pick) if pick else self.translate("commands.f1.no_pick_yet")
+        return await self.send_response(message, fit(text, MAX_BYTES))
+
     async def _predict(self, message: MeshMessage, service: Any, snap: dict, args: list, now: float) -> bool:
         if not service.game_enabled or service.game is None:
             return await self.send_response(message, self.translate("commands.f1.game_off"))

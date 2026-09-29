@@ -76,9 +76,36 @@ Tekens: **DM** = alleen via een DM · **#f1** = in het kanaal #f1 of via DM · �
 
 ## Formule 1
 
+Werkt in het kanaal `#f1` en via DM. De gegevens komen uit de F1-integratie van Home Assistant (f1_sensor).
+
 | Commando | Voorbeeld | Wat het doet |
 |---|---|---|
-| `f1` | `f1  /  f1 stand  /  f1 uitslag  /  f1 nu  /  f1 kalender  /  f1 voorspel VER  /  f1 spel` | Volgende race, WK-stand, uitslag, live sessie, de komende races en het F1-voorspellingsspel: de winnaar (`f1 voorspel VER`) of je top 3 (`f1 voorspel VER NOR LEC`), via DM. **#f1** |
+| `f1`<br><sub>ook: volgende, next</sub> | `f1` | De volgende race: naam, plaats en de starttijden van het weekend. **#f1** |
+| `f1 stand`<br><sub>ook: wk, rijders</sub> | `f1 stand` | WK-stand van de coureurs (top 10). **#f1** |
+| `f1 team`<br><sub>ook: teams, constructeurs</sub> | `f1 team` | WK-stand van de teams (top 10). **#f1** |
+| `f1 coureur`<br><sub>ook: rijder, driver</sub> | `f1 coureur VER`  /  `f1 coureur verstappen`  /  `f1 coureur 1` | Eén coureur: plek in het WK, punten, overwinningen, team en rugnummer. **#f1** |
+| `f1 uitslag`<br><sub>ook: result</sub> | `f1 uitslag` | Uitslag van de laatste race. **#f1** |
+| `f1 sprint` | `f1 sprint` | Uitslag van de laatste sprintrace. **#f1** |
+| `f1 weekend`<br><sub>ook: schema, tijden</sub> | `f1 weekend` | Alle sessies van het volgende raceweekend in jouw tijd: vrije trainingen, kwalificatie, sprint en race. **#f1** |
+| `f1 grid`<br><sub>ook: opstelling, start</sub> | `f1 grid` | De startopstelling (top 10) na de kwalificatie; daarvoor zegt de bot wanneer de kwalificatie is. **#f1** |
+| `f1 kalender`<br><sub>ook: agenda, races</sub> | `f1 kalender` | De komende races met datum en tijd. **#f1** |
+| `f1 nu`<br><sub>ook: live</sub> | `f1 nu` | Tijdens een sessie: welke sessie, ronde, vlag en de top van het veld. **#f1** |
+| `f1 weer` | `f1 weer` | Tijdens een sessie: temperatuur van lucht en baan, vocht, wind en of het regent. **#f1** |
+| `f1 pit`<br><sub>ook: pitstops</sub> | `f1 pit` | Tijdens een sessie: de laatste pitstops met ronde en stilstandtijd. **#f1** |
+| `f1 voorspel` | `f1 voorspel VER`  /  `f1 voorspel VER NOR LEC` | Voorspel de winnaar, of je top 3 in volgorde. Met de afkorting van 3 letters. **DM** |
+| `f1 spel`<br><sub>ook: punten</sub> | `f1 spel` | Stand van het voorspellingsspel dit seizoen. **#f1** |
+| `f1 ik`<br><sub>ook: mijn</sub> | `f1 ik` | Jouw eigen punten, je plek en je voorspelling voor de volgende race. **DM** |
+
+`f1 nu`, `f1 weer` en `f1 pit` werken alleen tijdens een sessie. Daarbuiten zegt de bot hoe lang het nog duurt tot de
+volgende sessie begint, bijvoorbeeld "Over 2:15 uur begint de kwalificatie".
+
+**Het voorspellingsspel**
+- Voorspellen doe je via een DM aan de bot (daar zit je sleutel bij, zodat niemand namens jou speelt).
+- Je kunt je voorspelling veranderen tot de eerste kwalificatie van het weekend begint; de laatste telt.
+- **Alleen de winnaar** (`f1 voorspel VER`): goed = **5 punten**, je coureur werd 2e of 3e = **2 punten**.
+- **Je top 3** (`f1 voorspel VER NOR LEC`): per coureur op de goede plek **5 punten**, in de top 3 maar op een andere
+  plek **2 punten**, en **3 punten extra** als alle drie precies goed zijn. Dus maximaal 18 punten per race.
+- De punten komen er na de race bij; `f1 spel` toont de stand. De punten zijn per bot aan te passen (kaart *F1*).
 
 ## Handig (Nederland en België)
 

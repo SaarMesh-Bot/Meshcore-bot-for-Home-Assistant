@@ -204,7 +204,7 @@ check("**/__pycache__" in (addon / ".dockerignore").read_text(), ".dockerignore 
 # the Dutch and the English command list name the same commands, in the same order
 import re as _re
 _root = _pl.Path(__file__).resolve().parent.parent
-_cmds = lambda t: _re.findall(r"^\| `([^`]+)`", t, _re.M)
+_cmds = lambda t: [c.split()[0] for c in _re.findall(r"^\| `([^`]+)`", t, _re.M)]   # "f1 stand" / "f1 standings" = f1
 _nl, _en = _cmds((_root / "COMMANDS.md").read_text()), _cmds((_root / "COMMANDS.en.md").read_text())
 check(_nl and _nl == _en, f"COMMANDS.md en COMMANDS.en.md noemen dezelfde commando's ({len(_nl)} / {len(_en)}; verschil: {sorted(set(_nl) ^ set(_en))})")
 

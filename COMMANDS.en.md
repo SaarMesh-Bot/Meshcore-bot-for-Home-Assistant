@@ -78,9 +78,36 @@ Signs: **DM** = direct message only · **#f1** = in the #f1 channel or by DM · 
 
 ## Formula 1
 
+Works in the `#f1` channel and by DM. The data comes from Home Assistant's F1 integration (f1_sensor).
+
 | Command | Example | What it does |
 |---|---|---|
-| `f1` | `f1  /  f1 stand  /  f1 uitslag  /  f1 nu  /  f1 kalender  /  f1 voorspel VER  /  f1 spel` | Next race, championship standings, result, live session, the coming races and the F1 prediction game: the winner (`f1 voorspel VER`) or your top 3 (`f1 voorspel VER NOR LEC`), by DM. **#f1** |
+| `f1`<br><sub>also: next</sub> | `f1` | The next race: name, place and the start times of the weekend. **#f1** |
+| `f1 standings`<br><sub>also: stand, wk</sub> | `f1 standings` | Drivers' championship (top 10). **#f1** |
+| `f1 constructors`<br><sub>also: team, teams</sub> | `f1 constructors` | Constructors' championship (top 10). **#f1** |
+| `f1 driver`<br><sub>also: coureur</sub> | `f1 driver VER`  /  `f1 driver verstappen`  /  `f1 driver 1` | One driver: championship place, points, wins, team and racing number. **#f1** |
+| `f1 result`<br><sub>also: uitslag</sub> | `f1 result` | Result of the last race. **#f1** |
+| `f1 sprint` | `f1 sprint` | Result of the last sprint race. **#f1** |
+| `f1 weekend`<br><sub>also: schedule, times</sub> | `f1 weekend` | All sessions of the next race weekend in your time: practice, qualifying, sprint and race. **#f1** |
+| `f1 grid`<br><sub>also: start</sub> | `f1 grid` | The starting grid (top 10) after qualifying; before that the bot says when qualifying is. **#f1** |
+| `f1 calendar`<br><sub>also: kalender, races</sub> | `f1 calendar` | The coming races with date and time. **#f1** |
+| `f1 live`<br><sub>also: now, nu</sub> | `f1 live` | During a session: which session, lap, flag and the front of the field. **#f1** |
+| `f1 weather`<br><sub>also: weer</sub> | `f1 weather` | During a session: air and track temperature, humidity, wind and whether it rains. **#f1** |
+| `f1 pit`<br><sub>also: pitstops</sub> | `f1 pit` | During a session: the latest pit stops with lap and stationary time. **#f1** |
+| `f1 predict`<br><sub>also: voorspel</sub> | `f1 predict VER`  /  `f1 predict VER NOR LEC` | Predict the winner, or your top 3 in order, with the three-letter code. **DM** |
+| `f1 game`<br><sub>also: spel, punten</sub> | `f1 game` | Standings of the prediction game this season. **#f1** |
+| `f1 me`<br><sub>also: ik</sub> | `f1 me` | Your own points, your place and your prediction for the next race. **DM** |
+
+`f1 live`, `f1 weather` and `f1 pit` only work during a session. Outside one, the bot says how long until the next
+session starts, for example "The qualifying starts in 2:15 h".
+
+**The prediction game**
+- You predict by DM to the bot (it carries your key, so nobody can play in your name).
+- You can change your prediction until the first qualifying session of the weekend starts; the last one counts.
+- **Winner only** (`f1 predict VER`): right = **5 points**, your driver finished 2nd or 3rd = **2 points**.
+- **Your top 3** (`f1 predict VER NOR LEC`): per driver on the right place **5 points**, in the top 3 but on another
+  place **2 points**, and **3 extra points** when all three are exactly right. So at most 18 points a race.
+- Points are added after the race; `f1 game` shows the standings. Each bot can change the points (card *F1*).
 
 ## Useful (Netherlands and Belgium)
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1
+
+- More `f1`: `f1 weekend` (all session times), `f1 sprint`, `f1 coureur VER` (a driver's place, points, wins, number),
+  `f1 grid` (starting grid after qualifying), `f1 ik` (your own place in the prediction game, by DM), and during a
+  session `f1 weer` (track weather) and `f1 pit` (pit stops). Outside a session the live parts say when the next one
+  starts. The command list explains the prediction game's points.
+
 ## 1.1.0
 
 **English by default** (thanks to the first user report, GitHub issue #1)

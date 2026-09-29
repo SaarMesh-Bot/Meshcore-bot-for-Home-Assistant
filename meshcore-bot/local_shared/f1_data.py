@@ -150,7 +150,8 @@ def parse(states: list) -> dict:
     """Everything the F1 service and command need, from one read of Home Assistant's states."""
     idx = _index(states)
     snap: dict = {"next": None, "last_race": None, "sprint": None, "drivers": [], "teams": [], "standings_round": None,
-                  "standings_season": None, "live": {}, "calendar": []}
+                  "standings_season": None, "live": {}, "calendar": [], "grid": [], "grid_meeting": "", "weather": {},
+                  "pitstops": {"total": 0, "stops": []}, "numbers": {}}
 
     # The season's races (sensor.f1_current_season, attribute races in Ergast/Jolpica form: date + time in UTC).
     season = _attrs(_get(idx, "current_season"))
@@ -231,6 +232,41 @@ def parse(states: list) -> dict:
                          "gap": d.get("gap_to_leader") or "", "retired": bool(d.get("retired"))})
     live["positions"] = sorted(rows, key=lambda r: r["pos"])
     snap["live"] = live
+
+    # racing numbers (sensor.f1_driver_list: drivers[{racing_number, tla, ...}])
+    for d in _attrs(_get(idx, "driver_list")).get("drivers") or []:
+        if isinstance(d, dict) and d.get("tla"):
+            snap["numbers"][str(d["tla"]).upper()] = str(d.get("racing_number") or "")
+    # starting grid (sensor.f1_starting_grid: grid[{grid_position, tla, driver_name, team_name, ...}], after qualifying)
+    ga = _attrs(_get(idx, "starting_grid"))
+    grid = []
+    for g in ga.get("grid") or []:
+        pos = num((g or {}).get("grid_position")) if isinstance(g, dict) else None
+        if pos is not None and g.get("tla"):
+            grid.append({"pos": int(pos), "code": str(g["tla"]).upper(), "name": g.get("driver_name") or "",
+                         "team": g.get("team_name") or ""})
+    snap["grid"] = sorted(grid, key=lambda r: r["pos"])
+    snap["grid_meeting"] = str(ga.get("meeting_name") or "")
+    # weather on the track (sensor.f1_track_weather, live: state = air temperature)
+    wst = _get(idx, "track_weather")
+    wa = _attrs(wst)
+    air = num((wst or {}).get("state"))
+    if air is None:
+        air = num(wa.get("air_temperature"))
+    if air is not None:
+        snap["weather"] = {"air": air, "track": num(wa.get("track_temperature")), "humidity": num(wa.get("humidity")),
+                           "rain": num(wa.get("rainfall")), "wind": num(wa.get("wind_speed"))}
+    # pit stops (sensor.f1_pitstops, live: state = total, cars{number: {tla, count, stops[{lap, pit_stop_time, ...}]}})
+    pst = _get(idx, "pitstops")
+    stops = []
+    for car in (_attrs(pst).get("cars") or {}).values() if isinstance(_attrs(pst).get("cars"), dict) else []:
+        for stop in (car or {}).get("stops") or []:
+            if isinstance(stop, dict):
+                stops.append({"code": str(car.get("tla") or "?").upper(), "lap": num(stop.get("lap")),
+                              "time": num(stop.get("pit_stop_time")), "ts": str(stop.get("timestamp") or "")})
+    stops.sort(key=lambda x: (x["ts"], x["lap"] or 0), reverse=True)
+    total = num((pst or {}).get("state"))
+    snap["pitstops"] = {"total": int(total) if total is not None else len(stops), "stops": stops}
     return snap
 
 
@@ -371,6 +407,119 @@ def now_text(snap: dict, translate) -> list:
             if live.get("lap") and live.get("total_laps") else ""
         ))]
     return []
+
+
+LIVE_STATUSES = ("live", "suspended", "break", "pre")
+SESSION_ORDER = ("fp1", "fp2", "fp3", "sq", "sprint", "quali", "race")
+
+
+def live_active(snap: dict) -> bool:
+    live = snap.get("live") or {}
+    return bool(live.get("session")) and live.get("status") in LIVE_STATUSES
+
+
+def next_session(nxt: Optional[dict], now_ts: float) -> Optional[tuple]:
+    """(short, start ts) of the first session of the next race weekend that has not started yet."""
+    if not nxt:
+        return None
+    coming = sorted((ts, short) for short, ts in (nxt.get("sessions") or {}).items() if ts is not None and ts > now_ts)
+    return (coming[0][1], coming[0][0]) if coming else None
+
+
+def left_text(seconds: float, translate) -> str:
+    """'3:05 uur' under two days, else '4 dagen'."""
+    seconds = max(0, int(seconds))
+    if seconds < 48 * 3600:
+        return translate("commands.f1.left_hours", h=seconds // 3600, m=f"{(seconds % 3600) // 60:02d}")
+    days = seconds // 86400
+    return f"{days} {translate('commands.f1.days_unit')}"
+
+
+def live_only_text(snap: dict, now_ts: float, tz, translate) -> str:
+    """Answer for a live-only question outside a session: when the next session starts."""
+    nxt = snap.get("next")
+    upcoming = next_session(nxt, now_ts)
+    if not upcoming:
+        return fit(translate("commands.f1.live_only_none"))
+    short, ts = upcoming
+    local = to_local(ts, tz)
+    return fit(translate("commands.f1.live_only", left=left_text(ts - now_ts, translate),
+                         session=translate(f"commands.f1.session.{short}"), gp=gp_name(nxt, translate),
+                         when=f"{fmt_day(local, translate)} {fmt_hm(local)}"))
+
+
+def weekend_text(nxt: Optional[dict], tz, translate) -> list:
+    """All sessions of the next race weekend in local time, whenever it is."""
+    if not nxt:
+        return [translate("commands.f1.no_next_race")]
+    by_day: dict = {}
+    for short in SESSION_ORDER:
+        ts = nxt["sessions"].get(short)
+        if ts is not None:
+            local = to_local(ts, tz)
+            by_day.setdefault(local.date(), []).append((short, local))
+    pieces = []
+    for day in sorted(by_day):
+        items = by_day[day]
+        pieces.append(f"{fmt_day(items[0][1], translate)} "
+                      + ", ".join(f"{translate(f'commands.f1.session.{s}')} {fmt_hm(dt)}" for s, dt in items))
+    return pack(translate("commands.f1.weekend_header", gp=gp_name(nxt, translate)), pieces)
+
+
+def find_driver(snap: dict, query: str) -> Optional[dict]:
+    """A driver from the standings by code (VER), family name (Verstappen) or its start, or racing number."""
+    q = (query or "").strip().lower()
+    if not q:
+        return None
+    numbers = snap.get("numbers") or {}
+    for d in snap.get("drivers") or []:
+        if d["code"].lower() == q or d["family"].lower() == q or numbers.get(d["code"]) == q:
+            return d
+    starts = [d for d in snap.get("drivers") or [] if len(q) >= 3 and d["family"].lower().startswith(q)]
+    return starts[0] if len(starts) == 1 else None
+
+
+def driver_text(d: dict, snap: dict, translate) -> str:
+    number = (snap.get("numbers") or {}).get(d["code"])
+    who = f"{d['given']} {d['family']}".strip() + (f" #{number}" if number else "") + (f" ({d['team']})" if d["team"] else "")
+    return fit(translate("commands.f1.driver_card", who=who, pos=d["pos"], points=d["points"], wins=d["wins"]))
+
+
+def grid_text(snap: dict, nxt: Optional[dict], now_ts: float, tz, translate, limit: int = 10) -> list:
+    """The starting grid (top 10) once known; before that: when the qualifying is."""
+    if snap.get("grid"):
+        name = gp_name(nxt, translate) if nxt else snap.get("grid_meeting") or ""
+        return pack(translate("commands.f1.grid_header", gp=name), [f"{g['pos']} {g['code']}" for g in snap["grid"][:limit]], sep=", ")
+    quali = (nxt or {}).get("sessions", {}).get("quali")
+    if quali is not None and quali > now_ts:
+        local = to_local(quali, tz)
+        return [fit(translate("commands.f1.grid_after_quali", when=f"{fmt_day(local, translate)} {fmt_hm(local)}",
+                              left=left_text(quali - now_ts, translate)))]
+    return [translate("commands.f1.no_grid")]
+
+
+def _dec(value: Optional[float], digits: int, translate) -> str:
+    return "?" if value is None else f"{value:.{digits}f}".replace(".", translate("commands.f1.decimal_sep"))
+
+
+def weather_text(snap: dict, translate) -> str:
+    w = snap["weather"]
+    rain = translate("commands.f1.rain_yes") if (w.get("rain") or 0) > 0 else translate("commands.f1.rain_no")
+    return fit(translate("commands.f1.weather", session=snap["live"].get("session") or "", air=_dec(w.get("air"), 0, translate),
+                         track=_dec(w.get("track"), 0, translate), hum=_dec(w.get("humidity"), 0, translate),
+                         wind=_dec(w.get("wind"), 1, translate), rain=rain))
+
+
+def pit_text(snap: dict, translate, limit: int = 6) -> str:
+    p = snap["pitstops"]
+    if not p["stops"]:
+        return fit(translate("commands.f1.no_pits"))
+    pieces = []
+    for st in p["stops"][:limit]:
+        lap = f" r{int(st['lap'])}" if st["lap"] is not None else ""
+        secs = f" {_dec(st['time'], 1, translate)}s" if st["time"] is not None else ""
+        pieces.append(f"{st['code']}{lap}{secs}")
+    return fit(translate("commands.f1.pit_header", total=p["total"]) + " | ".join(pieces))
 
 
 # ------------------------------------------------------------------------------------------ planning

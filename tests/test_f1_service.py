@@ -222,6 +222,10 @@ async def main():
     check(svc.lock_ts() == S.ts(2026, 10, 3, 14) and svc.valid_codes() == {"VER", "NOR", "LEC", "PIA", "HAM", "RUS", "SAI", "ALO", "GAS", "TSU"}, "sluitingstijd (kwalificatie) en geldige coureurcodes")
 
     # ------------------------------------------------------------- the command
+    CLOCK = [None]   # a fixed "now" for the command (None = the real clock)
+    import time as _real_time
+    sys.modules[F1Command.__module__].time = types.SimpleNamespace(time=lambda: CLOCK[0] or _real_time.time())
+
     async def run(text, is_dm=False, pubkey=None, name="Alex", service=svc, channel="#f1"):
         b = types.SimpleNamespace(config=configparser.ConfigParser(), logger=logging.getLogger("c"), services=({"f1": service} if service else {}),
                                   command_manager=types.SimpleNamespace(monitor_channels=["#bot", "#test"]), translator=nl_translator())
@@ -251,14 +255,68 @@ async def main():
     check(r[0].startswith("Constructeurs: 1 McLaren 460 | 2 Ferrari 420"), "f1 team")
     r = await run("f1 uitslag")
     check(len(r) == 2 and r[0].startswith("Uitslag GP Singapore: 1 VER, 2 NOR") and r[1].startswith("Winnaar GP Singapore"), "f1 uitslag: top 10 en winnaar")
+    CLOCK[0] = S.ts(2026, 9, 21, 10)
     r = await run("f1 nu")
-    check(r[0] == "Geen F1-sessie bezig." and r[1].startswith("Volgende:"), "f1 nu buiten een sessie")
+    check(r == ["F1: dit kan alleen tijdens een sessie. Over 11 dagen begint de VT1 van de GP Italië (Monza) (vr 2 okt 13:30)."],
+          f"f1 nu buiten een sessie: wanneer de volgende sessie begint ({r})")
     svc.snapshot = F.parse(S.states(S.ts(2026, 10, 4, 13, 30), live_states=S.live("Race", "live", 14)))
     r = await run("f1 nu")
     check(len(r) == 1 and r[0].startswith("Race bezig | Ronde 14/53: 1 VER | 2 NOR +3,400"), "f1 nu tijdens de race")
     svc.snapshot = F.parse(S.states(S.ts(2026, 9, 21, 10)))
     r = await run("f1 onzin")
-    check(r[0].startswith("F1: gebruik f1"), "onbekend onderdeel: uitleg")
+    check(r[0].startswith("F1: f1, stand, team, uitslag, sprint, weekend, grid"), "onbekend onderdeel: uitleg met alle onderdelen")
+
+    # ---- new parts (2.26.0): weekend, sprint, driver, grid, weather, pit
+    r = await run("f1 weekend")
+    check(r[0].startswith("Weekend GP Italië (Monza): vr 2 okt VT1 13:30, VT2 17:00 | za 3 okt VT3 12:30, kwalificatie 16:00 | zo 4 okt race 15:00"),
+          f"f1 weekend: alle sessies in lokale tijd, ook ver vooruit ({r})")
+    r = await run("f1 sprint")
+    check(r == ["F1: nog geen sprintuitslag dit seizoen."], "f1 sprint zonder sprint")
+    with_sprint = S.states(S.ts(2026, 9, 21, 10))
+    with_sprint.append(S.results(["PIA", "NOR", "VER"], S.iso(2026, 9, 12, 14, 0), "15", key="sprint_results"))
+    svc.snapshot = F.parse(with_sprint)
+    r = await run("f1 sprint")
+    check(r[0].startswith("Sprint GP Singapore: 1 PIA, 2 NOR, 3 VER"), f"f1 sprint: uitslag van de sprint ({r})")
+    base = S.states(S.ts(2026, 9, 21, 10))
+    base.append({"entity_id": "sensor.f1_driver_list", "state": "20", "attributes": {"drivers": [{"racing_number": "1", "tla": "VER", "name": "Max VERSTAPPEN"}]}})
+    svc.snapshot = F.parse(base)
+    r = await run("f1 coureur ver")
+    check(len(r) == 1 and r[0].startswith("Ver VERson #1 (Red Bull)") and "1e in het WK, 288 pt" in r[0] and "zeges" in r[0], f"f1 coureur: WK-plek, punten, zeges, nummer ({r})")
+    r = await run("f1 driver 1")
+    check(r[0].startswith("Ver VERson #1"), "f1 driver met het rugnummer")
+    r = await run("f1 coureur norson")
+    check(r[0].startswith("Nor NORson ("), "f1 coureur met de achternaam")
+    r = await run("f1 coureur xyz")
+    check("niet gevonden" in r[0], "f1 coureur onbekend: uitleg")
+    r = await run("f1 coureur")
+    check(r[0].startswith("F1: f1 coureur <code of naam>"), "f1 coureur zonder naam: uitleg")
+    r = await run("f1 grid")
+    check(r == ["F1: de startopstelling komt na de kwalificatie, za 3 okt 16:00 (over 12 dagen)."], f"f1 grid voor de kwalificatie: wanneer ({r})")
+    grid = [{"grid_position": i, "tla": c, "driver_name": c, "team_name": "T"} for i, c in enumerate(["LEC", "VER", "NOR", "PIA", "HAM", "RUS", "SAI", "ALO", "GAS", "TSU", "ALB"], 1)]
+    base.append({"entity_id": "sensor.f1_starting_grid", "state": "completed", "attributes": {"grid": grid, "meeting_name": "Italian Grand Prix"}})
+    svc.snapshot = F.parse(base)
+    r = await run("f1 grid")
+    check(r[0].startswith("Grid GP Italië (Monza): 1 LEC, 2 VER, 3 NOR") and "11 ALB" not in " ".join(r), f"f1 grid: top 10 na de kwalificatie ({r})")
+    r = await run("f1 weer")
+    check(r[0].startswith("F1: dit kan alleen tijdens een sessie. Over 11 dagen begint de VT1"), f"f1 weer buiten een sessie: wanneer wel ({r})")
+    r = await run("f1 pit")
+    check(r[0].startswith("F1: dit kan alleen tijdens een sessie."), "f1 pit buiten een sessie")
+    live_now = S.states(S.ts(2026, 10, 4, 13, 30), live_states=S.live("Race", "live", 14))
+    live_now.append({"entity_id": "sensor.f1_track_weather", "state": "24.3", "attributes": {"track_temperature": 38.1, "humidity": 55, "rainfall": 0, "wind_speed": 3.24}})
+    live_now.append({"entity_id": "sensor.f1_pitstops", "state": "2", "attributes": {"cars": {
+        "1": {"tla": "VER", "count": 1, "stops": [{"lap": 12, "pit_stop_time": 2.4, "timestamp": "2026-10-04T13:25:00+00:00"}]},
+        "4": {"tla": "NOR", "count": 1, "stops": [{"lap": 13, "pit_stop_time": 2.9, "timestamp": "2026-10-04T13:27:00+00:00"}]}}}})
+    svc.snapshot = F.parse(live_now)
+    r = await run("f1 weer")
+    check(r == ["Weer Race: lucht 24°C, baan 38°C, vocht 55%, wind 3,2 m/s, droog"], f"f1 weer tijdens de race ({r})")
+    r = await run("f1 pit")
+    check(r == ["Pitstops (2): NOR r13 2,9s | VER r12 2,4s"], f"f1 pit: laatste stops eerst ({r})")
+    svc.snapshot = F.parse(S.states(S.ts(2026, 10, 3, 12)))
+    CLOCK[0] = S.ts(2026, 10, 3, 12)
+    r = await run("f1 nu")
+    check(r[0].startswith("F1: dit kan alleen tijdens een sessie. Over 2:00 uur begint de kwalificatie"), f"korter dan 2 dagen: in uren ({r})")
+    CLOCK[0] = None
+    svc.snapshot = F.parse(S.states(S.ts(2026, 9, 21, 10)))
     r = await run("f1", service=None)
     check("staat uit" in r[0], "service niet geladen: uitleg")
     svc.last_read = 0.0
@@ -292,6 +350,12 @@ async def main():
     check(r[0].startswith("Spel 2026: Stand: 1 Alice 5 | 2 Bob 2 | 3 Cor 2") and any("Meedoen: DM mij f1 voorspel <code> (GP Italië (Monza))" in x for x in r), "f1 spel in het kanaal: stand en hoe je meedoet")
     r = await run("f1 spel", is_dm=True, pubkey=A, name="Alice")
     check("Jij: 5 pt in 1 races" in " ".join(r), "f1 spel per DM: je eigen punten")
+    r = await run("f1 ik", is_dm=True, pubkey=A, name="Alice")
+    check(r[0].startswith("F1-spel 2026: 5 pt in 1 races, plek 1 van 3"), f"f1 ik per DM: punten en plek ({r})")
+    r = await run("f1 ik")
+    check(r[0].startswith("Je eigen stand zie je via een DM"), "f1 ik in het kanaal: via DM")
+    r = await run("f1 ik", is_dm=True, pubkey="ab" * 32, name="Nieuw")
+    check(r[0].startswith("Je doet nog niet mee"), "f1 ik zonder voorspelling: hoe je meedoet")
     r = await run("f1 spel", is_dm=True, pubkey=D, name="Dirk")
     check("Jij: 0 pt in 0 races, je voorspelt NOR" in " ".join(r), "en je eigen voorspelling")
     # bots do not take part: a bot cannot predict, and a bot already in the points never shows in the standings
