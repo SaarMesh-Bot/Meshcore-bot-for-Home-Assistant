@@ -18,10 +18,10 @@ class StatusCommand(BaseCommand):
 
     name = "status"
     keywords = ["status"]
-    description = "Toestand van de bot: uptime, radio, contacten, fouten (admin)"
+    description = "State of the bot: uptime, radio, contacts, errors (admin)"
     category = "admin"
 
-    short_description = "Botstatus (admin)"
+    short_description = "Bot status (admin)"
     usage = "status"
     examples = ["status"]
 
@@ -40,7 +40,7 @@ class StatusCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "status toont uptime, radio, contacten en de laatste fout (admin)."
+        return self.translate("commands.status.help")
 
     async def execute(self, message: MeshMessage) -> bool:
         service = getattr(self.bot, "services", {}).get("notify")

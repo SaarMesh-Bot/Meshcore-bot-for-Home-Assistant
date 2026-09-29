@@ -4,19 +4,22 @@
       "result": "National avg. pump price ({date}): Euro95 €{euro95} | Diesel €{diesel} | LPG €{lpg}",
       "fetch_error": "Could not fetch CBS fuel prices.",
       "no_data": "No recent CBS fuel prices found.",
-      "error": "Error in the tanken command: {error}"
+      "error": "Error in the tanken command: {error}",
+      "help": "National average fuel prices in the Netherlands for today/yesterday (CBS, not the nearest station)."
     },
     "beving": {
       "fetch_error": "Could not fetch the KNMI earthquake feed.",
       "no_data": "No recent earthquakes found in the KNMI feed.",
       "header": "Recent earthquakes:",
-      "error": "Error in the beving command: {error}"
+      "error": "Error in the beving command: {error}",
+      "help": "Top 3 recent earthquakes in and around the Netherlands, from the KNMI seismology feed."
     },
     "storing": {
       "usage": "Usage: storing <{providers}>",
       "fetch_error": "Could not fetch outage status for {provider}.",
       "result": "{provider}: {status} (source: storingradar.com, unofficial)",
-      "error": "Error in the storing command: {error}"
+      "error": "Error in the storing command: {error}",
+      "help": "Outage status of a Dutch telecom provider ({providers}), from the community site storingradar.com - not an official provider source."
     },
     "wegwerk": {
       "usage": "Usage: wegwerk <place>",
@@ -30,7 +33,8 @@
         "SpeedManagement": "speed restriction",
         "ReroutingManagement": "diversion",
         "GeneralNetworkManagement": "road measure"
-      }
+      },
+      "help": "Road works and lane closures within 20 km of a place (NDW open data, NL)."
     },
     "ov": {
       "usage": "Usage: ov <place/stop>",
@@ -38,27 +42,31 @@
       "no_departures": "No departures found for '{query}'.",
       "header": "Transit at {query}:",
       "line": "{time} line {line} -> {dest} ({stop})",
-      "error": "Error in the ov command: {error}"
+      "error": "Error in the ov command: {error}",
+      "help": "Next public transport departures at a stop, by town and/or stop name (OVapi.nl, NL)."
     },
     "waterstand": {
       "no_data": "No recent water level data for {station}.",
       "fetch_error": "Could not fetch Rijkswaterstaat water data.",
       "no_valid": "No valid measurement for {station}.",
       "result": "Maas water level at {station}: {value}m NAP (measured {time})",
-      "error": "Error in the waterstand command: {error}"
+      "error": "Error in the waterstand command: {error}",
+      "help": "Current water level of the Meuse (cm relative to NAP) at a gauge ({stations})."
     },
     "weerwaarschuwing": {
       "no_file": "Could not find a KNMI warning file.",
       "no_link": "No download link received from KNMI.",
       "download_error": "Could not download the KNMI warning text.",
       "empty": "Received an empty KNMI warning text.",
-      "error": "Error in the weerwaarschuwing command: {error}"
+      "error": "Error in the weerwaarschuwing command: {error}",
+      "help": "The latest official KNMI weather warning for the Netherlands (incl. code yellow/orange/red, ice)."
     },
     "energieprijs": {
       "fetch_error": "Could not fetch electricity prices (EnergyZero).",
       "no_data": "No electricity prices found for today.",
       "result": "Electricity price now: €{current}/kWh | today's low €{low} - high €{high} (incl. VAT)",
-      "error": "Error in the energieprijs command: {error}"
+      "error": "Error in the energieprijs command: {error}",
+      "help": "Current dynamic electricity price (incl. VAT), plus today's lowest and highest hourly rate (NL)."
     },
     "aed": {
       "usage": "Usage: aed <place>",
@@ -66,7 +74,8 @@
       "no_data": "No AED found within {radius}km of {place}.",
       "header": "AEDs near {place}:",
       "line": "- {name}: {distance}m",
-      "error": "Error in the aed command: {error}"
+      "error": "Error in the aed command: {error}",
+      "help": "Nearest AEDs (defibrillators) near a place, from OpenStreetMap."
     },
     "laadpaal": {
       "usage": "Usage: laadpaal <place>",
@@ -75,7 +84,8 @@
       "header": "Charging stations near {place}:",
       "generic_name": "Charging station",
       "line": "- {name}{extra}: {distance}m",
-      "error": "Error in the laadpaal command: {error}"
+      "error": "Error in the laadpaal command: {error}",
+      "help": "Nearest EV charging points near a place, from OpenStreetMap."
     },
     "straling": {
       "usage": "Usage: straling <place>",
@@ -83,7 +93,8 @@
       "no_data": "No recent Safecast measurements found within {radius}km of {place}.",
       "age_suffix": ", newest measurement {date}",
       "result": "Radiation near {place} (~{radius}km, n={n}{age}): ~{usvh} uSv/h indicative ({cpm} cpm) - citizen-science sensors (Safecast), not an official measurement.",
-      "error": "Error in the straling command: {error}"
+      "error": "Error in the straling command: {error}",
+      "help": "Indicative radiation level near a place, from Safecast citizen-science sensors (not an official measurement)."
     },
     "kenteken": {
       "usage": "Usage: kenteken <plate>",
@@ -94,22 +105,26 @@
       "apk": "APK {date}",
       "error": "Error in the kenteken command: {error}",
       "foreign_be": "Belgian plate: there is no free open source for it (the DIV shares nothing), only Dutch plates via the RDW.",
-      "foreign_de": "German plate: there is no free open source for it (the KBA shares nothing), only Dutch plates via the RDW."
+      "foreign_de": "German plate: there is no free open source for it (the KBA shares nothing), only Dutch plates via the RDW.",
+      "help": "Looks up a Dutch number plate via RDW open data: make and model, year, colour, fuel, engine size/power, top speed, MOT expiry. No personal data."
     },
     "quote": {
-      "error": "Error in the quote command: {error}"
+      "error": "Error in the quote command: {error}",
+      "help": "Sends a random quote from a local list."
     },
     "uptime": {
       "days": "{n}d",
       "hours": "{n}h",
       "minutes": "{n}m",
       "result": "Uptime: {duration} (since {started})",
-      "error": "Error in the uptime command: {error}"
+      "error": "Error in the uptime command: {error}",
+      "help": "Shows how long the bot has been running since its last restart."
     },
     "topcommands": {
       "no_data": "Top commands ({label}): no data yet",
       "header": "Top commands ({label}):",
-      "error": "Error fetching top commands: {error}"
+      "error": "Error fetching top commands: {error}",
+      "help": "Top 5 most used commands (optional: topc <days>, default 24 h)"
     },
     "status": {
       "no_service": "Status: service not loaded.",
@@ -120,17 +135,20 @@
       "last_issue": "last ({age} ago): {text}",
       "no_issues": "no problems",
       "header": "Status:",
-      "error": "Error in status: {error}"
+      "error": "Error in status: {error}",
+      "help": "status shows uptime, radio, contacts and the last error (admin)."
     },
     "toprepeaters": {
       "no_data": "Top repeaters ({label}): no data yet",
       "header": "Top repeaters ({label}):",
-      "error": "Error fetching top repeaters: {error}"
+      "error": "Error fetching top repeaters: {error}",
+      "help": "Top 3 busiest repeaters (optional: topr <days>, default 24 h)"
     },
     "topusers": {
       "no_data": "Top users ({label}): no data yet",
       "header": "Top users ({label}):",
-      "error": "Error fetching top users: {error}"
+      "error": "Error fetching top users: {error}",
+      "help": "Top 5 most active users (optional: topu <days>, default 24 h)"
     },
     "whois": {
       "usage": "Usage: whois <name or key prefix>",
@@ -143,14 +161,17 @@
       "hop": "{n} hop",
       "hops": "{n} hops",
       "last_seen": "last seen {ago}",
-      "error": "Error in the whois command: {error}"
+      "error": "Error in the whois command: {error}",
+      "level": "level {level} {title} ({xp} XP)",
+      "help": "Looks up a known node by name or key prefix (name, role, last seen, hops, location, game level)."
     },
     "feestdag": {
       "today": "Today",
       "tomorrow": "Tomorrow",
       "none": "{label} ({date}): no official holiday in NL or BE.",
       "header": "{label} ({date}):",
-      "error": "Error in the feestdag command: {error}"
+      "error": "Error in the feestdag command: {error}",
+      "help": "Shows official public holidays in NL and BE for today (or 'feestdag morgen' for tomorrow)."
     },
     "morse": {
       "usage": "Usage: morse <text> or morse <.... .- .-..>",
@@ -158,7 +179,8 @@
       "decoded": "Morse -> text: {text}",
       "encode_error": "No supported characters found to encode.",
       "encoded": "Morse: {text}",
-      "error": "Error in the morse command: {error}"
+      "error": "Error in the morse command: {error}",
+      "help": "Turns text into Morse code, or Morse code back into text (detected automatically)."
     },
     "file": {
       "usage": "Usage: file <place>",
@@ -173,7 +195,8 @@
         "Accident": "accident",
         "GeneralObstruction": "obstruction",
         "VehicleObstruction": "breakdown/vehicle"
-      }
+      },
+      "help": "Traffic jams and incidents within 20 km of a place (NDW open data, NL)."
     },
     "f1": {
       "decimal_sep": ".",
@@ -280,12 +303,12 @@
       "no_team_standings": "F1: the constructors' championship is not available yet.",
       "no_result": "F1: no result available yet.",
       "no_session": "No F1 session running.",
-      "usage": "F1: use f1, f1 stand, f1 team, f1 uitslag, f1 nu, f1 voorspel <code> or f1 spel.",
+      "usage": "F1: use f1, f1 stand, f1 team, f1 uitslag, f1 nu, f1 kalender, f1 voorspel <code> or f1 spel.",
       "error": "Error in f1: {error}",
       "game_off": "F1: the prediction game is off.",
       "predict_dm_only": "Predicting only works by DM to me, that way I know it's really you and nobody can vote for you. Send me: f1 voorspel VER",
       "no_next_to_predict": "F1: there is no next race to predict right now.",
-      "predict_prompt": "Who wins the {gp}? f1 voorspel <code>, e.g. {example}",
+      "predict_prompt": "Who wins the {gp}? f1 voorspel <code>, or your top 3: f1 voorspel A B C. E.g. {example}",
       "game_standing": "Standings: ",
       "no_points_yet": "no points yet",
       "your_points": "You: {points} pt in {races} races",
@@ -296,12 +319,17 @@
       "predict_no_key": "I can't determine your key. Try again as a direct message.",
       "predict_locked": "Predictions for this race are closed (qualifying has started).",
       "predict_unknown_code": "I don't know '{code}'. Use the 3 letters, for example {example}.",
-      "predict_bad_format": "Use the driver's 3 letters, for example f1 voorspel VER.",
+      "predict_bad_format": "Use 1 code (the winner) or 3 (your top 3), e.g. f1 voorspel VER or f1 voorspel VER NOR LEC.",
       "predict_changed": "Changed: you now predict {code} (was {previous}).",
       "predict_recorded": "Recorded: you predict {code} as the winner.",
       "game_result_header": "Game: {n} players. ",
       "game_good": "Correct: {names}",
-      "game_none_good": "Nobody got the winner or a podium spot right"
+      "game_none_good": "Nobody got the winner or a podium spot right",
+      "calendar_header": "Calendar {season}: ",
+      "no_calendar": "No race calendar available.",
+      "help": "f1 = next race; f1 stand / team / uitslag / nu / kalender; f1 voorspel <code> (DM only) and f1 spel for the prediction game.",
+      "predict_recorded_top3": "Noted: your top 3 is {code}.",
+      "predict_duplicate": "Each driver only once in your top 3."
     },
     "rptr": {
       "no_service": "rptr: the Home Assistant link is off. Turn HARepeater on in Plugins and restart the add-on.",
@@ -337,15 +365,18 @@
       "trend_v_per_day": " V/day",
       "trend_low_in": ", low in ~{days} d",
       "measurements": "{n} readings",
-      "decimal_sep": "."
+      "decimal_sep": ".",
+      "help": "rptr shows battery, uptime, airtime and neighbours of the repeater; rptr buren = the neighbours; rptr accu [7d] = battery history; rptr list = all repeaters."
     },
     "helpall": {
       "bad_page": "Help: page {page} does not exist (1-{total} available).",
       "page": "Help {page}/{total}: {names}",
-      "error": "Error in the helpall command: {error}"
+      "error": "Error in the helpall command: {error}",
+      "help": "Full list of channel commands (no admin/DM-only): 'helpall' for page 1, then 'helpall 2', 'helpall 3', ..."
     },
     "info": {
-      "error": "Error in info bot: {error}"
+      "error": "Error in info bot: {error}",
+      "help": "info bot tells what this bot is and what you need for a bot of your own (DM only)."
     },
     "quiz": {
       "no_question": "No question received from OpenTDB",
@@ -354,7 +385,8 @@
       "already_active": "A quiz question is already running on this channel - answer with quiz a/b/c/d.",
       "question": "Quiz: {question}",
       "answer_hint": "Answer: quiz a/b/c/d (60s)",
-      "error": "Error in the quiz command: {error}"
+      "error": "Error in the quiz command: {error}",
+      "help": "Sends a multiple-choice trivia question. Answer within 60 s with 'quiz a', 'quiz b', 'quiz c' or 'quiz d'. Questions in English."
     },
     "hangman": {
       "wrong_suffix": " | wrong: {letters} ({n}/{max})",
@@ -373,7 +405,8 @@
       "running": "Running game ({category}): {status}",
       "usage": "Usage: hangman start [category] ({categories})",
       "unknown_action": "Unknown hangman action. Use: start [category], <letter>, raad <word>, stop.",
-      "error": "Error in the hangman command: {error}"
+      "error": "Error in the hangman command: {error}",
+      "help": "Letter guessing game. 'hangman start [category]' starts a game (categories: {categories}). Guess with 'hangman <letter>' or 'hangman raad <word>'. 'hangman stop' stops."
     },
     "poll": {
       "vote_recorded": "Vote recorded ({ja} yes / {nee} no)",
@@ -389,7 +422,8 @@
       "unit_min": "{n} min",
       "unit_hour": "{n}h",
       "unit_day": "{n} day",
-      "unit_days": "{n} days"
+      "unit_days": "{n} days",
+      "help": "Starts a yes/no vote: 'stem <question>' (question max ~80 characters, or the message will not fit). Optionally a duration first (exactly one, do not combine): 'stem 15m <question>', 'stem 2h <question>' or 'stem 1d <question>' (default 10 min, max 1 day). Others vote with 'ja'/'nee' (yes/no). 'stem uitslag' shows the count so far, 'stem stop' ends the vote early."
     },
     "botlist": {
       "none": "Botlist: no manual names. Automatic: robot emoji or the word bot in the name.",
@@ -408,7 +442,8 @@
       "deleted": "Botlist: {name} removed from the list; now {verdict} according to the automatic rules.",
       "usage": "Botlist: use botlist, botlist add|not|del|check <name>.",
       "value_error": "Botlist: {error}.",
-      "error": "Error in botlist: {error}"
+      "error": "Error in botlist: {error}",
+      "help": "botlist shows the lists; botlist add <name> = always a bot, botlist not <name> = never a bot, botlist del <name> = off the lists, botlist check <name> (admin)."
     },
     "cleanup": {
       "no_service": "Cleanup: service not loaded.",
@@ -418,7 +453,8 @@
       "none": "Cleanup: {before} contacts, target {target}. Nothing to remove: {protected} protected, {recent} active <{keep_days}d, oldest unprotected {oldest}d.",
       "preview": "Cleanup: {before} contacts, target {target}: {planned} would be removed ({shown}{more}). 'cleanup now' runs it.",
       "done": "Cleanup done: {removed}/{planned} removed, now {after} contacts.",
-      "error": "Error in cleanup: {error}"
+      "error": "Error in cleanup: {error}",
+      "help": "cleanup shows what would be cleaned up, cleanup now does it; cleanup stale for silent contacts (admin)."
     },
     "dx": {
       "help": "dx = hop records (week, month, ever); dx top [week|month|ever]; dx me; dx <name>.",
@@ -517,7 +553,8 @@
       "error": "noodnummers error: {error}"
     },
     "weetje": {
-      "error": "weetje error: {error}"
+      "error": "weetje error: {error}",
+      "help": "A random fun fact (in Dutch)"
     },
     "peiling": {
       "help": "peiling [15m|2h|1d] question | a | b (up to {max} choices), vote with kies <nr>; peiling uitslag; peiling stop.",
@@ -619,7 +656,23 @@
       "error": "badge error: {error}"
     },
     "help": {
-      "list_link": "All commands explained: {url} | help <command> = help here"
+      "list_link": "All commands: {url} | help <command> = details",
+      "list_lang": "en",
+      "sample_suffix": " | help <cmd>=details, helpall=all"
+    },
+    "games": {
+      "no_bots": "{name} is a bot: bots don't take part in the games.",
+      "pointer": "Games are played in {channel}"
+    },
+    "ping": {
+      "response": "Pong! More info: type test"
+    },
+    "dm": {
+      "help": "Type dm in a channel: the bot sends you a DM, so you can use it privately from then on (help gives the list).",
+      "hello": "Hi {name}! Send your commands here, help gives the list. Can't see this? Add {bot} as a contact.",
+      "already": "You're already in a DM with me: type help for the list.",
+      "unknown": "{name}, I don't know your node yet. Send an advert (flood) and try dm again.",
+      "error": "dm failed: {error}"
     }
   }
 }

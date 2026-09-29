@@ -52,10 +52,37 @@ import re
 import time
 from typing import Any, Optional
 
-DEFAULT_MESSAGE = ("We helpen je heel graag verder in {channels} || Voor commando's en tests ben je welkom in {channels} || "
-                   "Hier reageer ik niet op commando's, in {channels} wel! || Tip: probeer het in {channels}, daar help ik je graag")
+# Standard texts per language of the bot ([Localization] language); used when the card leaves the text empty.
+DEFAULT_TEXTS = {
+    "nl": ("We helpen je heel graag verder in {channels} || Voor commando's en tests ben je welkom in {channels} || "
+           "Hier reageer ik niet op commando's, in {channels} wel! || Tip: probeer het in {channels}, daar help ik je graag",
+           "Dat commando werkt hier niet. We helpen je graag verder in: {channels}"),
+    "en": ("Happy to help you in {channels} || For commands and tests you are welcome in {channels} || "
+           "I don't answer commands here, in {channels} I do! || Tip: try it in {channels}, I'm happy to help there",
+           "That command does not work here. Happy to help you in: {channels}"),
+    "de": ("Gerne helfen wir dir in {channels} || Für Befehle und Tests bist du in {channels} willkommen || "
+           "Hier antworte ich nicht auf Befehle, in {channels} schon! || Tipp: versuch es in {channels}, dort helfe ich gern",
+           "Dieser Befehl funktioniert hier nicht. Gerne helfen wir dir in: {channels}"),
+    "fr": ("Avec plaisir dans {channels} || Pour les commandes et les tests, bienvenue dans {channels} || "
+           "Ici je ne réponds pas aux commandes, dans {channels} oui ! || Astuce : essayez dans {channels}, j'y aide volontiers",
+           "Cette commande ne marche pas ici. Avec plaisir dans : {channels}"),
+}
+DEFAULT_MESSAGE, DEFAULT_RESTRICTED = DEFAULT_TEXTS["nl"]   # kept for code that imports them
 VARIANT_SEPARATOR = "||"   # several texts in one field: the bot picks one at random, not the same one twice in a row
-DEFAULT_RESTRICTED = "Dat commando werkt hier niet. We helpen je graag verder in: {channels}"
+
+
+PHRASES = {
+    "nl": {"dm_only": "Dat commando werkt hier niet (alleen via DM).", "any_channel": "een van de commando-kanalen"},
+    "en": {"dm_only": "That command does not work here (DM only).", "any_channel": "one of the command channels"},
+    "de": {"dm_only": "Dieser Befehl funktioniert hier nicht (nur per DM).", "any_channel": "einem der Befehlskanäle"},
+    "fr": {"dm_only": "Cette commande ne marche pas ici (DM seulement).", "any_channel": "l'un des canaux de commandes"},
+}
+
+
+def default_texts(cfg: Any) -> tuple:
+    """(hint text, restricted text) in the bot's language; English for a language without its own texts."""
+    lang = (cfg.get("Localization", "language", fallback="en") if cfg.has_section("Localization") else "en") or "en"
+    return DEFAULT_TEXTS.get(lang.strip().lower()[:2], DEFAULT_TEXTS["en"])
 MAX_ARGUMENT_WORDS = 3
 DEFAULT_WORD_COMMANDS = {"ping", "test", "help"}
 DEFAULT_BOT_WORDS = "bot"
@@ -133,8 +160,9 @@ class ChannelHint:
         self.enabled = cfg.getboolean(s, "enabled", fallback=False) if has else False
         self.channels = {_norm(c) for c in _split(get("channels"))}
         self.where = _split(get("where"))
-        self.message = get("message", DEFAULT_MESSAGE) or DEFAULT_MESSAGE
-        self.restricted_message = get("restricted_message", DEFAULT_RESTRICTED) or DEFAULT_RESTRICTED
+        hint_default, restricted_default = default_texts(cfg)
+        self.message = get("message", "") or hint_default
+        self.restricted_message = get("restricted_message", "") or restricted_default
         self.ignore_words = {w.lower() for w in _split(get("ignore_words", "hello,hi,hey"))}
         self.bot_markers = [m for m in _split(get("bot_markers", "🤖")) if m]
         self._bot_word_res = _bot_word_patterns(_split(get("bot_words", DEFAULT_BOT_WORDS)))
@@ -236,6 +264,12 @@ class ChannelHint:
             return False, "handmatig: geen bot"
         if state is True:
             return True, "handmatig: bot"
+        try:
+            from .bot_network import is_network_bot
+            if is_network_bot(self.bot, name):
+                return True, "botnetwerk"
+        except Exception:  # noqa: BLE001
+            pass
         return self.classify_auto(name)
 
     def is_other_bot(self, message: Any) -> bool:
@@ -351,6 +385,11 @@ class ChannelHint:
         self._last_variant[key] = text
         return text
 
+    def _phrase(self, key: str) -> str:
+        cfg = self.bot.config
+        lang = (cfg.get("Localization", "language", fallback="en") if cfg.has_section("Localization") else "en") or "en"
+        return PHRASES.get(lang.strip().lower()[:2], PHRASES["en"])[key]
+
     async def send_hint(self, message: Any, where: Optional[list] = None, yield_to_bots: bool = False) -> bool:
         """Send a hint unless one went out recently. `where` = channels where the command works.
 
@@ -374,9 +413,9 @@ class ChannelHint:
         if targets:
             text = text.replace("{channels}", join_channels(targets))
         elif restricted:
-            text = "Dat commando werkt hier niet (alleen via DM)."
+            text = self._phrase("dm_only")
         else:
-            text = text.replace("{channels}", "een van de commando-kanalen")
+            text = text.replace("{channels}", self._phrase("any_channel"))
 
         if yield_to_bots and self.yield_seconds > 0:
             if now - self._bot_seen.get(channel, 0.0) < self.cooldown:

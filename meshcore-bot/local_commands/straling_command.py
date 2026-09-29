@@ -30,11 +30,11 @@ class StralingCommand(BaseCommand):
 
     name = "straling"
     keywords = ["straling"]
-    description = "Indicatief stralingsniveau nabij een plaats (usage: straling <plaats>)"
+    description = "Indicative radiation level near a place (usage: straling <place>)"
     category = "general"
     requires_internet = True
 
-    short_description = "Indicatief stralingsniveau"
+    short_description = "Indicative radiation level"
     usage = "straling <plaats>"
     examples = ["straling Diest", "straling Eindhoven"]
 
@@ -50,10 +50,7 @@ class StralingCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return (
-            "Indicatief stralingsniveau nabij een plaats, op basis van Safecast "
-            "burgerwetenschap-sensoren (geen officiële meting)."
-        )
+        return self.translate("commands.straling.help")
 
     async def _query_safecast(self, lat: float, lon: float, distance_km: int) -> list[dict]:
         params = {

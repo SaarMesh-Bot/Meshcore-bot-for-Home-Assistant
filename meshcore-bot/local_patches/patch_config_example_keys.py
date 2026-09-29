@@ -23,6 +23,8 @@ KEYS = {
     ],
     "Help_Command": [
         ("list_url", "", "add-on: bare 'help' answers with this link to the full command list"),
+        ("text", "", "add-on: bare 'help' answers with exactly this text (wins over list_url)"),
+        ("hint", "word", "add-on: pointer in a hint channel when 'help' is typed there (off, word, args)"),
     ],
 }
 

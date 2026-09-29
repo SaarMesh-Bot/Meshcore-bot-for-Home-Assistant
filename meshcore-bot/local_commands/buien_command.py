@@ -76,11 +76,11 @@ class BuienCommand(BaseCommand):
 
     name = "buien"
     keywords = ["buien", "buienradar"]
-    description = "Regen de komende 2 uur als tijdlijn per 10 minuten (Buienradar, NL/BE)"
+    description = "Rain in the next 2 hours as a timeline per 10 minutes (Buienradar, NL/BE)"
     category = "weather"
     requires_internet = True
 
-    short_description = "Regen komende 2 uur (Buienradar)"
+    short_description = "Rain in the next 2 hours (Buienradar)"
     usage = "buien [plaats]"
     examples = ["buien", "buien Weert"]
 

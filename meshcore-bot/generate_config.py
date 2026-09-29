@@ -94,6 +94,13 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
         "auto_manage_contacts": str(g("contacts", "mode", "device")),
         # See local_patches/patch_contact_protection.py.
         **({"timezone": str(g("bot", "timezone", "")).strip()} if str(g("bot", "timezone", "")).strip() else {}),
+        # Where the bot is: airplanes, wx, rain, sun, distances in test and the map use it. Only when both are set.
+        **({"bot_latitude": str(g("bot", "latitude")), "bot_longitude": str(g("bot", "longitude"))}
+           if g("bot", "latitude") not in (None, "") and g("bot", "longitude") not in (None, "") else {}),
+        # Optional prefix before commands ("/" for /test). Not required by default, so "test" keeps working too.
+        **({"command_prefix": str(g("bot", "command_prefix", "")).strip(),
+            "require_command_prefix": bool_str(g("bot", "require_command_prefix", False))}
+           if str(g("bot", "command_prefix", "") or "").strip() else {}),
         "protect_starred": bool_str(g("contacts", "protect_starred", True)),
         "keep_radio_favourites": bool_str(g("contacts", "keep_radio_favourites", True)),
     }
@@ -102,7 +109,7 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
     # local_translation_path: our own commands' catalog (local_shared/local_translations/*.json), merged over
     # upstream's own translations/*.json. Absolute and build-time (COPY'd into the image), not the data dir.
     cfg["Localization"] = {
-        "language": str(g("bot", "language", "nl")),
+        "language": str(g("bot", "language", "en")),
         "local_translation_path": "/opt/meshcore-bot/local/translations",
     }
 
@@ -230,7 +237,7 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
 
     # Formula 1 channel. Off until it is switched on (Plugins -> F1). The f1 command works in this channel only because
     # its own channel list names it: #f1 is deliberately NOT in Bot.channels, so ping, wx and the rest stay out of it.
-    cfg["F1"] = {"enabled": "false", "channel": "#f1"}
+    cfg["F1"] = {"enabled": "false", "channel": "#f1", "language": str(g("bot", "language", "en"))}
     cfg["F1_Command"] = {"channels": "#f1"}
 
     # Auto-detect the sender's language from what they typed, and reply in that language for every command
@@ -240,10 +247,22 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
     # Community commands (2.14.0). Reminders delivers what people set with 'herinner' (only the DM they asked for);
     # Community keeps the archive behind dx/xp/badge (reads the bot's own stats, sends nothing). Both on by default:
     # without them those commands only half work. Switch off on their cards (Plugins -> Reminders / Community).
-    cfg["Reminders"] = {"enabled": "true", "language": "nl"}
+    cfg["Reminders"] = {"enabled": "true", "language": str(g("bot", "language", "en"))}
     cfg["Community"] = {"enabled": "true"}
     # Channel radar: counts which hashtag channels are in use (reads the bot's own packet log, sends nothing). On.
     cfg["ChannelRadar"] = {"enabled": "true"}
+    # Night mode: keeps scheduled messages and feeds quiet at night (webhook only when chosen). Off until switched on.
+    # Games channel: game commands only in one channel. Off (and empty) until chosen on the card.
+    cfg["GamesChannel"] = {"enabled": "false", "channel": "", "commands": "quiz,hangman,poll,peiling,checkin,karma,voorspel", "pointer": "false"}
+    # Bot network over the internet (MQTT): off until the owner chooses to join (it shares data with other bots).
+    cfg["BotNetwork"] = {"enabled": "false", "region": "", "trusted": "",
+                         "share_status": "true", "share_channels": "true", "share_bots": "true",
+                         "hello_hours": "24", "info_hours": "168", "status_hours": "1", "lists_hours": "24",
+                         "find_neighbours": "false", "neighbours_hours": "24"}
+    # Install count: once a day a random id + the version to the maintainer's server (anonymous; README says so). On,
+    # one switch on the card to turn it off.
+    cfg["InstallCount"] = {"enabled": "true"}
+    cfg["NightMode"] = {"enabled": "false", "start": "23:00", "end": "07:00", "scheduled": "true", "feeds": "true", "webhook": "false"}
 
     for name in DEFAULT_OFF:
         set_option(cfg, command_section(name), "enabled", "false")
@@ -274,8 +293,7 @@ def add_public_channel_defaults(cfg: configparser.ConfigParser) -> None:
         "enabled": "false",
         "channels": "",
         "where": "",
-        "message": ("We helpen je heel graag verder in {channels} || Voor commando's en tests ben je welkom in {channels} || "
-                    "Hier reageer ik niet op commando's, in {channels} wel! || Tip: probeer het in {channels}, daar help ik je graag"),
+        "message": "",                 # empty = standard text in the bot's language (channel_hint.default_texts)
         "ignore_words": "hello,hi,hey",
         "yield_seconds": "15",
         "cooldown_seconds": "120",
@@ -319,10 +337,16 @@ STATE_FILE = "generated_keys.json"
 # it was rewritten on every start until 2.6.1.
 MOVED_SECTIONS = {"Notifications", "ContactCleanup", "RoomServer_Login", "HomeAssistantBridge",
                   "Webhook", "ChannelHint", "Greeter_Command", "HARepeater", "F1", "F1_Command", "Heartbeat",
-                  "AutoLanguage", "Reminders", "Community", "ChannelRadar"}
+                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount"}
 # Never removed by the "generated last time but not now" cleanup: the moved sections, and the scheduled
 # messages (the dashboard's Schedule page owns them since 2.8.0; the old announcement option is gone).
 KEEP_SECTIONS = MOVED_SECTIONS | {"Scheduled_Messages"}
+
+
+# Keys an earlier version put on a card and that no longer exist: removed at the start, so the card does not show them
+# under "Other config values". BotNetwork: the radio variant (2.20.0) and the broker fields (2.21.0) are gone; the
+# server is fixed in the code since 2.21.1.
+OBSOLETE_KEYS = {"BotNetwork": ("channel", "max_per_hour", "transport", "broker", "port", "tls", "username", "password", "topic")}
 
 
 def merge_with_existing(generated: configparser.ConfigParser, config_path: str, state_path: str):
@@ -345,6 +369,14 @@ def merge_with_existing(generated: configparser.ConfigParser, config_path: str, 
             print(f"generate_config: existing config unreadable, starting fresh: {exc}", file=sys.stderr)
             merged = configparser.ConfigParser(interpolation=None, strict=False)
             merged.optionxform = str
+
+    for section, keys in OBSOLETE_KEYS.items():
+        if merged.has_section(section):
+            for key in keys:
+                merged.remove_option(section, key)
+        # a list saved empty by the card API once came back as the text "[]"
+        if merged.has_section(section) and merged.get(section, "trusted", fallback="").strip() == "[]":
+            merged[section]["trusted"] = ""
 
     now_keys = [[s, k] for s in generated.sections() for k in generated[s]]
     try:

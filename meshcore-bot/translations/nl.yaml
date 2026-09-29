@@ -42,13 +42,25 @@ configuration:
         description: De bot antwoordt in totaal hooguit één keer per zoveel seconden (een tweede commando binnen die tijd krijgt geen antwoord). Upstream gebruikt 10, deze add-on 4. Lager betekent meer airtime op de mesh.
       language:
         name: Taal van de antwoorden
-        description: De taal van de eigen antwoorden van de bot (weer, dobbelstenen, help enzovoort). Nederlands dekt ongeveer 70% van de ingebouwde teksten, de rest blijft Engels. De extra commando's van deze add-on zijn sowieso Nederlands.
+        description: "De taal van de antwoorden van de bot: en (Engels), nl (Nederlands), de (Duits) of fr (Frans). Geldt voor de eigen teksten van de bot en alle extra commando's van deze add-on, ook help en helpall. Nieuwe installaties beginnen in het Engels. Staat AutoLanguage aan (pagina Plugins), dan krijgt wie in een van de andere talen schrijft het antwoord in die taal."
       log_level:
         name: Logniveau
         description: Gebruik DEBUG als er iets stil wordt weggegooid en je wilt zien waarom.
       timezone:
         name: Tijdzone
         description: Tijdzonenaam zoals Europe/Amsterdam, gebruikt voor geplande berichten zoals de wekelijkse aankondiging. Leeg = de systeemtijdzone.
+      latitude:
+        name: Breedtegraad van de bot
+        description: "Waar de bot staat, bijvoorbeeld 50.89 (twee decimalen is genoeg). Gebruikt door airplanes, wx, rain, sun, de afstanden in test en de kaart op het dashboard. Leeg laten (samen met de lengtegraad) = geen vaste plek. Gaat alleen naar de weer- en vluchtdiensten die die commando's vragen."
+      longitude:
+        name: Lengtegraad van de bot
+        description: Bijvoorbeeld 5.98. Alleen samen met de breedtegraad hierboven.
+      command_prefix:
+        name: Voorvoegsel voor commando's
+        description: "Optioneel teken vóór commando's, bijvoorbeeld / zodat /test werkt. Meerdere gescheiden door komma's (/, !). Leeg = geen voorvoegsel (het oude ! werkt altijd)."
+      require_command_prefix:
+        name: Voorvoegsel verplicht
+        description: "Uit (standaard): /test en test werken allebei. Aan: alleen commando's met het voorvoegsel krijgen antwoord."
   weather:
     name: Weer en eenheden
     description: Gebruikt door wx, gwx, rain, aqi en andere weercommando's.

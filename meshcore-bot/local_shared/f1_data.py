@@ -150,7 +150,22 @@ def parse(states: list) -> dict:
     """Everything the F1 service and command need, from one read of Home Assistant's states."""
     idx = _index(states)
     snap: dict = {"next": None, "last_race": None, "sprint": None, "drivers": [], "teams": [], "standings_round": None,
-                  "standings_season": None, "live": {}}
+                  "standings_season": None, "live": {}, "calendar": []}
+
+    # The season's races (sensor.f1_current_season, attribute races in Ergast/Jolpica form: date + time in UTC).
+    season = _attrs(_get(idx, "current_season"))
+    for r in season.get("races") or []:
+        if not isinstance(r, dict):
+            continue
+        day = str(r.get("date") or "")
+        race_ts = parse_time(f"{day}T{r.get('time') or '12:00:00Z'}") if day else None
+        if race_ts is None:
+            continue
+        loc = (r.get("Circuit") or {}).get("Location") or {}
+        snap["calendar"].append({"season": str(r.get("season") or season.get("season") or ""), "round": str(r.get("round") or ""),
+                                 "race_name": r.get("raceName") or "", "country": loc.get("country") or "",
+                                 "locality": loc.get("locality") or "", "race_ts": race_ts})
+    snap["calendar"].sort(key=lambda r: r["race_ts"])
 
     nxt = _get(idx, "next_race")
     if nxt is not None and str(nxt.get("state", "")).lower() not in UNKNOWN:
@@ -283,6 +298,18 @@ def next_race_text(nxt: dict, now_ts: float, tz, translate) -> list:
     if days > 3:
         return [fit(head)]
     return [fit(head)] + week_texts(nxt, tz, translate)
+
+
+def calendar_text(calendar: list, now_ts: float, tz, translate, limit: int = 6) -> list:
+    """The coming races (a race that started less than 3 hours ago still counts), at most `limit`, in 1-2 messages."""
+    coming = [r for r in calendar if r["race_ts"] >= now_ts - 3 * 3600][:limit]
+    if not coming:
+        return [translate("commands.f1.no_calendar")]
+    pieces = []
+    for r in coming:
+        local = to_local(r["race_ts"], tz)
+        pieces.append(f"R{r['round']} {gp_name_of(r, translate)} {fmt_day(local, translate)} {fmt_hm(local)}")
+    return pack(translate("commands.f1.calendar_header", season=coming[0]["season"]), pieces, max_messages=2)
 
 
 def reminder_text(nxt: dict, short: str, now_ts: float, tz, translate) -> str:

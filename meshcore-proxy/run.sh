@@ -4,6 +4,8 @@ set -e
 SERIAL_PORT=$(bashio::config 'serial_port')
 BAUDRATE=$(bashio::config 'baudrate')
 LISTEN_PORT=$(bashio::config 'listen_port')
+PRIORITY_PORT=0
+if bashio::config.has_value 'priority_port'; then PRIORITY_PORT=$(bashio::config 'priority_port'); fi
 QUIET_RELEASE=$(bashio::config 'turn_quiet_seconds')
 MAX_HOLD=$(bashio::config 'turn_max_seconds')
 LOG_LEVEL=$(bashio::config 'log_level')
@@ -21,6 +23,7 @@ exec python3 /opt/proxy.py \
     --baudrate "${BAUDRATE}" \
     --listen-host 0.0.0.0 \
     --listen-port "${LISTEN_PORT}" \
+    --priority-port "${PRIORITY_PORT}" \
     --quiet-release "${QUIET_RELEASE}" \
     --max-hold "${MAX_HOLD}" \
     --log-level "${LOG_LEVEL}"

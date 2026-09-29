@@ -8,6 +8,9 @@ configuration:
   listen_port:
     name: Listen port
     description: TCP port clients connect to (meshcore-ha, MeshCore Bot). Default 5010.
+  priority_port:
+    name: Priority port
+    description: "Clients on this port go first when several want the radio at the same time (a running turn is finished). Put the MeshCore Bot on it (tcp_port 5011) and its replies go before meshcore-ha. 0 = off."
   turn_quiet_seconds:
     name: Turn ends after silence (seconds)
     description: "While one client is talking to the radio, the proxy gives that client the answers live and holds them back from the others. The turn ends after this many seconds without radio traffic."

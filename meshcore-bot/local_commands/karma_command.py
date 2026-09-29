@@ -31,10 +31,10 @@ class KarmaCommand(BaseCommand):
 
     name = "karma"
     keywords = ["karma", "topkarma"]
-    description = "Iemand bedanken met een punt (karma <naam>), karma = jouw punten, karma top = ranglijst"
+    description = "Thank someone with a point (karma <name>), karma = your points, karma top = ranking"
     category = "fun"
 
-    short_description = "Iemand bedanken met een karmapunt"
+    short_description = "Thank someone with a karma point"
     usage = "karma [<naam>|top]"
     examples = ["karma", "karma Piet", "karma top", "topkarma"]
 

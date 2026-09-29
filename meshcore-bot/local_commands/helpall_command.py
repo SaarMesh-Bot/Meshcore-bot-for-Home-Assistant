@@ -50,10 +50,10 @@ class HelpAllCommand(BaseCommand):
 
     name = "helpall"
     keywords = ["helpall"]
-    description = "Volledige commandolijst, één pagina per keer (usage: helpall [paginanummer])"
+    description = "Full command list, one page at a time (usage: helpall [page])"
     category = "basic"
 
-    short_description = "Volledige commandolijst (pagina per pagina, onthoudt waar je was)"
+    short_description = "Full command list (page by page, remembers where you were)"
     usage = "helpall [paginanummer]"
     examples = ["helpall", "helpall 2"]
 
@@ -73,7 +73,7 @@ class HelpAllCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "Volledige lijst kanaal-commando's (geen admin/DM-only): 'helpall' voor pagina 1, dan 'helpall 2', 'helpall 3', ..."
+        return self.translate("commands.helpall.help")
 
     def _public_command_names(self, message: MeshMessage) -> list[str]:
         command_manager = self.bot.command_manager

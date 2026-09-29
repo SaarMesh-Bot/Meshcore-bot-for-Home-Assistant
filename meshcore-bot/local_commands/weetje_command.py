@@ -20,12 +20,15 @@ class WeetjeCommand(BaseCommand):
 
     name = "weetje"
     keywords = ["weetje", "wistje"]
-    description = "Een willekeurig weetje (Nederlandstalig)"
+    description = "A random fun fact (in Dutch)"
     category = "fun"
 
-    short_description = "Willekeurig weetje"
+    short_description = "Random fun fact"
     usage = "weetje"
     examples = ["weetje"]
+
+    def get_help_text(self) -> str:
+        return self.translate("commands.weetje.help")
 
     def __init__(self, bot: Any):
         super().__init__(bot)

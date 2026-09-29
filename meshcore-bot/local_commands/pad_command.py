@@ -65,10 +65,10 @@ class PadCommand(BaseCommand):
 
     name = "pad"
     keywords = ["pad"]
-    description = "De route van je bericht in één regel: hops, afstand en repeaters (lang: path)"
+    description = "The route of your message in one line: hops, distance and repeaters (long form: path)"
     category = "meshcore_info"
 
-    short_description = "Route van je bericht: hops, km en repeaters"
+    short_description = "Route of your message: hops, km and repeaters"
     usage = "pad"
     examples = ["pad"]
 

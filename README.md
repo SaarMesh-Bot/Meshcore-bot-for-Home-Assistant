@@ -81,9 +81,26 @@ What it does **not** do: when two bots listen on the same command channel, both 
 region which channels are already served by a bot, and give your bot its own channels (for example `#bot`, `#test`) or
 agree with the other owner who answers where.
 
+## Bot network
+
+Bots running this add-on can share what their radio hears (nodes heard, how busy the mesh is, channel names) over the
+internet, at no airtime and at any distance. It is off by default: to join, switch on the **BotNetwork**
+card on the dashboard's Plugins page and restart the add-on (switch it off again to leave). What is shared: numbers (nodes heard, messages, commands), radio settings, the add-on version, bot names
+and hashtag channel names - never message content, people's names or keys. Say hello
+with the issue form **Join the bot network** ([new issue](https://github.com/vipje/Meshcore-bot-for-Home-Assistant/issues/new/choose))
+if you like, so others can add your bot to their trusted list.
+
+## Install count
+
+To know how many installations run, the bot sends **once a day one anonymous message** to the maintainer's server
+(`mqtt.vipje.nl`, the same one as the bot network): a random number made at the first start, the add-on version and the
+date. Nothing else - not your bot's name, your radio, your location or anything from the mesh - and no airtime. As with
+any internet connection, the server sees your IP address. It is **on by default**; switch off the **InstallCount** card
+on the dashboard's Plugins page to send nothing at all.
+
 ## Commands
 
-The full list of commands is in **[COMMANDS.md](COMMANDS.md)** (in Dutch). On the mesh you can also type `help`: the bot
+The full list of commands is in **[COMMANDS.en.md](COMMANDS.en.md)** (in Dutch: [COMMANDS.md](COMMANDS.md)). On the mesh you can also type `help`: the bot
 sends the link to that list, and `help <command>` explains one command.
 
 ## Thanks

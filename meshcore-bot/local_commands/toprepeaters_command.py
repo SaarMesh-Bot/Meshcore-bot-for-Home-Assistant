@@ -30,12 +30,15 @@ class TopRepeatersCommand(BaseCommand):
 
     name = "toprepeaters"
     keywords = ["topr"]
-    description = "Top 3 drukste repeaters (optioneel: topr <dagen>, standaard 24u)"
+    description = "Top 3 busiest repeaters (optional: topr <days>, default 24 h)"
     category = "analytics"
 
-    short_description = "Top 3 drukste repeaters (24u, of 'topr N' voor N dagen)"
+    short_description = "Top 3 busiest repeaters (24 h, or 'topr N' for N days)"
     usage = "topr [dagen]"
     examples = ["topr", "topr 7"]
+
+    def get_help_text(self) -> str:
+        return self.translate("commands.toprepeaters.help")
 
     def __init__(self, bot: Any):
         super().__init__(bot)

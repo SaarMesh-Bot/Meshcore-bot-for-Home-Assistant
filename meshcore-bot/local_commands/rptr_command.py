@@ -32,10 +32,10 @@ class RptrCommand(BaseCommand):
 
     name = "rptr"
     keywords = ["rptr"]
-    description = "Batterij, uptime, airtime en buren van de repeater (uit Home Assistant)"
+    description = "Battery, uptime, airtime and neighbours of the repeater (from Home Assistant)"
     category = "general"
 
-    short_description = "Status van de repeater"
+    short_description = "Status of the repeater"
     usage = "rptr [buren|accu|list|naam]"
     examples = ["rptr", "rptr buren", "rptr accu", "rptr accu 7d", "rptr list"]
 
@@ -52,7 +52,7 @@ class RptrCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "rptr toont batterij, uptime, airtime en buren van de repeater; rptr buren = de buren; rptr accu [7d] = het verloop van de accu; rptr list = alle repeaters."
+        return self.translate("commands.rptr.help")
 
     def _arguments(self, message: MeshMessage) -> list:
         tokens = (message.content or "").split()

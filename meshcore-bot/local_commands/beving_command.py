@@ -28,11 +28,11 @@ class BevingCommand(BaseCommand):
 
     name = "beving"
     keywords = ["beving"]
-    description = "Recente aardbevingen in/rond Nederland (KNMI)"
+    description = "Recent earthquakes in and around the Netherlands (KNMI)"
     category = "general"
     requires_internet = True
 
-    short_description = "Recente aardbevingen (KNMI)"
+    short_description = "Recent earthquakes (KNMI)"
     usage = "beving"
     examples = ["beving"]
 
@@ -48,7 +48,7 @@ class BevingCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "Top 3 recente aardbevingen in/rond Nederland, uit de KNMI-seismologiefeed."
+        return self.translate("commands.beving.help")
 
     async def execute(self, message: MeshMessage) -> bool:
         try:

@@ -23,11 +23,11 @@ class LaadpaalCommand(BaseCommand):
 
     name = "laadpaal"
     keywords = ["laadpaal"]
-    description = "Dichtstbijzijnde laadpalen nabij een plaats (usage: laadpaal <plaats>)"
+    description = "Nearest EV charging points near a place (usage: laadpaal <place>)"
     category = "general"
     requires_internet = True
 
-    short_description = "Dichtstbijzijnde laadpalen"
+    short_description = "Nearest EV charging points"
     usage = "laadpaal <plaats>"
     examples = ["laadpaal Utrecht", "laadpaal Sittard"]
 
@@ -43,7 +43,7 @@ class LaadpaalCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "Dichtstbijzijnde EV-laadpalen nabij een plaats, uit OpenStreetMap."
+        return self.translate("commands.laadpaal.help")
 
     async def _query_overpass(self, lat: float, lon: float) -> list[dict]:
         query = (

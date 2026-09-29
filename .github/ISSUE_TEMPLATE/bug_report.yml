@@ -1,0 +1,29 @@
+name: Bug report
+description: Something does not work as described
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens, and what did you expect?
+      description: For a command, the exact text you sent and the bot's answer.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Add-on version
+      description: Settings > Add-ons > MeshCore Bot (and MeshCore Proxy, if it is about the radio connection).
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language of the replies
+      options: ["en", "nl", "de", "fr"]
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: The add-on's Log tab around the moment it happened. Remove passwords and keys first.
+      render: text

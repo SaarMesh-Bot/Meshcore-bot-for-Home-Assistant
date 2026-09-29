@@ -17,7 +17,8 @@ Typical clients: the **MeshCore Bot** add-on from this repository, the
    stable one. If the port cannot be found, the add-on log lists the paths that exist.
 2. Start the add-on. The log shows `Luistert op 0.0.0.0:5010` (the proxy's log messages are Dutch).
 3. Point every program that used the USB device at the proxy instead:
-   - **MeshCore Bot** add-on: *Connection type* `tcp`, host `localhost`, port `5010`.
+   - **MeshCore Bot** add-on: *Connection type* `tcp`, host `localhost`, port `5011` (the priority port, so the bot's replies
+     go first; `5010` works too, without priority).
    - **meshcore-ha** integration: connection type TCP, host `localhost`, port `5010`.
 
 Start the proxy first, so the clients find it when they start.
@@ -29,6 +30,7 @@ Start the proxy first, so the clients find it when they start.
 | Serial port | Path of the radio, for example `/dev/ttyACM0`. |
 | Baud rate | 115200 for MeshCore companion firmware. |
 | Listen port | TCP port for clients. Default 5010. |
+| Priority port | Clients on this port go first when several want the radio (a running turn is finished first). Default 5011, 0 = off. |
 | Turn ends after silence | See *Turns* below. Default 0.75 s. |
 | Longest turn | Hard limit for one turn. Default 8 s. |
 | Log level | `DEBUG` shows every turn. |

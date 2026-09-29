@@ -16,10 +16,10 @@ class UptimeCommand(BaseCommand):
 
     name = "uptime"
     keywords = ["uptime"]
-    description = "Hoe lang de bot al draait sinds de laatste herstart"
+    description = "How long the bot has been running since its last restart"
     category = "general"
 
-    short_description = "Bot-uptime sinds laatste herstart"
+    short_description = "Bot uptime since last restart"
     usage = "uptime"
     examples = ["uptime"]
 
@@ -38,7 +38,7 @@ class UptimeCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "Toont hoe lang de bot al draait sinds de laatste herstart."
+        return self.translate("commands.uptime.help")
 
     def _format_duration(self, seconds: float) -> str:
         seconds = int(seconds)

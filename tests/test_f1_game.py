@@ -70,7 +70,7 @@ check(not ok and "ken ik niet" in msg and g.players("2026", "16") == 2, "onbeken
 ok, msg = g.predict("2026", "16", C, "Cor", "", NOW, LOCK, set(), TR)
 check(not ok, "lege code wordt geweigerd")
 ok, msg = g.predict("2026", "16", C, "Cor", "VERSTAPPEN", NOW, LOCK, set(), TR)
-check(not ok and "3 letters" in msg, "meer dan 3 letters wordt geweigerd")
+check(not ok and "f1 voorspel VER NOR LEC" in msg, "meer dan 3 letters wordt geweigerd, met uitleg over 1 of 3 codes")
 ok, msg = g.predict("2026", "16", "", "Zonder", "VER", NOW, LOCK, CODES, TR)
 check(not ok and "sleutel" in msg and g.players("2026", "16") == 2, "zonder sleutel (kanaalbericht) wordt nooit geaccepteerd")
 ok, msg = g.predict("2026", "16", C, "Cor", "VER", LOCK, LOCK, CODES, TR)
@@ -99,5 +99,30 @@ print("   ", table)
 check(table[:2] == [("Alice (nieuwe naam)", 7, 2), ("Bob", 7, 2)], "stand: punten van beide races opgeteld, laatste naam getoond, gelijke stand op naam")
 check(len(g.standings("2026", 1)) == 1 and g.standings("2025", 5) == [], "limiet en ander seizoen")
 check(g.score("2026", "18", results) == [], "een race zonder deelnemers levert niets op")
+# ---- top 3 (f1 voorspel VER NOR LEC): right place 5, right driver elsewhere 2, all three exact +3
+P1, P2, P3, P4 = "d1" * 32, "d2" * 32, "d3" * 32, "d4" * 32
+ok, msg = g.predict("2026", "19", P1, "Top", "ver nor lec", NOW, LOCK, set(), TR)
+check(ok and msg == "Genoteerd: jouw top 3 is VER, NOR, LEC." and g.pick_of("2026", "19", P1) == "VER,NOR,LEC", f"top 3 genoteerd ({msg})")
+ok, msg = g.predict("2026", "19", P1, "Top", "VER,NOR,LEC", NOW, LOCK, set(), TR)
+check(ok and "Genoteerd" in msg, "zelfde top 3 met komma's: gewoon genoteerd")
+ok, msg = g.predict("2026", "19", P2, "Wissel", "NOR VER LEC", NOW, LOCK, set(), TR)
+ok, msg = g.predict("2026", "19", P3, "Half", "VER PIA NOR", NOW, LOCK, set(), TR)
+ok, msg = g.predict("2026", "19", P4, "Winnaar", "VER", NOW, LOCK, set(), TR)
+check(not g.predict("2026", "19", P4, "Winnaar", "VER VER NOR", NOW, LOCK, set(), TR)[0], "dezelfde coureur twee keer: geweigerd")
+check(not g.predict("2026", "19", P4, "Winnaar", "VER NOR", NOW, LOCK, set(), TR)[0], "twee codes: geweigerd (1 of 3)")
+ok, msg = g.predict("2026", "19", P3, "Half", "VER PIA NOR", NOW, LOCK, {"VER", "NOR", "LEC"}, TR)
+check(not ok and "'PIA' ken ik niet" in msg, f"onbekende code in een top 3: die code wordt genoemd ({msg})")
+ok, msg = g.predict("2026", "19", P2, "Wissel", "LEC VER NOR", NOW, LOCK, set(), TR)
+check(ok and msg.startswith("Aangepast: je voorspelt nu LEC, VER, NOR (was NOR, VER, LEC)"), f"top 3 aanpassen ({msg})")
+ok, msg = g.predict("2026", "19", P2, "Wissel", "NOR VER LEC", NOW, LOCK, set(), TR)
+top = [{"pos": "1", "code": "VER"}, {"pos": "2", "code": "NOR"}, {"pos": "3", "code": "LEC"}, {"pos": "4", "code": "PIA"}]
+got = {n: p for n, _pick, p in g.score("2026", "19", top)}
+check(got == {"Top": 18, "Wissel": 9, "Half": 7, "Winnaar": 5}, f"punten: alles goed 5+5+5+3, gewisseld 2+2+5, half 5+0+2, alleen winnaar 5 ({got})")
+from f1_game import points_for
+pod = {"1": "VER", "2": "NOR", "3": "LEC"}
+check(points_for("VER,NOR,LEC", pod, {"exact": 10, "in_top3": 1, "bonus": 0}) == 30 and points_for("NOR,LEC,VER", pod, {"exact": 10, "in_top3": 1, "bonus": 0}) == 3,
+      "punten van de kaart worden gebruikt")
+check(points_for("LEC", pod) == 2 and points_for("PIA", pod) == 0, "winnaar-voorspelling: oude regels (podium 2, anders 0)")
+
 print(f"\n{len(fails)} fouten")
 sys.exit(1 if fails else 0)

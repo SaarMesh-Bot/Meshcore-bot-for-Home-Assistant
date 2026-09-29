@@ -24,11 +24,11 @@ class FileCommand(BaseCommand):
 
     name = "file"
     keywords = ["file"]
-    description = "Files/verkeersincidenten nabij een plaats (usage: file <plaats>)"
+    description = "Traffic jams and incidents near a place (usage: file <place>, NL)"
     category = "general"
     requires_internet = True
 
-    short_description = "Files/incidenten nabij een plaats"
+    short_description = "Traffic jams near a place"
     usage = "file <plaats>"
     examples = ["file Heerlen"]
 
@@ -44,7 +44,7 @@ class FileCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "Files/verkeersincidenten binnen 20km van een plaats (NDW open data)."
+        return self.translate("commands.file.help")
 
     async def execute(self, message: MeshMessage) -> bool:
         try:

@@ -6,15 +6,42 @@ so nobody can vote for someone else. A channel message only has a display name a
 stored in the bot's database and never shown; standings show the name the person had when they last played.
 
 Rules: one pick per race (a new pick replaces the old one until the lock), the pick can be changed until the
-first qualifying session of the weekend starts. Points: the winner picked right = 5, a pick that finished second
-or third = 2, anything else = 0.
+first qualifying session of the weekend starts. Two ways to play:
+- one code = the winner: right = 5, a pick that finished second or third = 2, anything else = 0;
+- three codes = your top 3 in order (f1 voorspel VER NOR LEC): per driver the right place = 5, in the top 3 but on
+  another place = 2, and +3 when all three are exactly right (at most 18). Adjustable on the F1 card.
+The pick is stored as "VER" or "VER,NOR,LEC".
 """
 from __future__ import annotations
 
 from typing import Any, Optional
 
+import re
+
 POINTS_WINNER = 5
 POINTS_PODIUM = 2
+TOP3_POINTS = {"exact": 5, "in_top3": 2, "bonus": 3}
+
+
+def picks_of(pick: str) -> list:
+    return [c for c in (pick or "").split(",") if c]
+
+
+def points_for(pick: str, podium: dict, top3_points: Optional[dict] = None) -> int:
+    """Points of one stored pick against the podium {"1": code, "2": code, "3": code}."""
+    codes = picks_of(pick)
+    if len(codes) == 1:
+        return POINTS_WINNER if codes[0] == podium.get("1") else (POINTS_PODIUM if codes[0] in (podium.get("2"), podium.get("3")) else 0)
+    pts = {**TOP3_POINTS, **(top3_points or {})}
+    top = [podium.get("1"), podium.get("2"), podium.get("3")]
+    total, exact = 0, 0
+    for place, code in enumerate(codes[:3]):
+        if code == top[place]:
+            total += pts["exact"]
+            exact += 1
+        elif code in top:
+            total += pts["in_top3"]
+    return total + (pts["bonus"] if exact == 3 else 0)
 
 
 class F1Game:
@@ -35,25 +62,33 @@ class F1Game:
     # ------------------------------------------------------------------ playing
     def predict(self, season: str, rnd: str, pubkey: str, name: str, code: str, now_ts: float,
                 lock_ts: Optional[float], valid_codes: set, translate) -> tuple:
-        """(ok, message in the sender's detected language). Codes are the 3-letter driver codes of this season."""
-        code = (code or "").strip().upper()
+        """(ok, message in the sender's detected language). `code` = one driver code (the winner) or three separated by
+        spaces or commas (your top 3 in order). Codes are the 3-letter driver codes of this season."""
+        codes = [c for c in re.split(r"[\s,]+", (code or "").strip().upper()) if c]
         if not pubkey:
             return False, translate("commands.f1.predict_no_key")
         if lock_ts is not None and now_ts >= lock_ts:
             return False, translate("commands.f1.predict_locked")
-        if valid_codes and code not in valid_codes:
-            return False, translate("commands.f1.predict_unknown_code", code=code or "?", example=sorted(valid_codes)[0])
-        if not code or len(code) != 3:
+        for c in codes:
+            if valid_codes and c not in valid_codes:
+                return False, translate("commands.f1.predict_unknown_code", code=c, example=sorted(valid_codes)[0])
+        if len(codes) not in (1, 3) or any(len(c) != 3 for c in codes):
             return False, translate("commands.f1.predict_bad_format")
+        if len(set(codes)) != len(codes):
+            return False, translate("commands.f1.predict_duplicate")
+        code = ",".join(codes)
         with self.db.connection() as conn:
             cur = conn.cursor()
             previous = cur.execute("SELECT pick FROM f1_predictions WHERE season=? AND round=? AND pubkey=?", (season, rnd, pubkey.lower())).fetchone()
             cur.execute("INSERT OR REPLACE INTO f1_predictions (season, round, pubkey, name, pick, created_at) VALUES (?,?,?,?,?,?)",
                         (season, rnd, pubkey.lower(), name or "", code, int(now_ts)))
             conn.commit()
+        shown, before = ", ".join(codes), (", ".join(picks_of(previous[0])) if previous else "")
         if previous and previous[0] != code:
-            return True, translate("commands.f1.predict_changed", code=code, previous=previous[0])
-        return True, translate("commands.f1.predict_recorded", code=code)
+            return True, translate("commands.f1.predict_changed", code=shown, previous=before)
+        if len(codes) == 3:
+            return True, translate("commands.f1.predict_recorded_top3", code=shown)
+        return True, translate("commands.f1.predict_recorded", code=shown)
 
     def pick_of(self, season: str, rnd: str, pubkey: str) -> Optional[str]:
         with self.db.connection() as conn:
@@ -65,10 +100,9 @@ class F1Game:
             return conn.execute("SELECT COUNT(*) FROM f1_predictions WHERE season=? AND round=?", (season, rnd)).fetchone()[0]
 
     # ------------------------------------------------------------------ scoring
-    def score(self, season: str, rnd: str, results: list) -> list:
+    def score(self, season: str, rnd: str, results: list, top3_points: Optional[dict] = None) -> list:
         """Give points for one finished race, once. Returns [(name, pick, points)] best first; [] if already scored."""
         podium = {r["pos"]: r["code"] for r in results if r["pos"] in ("1", "2", "3")}
-        winner = podium.get("1")
         with self.db.connection() as conn:
             cur = conn.cursor()
             if cur.execute("SELECT 1 FROM f1_points WHERE season=? AND round=? LIMIT 1", (season, rnd)).fetchone():
@@ -76,7 +110,7 @@ class F1Game:
             rows = cur.execute("SELECT pubkey, name, pick FROM f1_predictions WHERE season=? AND round=?", (season, rnd)).fetchall()
             scored = []
             for pubkey, name, pick in rows:
-                pts = POINTS_WINNER if pick == winner else (POINTS_PODIUM if pick in (podium.get("2"), podium.get("3")) else 0)
+                pts = points_for(pick, podium, top3_points)
                 cur.execute("INSERT INTO f1_points (season, round, pubkey, name, pick, points) VALUES (?,?,?,?,?,?)",
                             (season, rnd, pubkey, name, pick, pts))
                 scored.append((name or "?", pick, pts))

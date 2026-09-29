@@ -18,12 +18,15 @@ class TopCommandsCommand(BaseCommand):
 
     name = "topcommands"
     keywords = ["topc"]
-    description = "Top 5 meest gebruikte commando's (optioneel: topc <dagen>, standaard 24u)"
+    description = "Top 5 most used commands (optional: topc <days>, default 24 h)"
     category = "analytics"
 
-    short_description = "Top 5 commando's (24u, of 'topc N' voor N dagen)"
+    short_description = "Top 5 commands (24 h, or 'topc N' for N days)"
     usage = "topc [dagen]"
     examples = ["topc", "topc 7"]
+
+    def get_help_text(self) -> str:
+        return self.translate("commands.topcommands.help")
 
     def __init__(self, bot: Any):
         super().__init__(bot)

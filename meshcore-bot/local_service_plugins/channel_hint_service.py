@@ -27,14 +27,12 @@ class ChannelHintService(BaseServicePlugin):
                   "command word there gets a pointer to the channels below. Comma-separated, name exactly as on your radio.")},
         {"key": "where", "label": "Channels where commands do work", "type": "list", "default": [],
          "help": "Shown in the hint, for example #bot, #test. Comma-separated."},
-        {"key": "message", "label": "Hint text", "type": "str",
-         "default": ("We helpen je heel graag verder in {channels} || Voor commando's en tests ben je welkom in {channels} || "
-                     "Hier reageer ik niet op commando's, in {channels} wel! || Tip: probeer het in {channels}, daar help ik je graag"),
-         "help": ("{channels} becomes the list above. Several texts separated by || : the bot picks one at random and never the "
+        {"key": "message", "label": "Hint text", "type": "str", "default": "",
+         "help": ("Empty = a standard text in the bot's language. {channels} becomes the list above. Several texts separated by || : the bot picks one at random and never the "
                   "same one twice in a row in a channel, so someone who types test three times does not get the same answer.")},
         {"key": "restricted_message", "label": "Text when a command is used in the wrong channel", "type": "str",
-         "default": "Dat commando werkt hier niet. We helpen je graag verder in: {channels}",
-         "help": ("Sent when someone uses a command in a channel outside that command's own channel list. Several texts "
+         "default": "",
+         "help": ("Empty = a standard text in the bot's language. Sent when someone uses a command in a channel outside that command's own channel list. Several texts "
                   "separated by || are picked at random, like the hint text.")},
         {"key": "ignore_words", "label": "Words that never get a hint", "type": "list", "default": ["hello", "hi", "hey"],
          "help": "Greetings that are also command words; answering them would only be noise."},

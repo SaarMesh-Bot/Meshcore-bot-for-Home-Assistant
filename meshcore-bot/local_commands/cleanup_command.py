@@ -23,10 +23,10 @@ class CleanupCommand(BaseCommand):
 
     name = "cleanup"
     keywords = ["cleanup", "opschonen"]
-    description = "Contactlijst van de radio opschonen (admin)"
+    description = "Clean up the radio's contact list (admin)"
     category = "admin"
 
-    short_description = "Contacten opschonen (admin)"
+    short_description = "Clean up contacts (admin)"
     usage = "cleanup [stale] [now]"
     examples = ["cleanup", "cleanup now", "cleanup stale"]
 
@@ -45,7 +45,7 @@ class CleanupCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "cleanup toont wat er opgeschoond zou worden, cleanup now voert het uit; cleanup stale voor stille contacten (admin)."
+        return self.translate("commands.cleanup.help")
 
     async def execute(self, message: MeshMessage) -> bool:
         service = getattr(self.bot, "services", {}).get("contactcleanup")

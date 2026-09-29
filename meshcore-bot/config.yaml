@@ -1,5 +1,5 @@
 name: MeshCore Bot
-version: "1.0.0"
+version: "1.1.0"
 slug: meshcore_bot
 description: MeshCore mesh bot (agessaman/meshcore-bot) with Home Assistant integration, room server login and Dutch/Belgian extra commands
 url: https://github.com/vipje/Meshcore-bot-for-Home-Assistant
@@ -53,7 +53,7 @@ options:
     admin_pubkeys: []
     tx_delay_seconds: 3.0
     rate_limit_seconds: 4
-    language: nl
+    language: en
     log_level: INFO
     timezone: ""
   weather:
@@ -78,7 +78,6 @@ options:
     feed_max_item_age_minutes: 30
   advanced:
     keywords:
-      - 'ping = "Pong!"'
       - 'test = "ack @[{sender}]{phrase_part} | {connection_info} | Received at: {timestamp}"'
     extra_config: []
 schema:
@@ -97,9 +96,13 @@ schema:
       - "match(^[0-9a-fA-F]{64}$)"
     tx_delay_seconds: "float(0,30)"
     rate_limit_seconds: "int(1,60)?"
-    language: "list(nl|en)?"
+    language: "list(nl|en|de|fr)?"
     log_level: "list(DEBUG|INFO|WARNING|ERROR)"
     timezone: "str?"
+    latitude: "float(-90,90)?"
+    longitude: "float(-180,180)?"
+    command_prefix: "str?"
+    require_command_prefix: "bool?"
   weather:
     default_country: "str"
     provider: "list(noaa|openmeteo)"

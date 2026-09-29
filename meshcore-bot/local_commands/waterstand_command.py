@@ -39,11 +39,11 @@ class WaterstandCommand(BaseCommand):
 
     name = "waterstand"
     keywords = ["waterstand"]
-    description = "Actuele waterstand Maas bij een meetpunt (usage: waterstand [elsloo|grave])"
+    description = "Current water level of the Meuse at a gauge (usage: waterstand [elsloo|grave])"
     category = "general"
     requires_internet = True
 
-    short_description = "Actuele Maas-waterstand"
+    short_description = "Current Meuse water level"
     usage = "waterstand [elsloo|grave]"
     examples = ["waterstand", "waterstand grave"]
 
@@ -59,8 +59,7 @@ class WaterstandCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        stations = ", ".join(_STATIONS)
-        return f"Actuele Maas-waterstand (cm t.o.v. NAP) bij een meetpunt ({stations})."
+        return self.translate("commands.waterstand.help", stations=', '.join(_STATIONS))
 
     async def execute(self, message: MeshMessage) -> bool:
         try:

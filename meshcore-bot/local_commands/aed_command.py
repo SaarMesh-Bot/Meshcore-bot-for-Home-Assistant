@@ -27,11 +27,11 @@ class AedCommand(BaseCommand):
 
     name = "aed"
     keywords = ["aed"]
-    description = "Dichtstbijzijnde AED's nabij een plaats (usage: aed <plaats>)"
+    description = "Nearest AEDs near a place (usage: aed <place>)"
     category = "general"
     requires_internet = True
 
-    short_description = "Dichtstbijzijnde AED's"
+    short_description = "Nearest AEDs"
     usage = "aed <plaats>"
     examples = ["aed Utrecht", "aed Heerlen"]
 
@@ -50,7 +50,7 @@ class AedCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "Dichtstbijzijnde AED's (defibrillatoren) nabij een plaats, uit OpenStreetMap."
+        return self.translate("commands.aed.help")
 
     async def _query_overpass(self, lat: float, lon: float) -> list[dict]:
         query = (

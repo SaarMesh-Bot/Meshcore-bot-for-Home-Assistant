@@ -4,19 +4,22 @@
       "result": "Prix moyen national à la pompe ({date}) : Euro95 €{euro95} | Diesel €{diesel} | LPG €{lpg}",
       "fetch_error": "Impossible de récupérer les prix des carburants (CBS).",
       "no_data": "Aucun prix des carburants CBS récent trouvé.",
-      "error": "Erreur dans la commande tanken : {error}"
+      "error": "Erreur dans la commande tanken : {error}",
+      "help": "Prix moyens nationaux des carburants aux Pays-Bas aujourd'hui/hier (CBS, pas la station la plus proche)."
     },
     "beving": {
       "fetch_error": "Impossible de récupérer le flux sismique KNMI.",
       "no_data": "Aucun séisme récent trouvé dans le flux KNMI.",
       "header": "Séismes récents :",
-      "error": "Erreur dans la commande beving : {error}"
+      "error": "Erreur dans la commande beving : {error}",
+      "help": "Les 3 séismes récents aux Pays-Bas et alentour, flux sismologique du KNMI."
     },
     "storing": {
       "usage": "Utilisation : storing <{providers}>",
       "fetch_error": "Impossible de récupérer le statut des pannes pour {provider}.",
       "result": "{provider} : {status} (source : storingradar.com, non officiel)",
-      "error": "Erreur dans la commande storing : {error}"
+      "error": "Erreur dans la commande storing : {error}",
+      "help": "État des pannes d'un opérateur télécom néerlandais ({providers}), via le site communautaire storingradar.com - pas une source officielle."
     },
     "wegwerk": {
       "usage": "Utilisation : wegwerk <lieu>",
@@ -30,7 +33,8 @@
         "SpeedManagement": "limitation de vitesse",
         "ReroutingManagement": "déviation",
         "GeneralNetworkManagement": "mesure de circulation"
-      }
+      },
+      "help": "Travaux routiers et voies fermées à moins de 20 km d'un lieu (données ouvertes NDW, NL)."
     },
     "ov": {
       "usage": "Utilisation : ov <lieu/arrêt>",
@@ -38,27 +42,31 @@
       "no_departures": "Aucun départ trouvé pour « {query} ».",
       "header": "Transports en commun à {query} :",
       "line": "{time} ligne {line} -> {dest} ({stop})",
-      "error": "Erreur dans la commande ov : {error}"
+      "error": "Erreur dans la commande ov : {error}",
+      "help": "Prochains départs de transports publics à un arrêt, par ville et/ou arrêt (OVapi.nl, NL)."
     },
     "waterstand": {
       "no_data": "Aucune donnée récente de niveau d'eau pour {station}.",
       "fetch_error": "Impossible de récupérer les données d'eau du Rijkswaterstaat.",
       "no_valid": "Aucune mesure valide pour {station}.",
       "result": "Niveau d'eau de la Meuse à {station} : {value}m NAP (mesuré à {time})",
-      "error": "Erreur dans la commande waterstand : {error}"
+      "error": "Erreur dans la commande waterstand : {error}",
+      "help": "Niveau actuel de la Meuse (cm par rapport au NAP) à une station ({stations})."
     },
     "weerwaarschuwing": {
       "no_file": "Impossible de trouver un fichier d'alerte KNMI.",
       "no_link": "Aucun lien de téléchargement reçu du KNMI.",
       "download_error": "Impossible de télécharger le texte d'alerte KNMI.",
       "empty": "Texte d'alerte KNMI vide reçu.",
-      "error": "Erreur dans la commande weerwaarschuwing : {error}"
+      "error": "Erreur dans la commande weerwaarschuwing : {error}",
+      "help": "Le dernier avertissement météo officiel du KNMI pour les Pays-Bas (codes jaune/orange/rouge, verglas)."
     },
     "energieprijs": {
       "fetch_error": "Impossible de récupérer les prix de l'électricité (EnergyZero).",
       "no_data": "Aucun prix de l'électricité trouvé pour aujourd'hui.",
       "result": "Prix de l'électricité actuel : €{current}/kWh | aujourd'hui bas €{low} - haut €{high} (TVA incl.)",
-      "error": "Erreur dans la commande energieprijs : {error}"
+      "error": "Erreur dans la commande energieprijs : {error}",
+      "help": "Prix dynamique actuel de l'électricité (TVA incl.), avec le tarif horaire le plus bas/haut du jour (NL)."
     },
     "aed": {
       "usage": "Utilisation : aed <lieu>",
@@ -66,7 +74,8 @@
       "no_data": "Aucun DAE trouvé dans un rayon de {radius}km de {place}.",
       "header": "DAE près de {place} :",
       "line": "- {name} : {distance}m",
-      "error": "Erreur dans la commande aed : {error}"
+      "error": "Erreur dans la commande aed : {error}",
+      "help": "DAE (défibrillateurs) les plus proches d'un lieu, depuis OpenStreetMap."
     },
     "laadpaal": {
       "usage": "Utilisation : laadpaal <lieu>",
@@ -75,7 +84,8 @@
       "header": "Bornes de recharge près de {place} :",
       "generic_name": "Borne de recharge",
       "line": "- {name}{extra} : {distance}m",
-      "error": "Erreur dans la commande laadpaal : {error}"
+      "error": "Erreur dans la commande laadpaal : {error}",
+      "help": "Bornes de recharge les plus proches d'un lieu, depuis OpenStreetMap."
     },
     "straling": {
       "usage": "Utilisation : straling <lieu>",
@@ -83,7 +93,8 @@
       "no_data": "Aucune mesure Safecast récente trouvée dans un rayon de {radius}km de {place}.",
       "age_suffix": ", dernière mesure {date}",
       "result": "Radiation près de {place} (~{radius}km, n={n}{age}) : ~{usvh} uSv/h indicatif ({cpm} cpm) - capteurs de science citoyenne (Safecast), pas une mesure officielle.",
-      "error": "Erreur dans la commande straling : {error}"
+      "error": "Erreur dans la commande straling : {error}",
+      "help": "Niveau de radiation indicatif près d'un lieu, capteurs citoyens Safecast (pas une mesure officielle)."
     },
     "kenteken": {
       "usage": "Utilisation : kenteken <plaque>",
@@ -94,22 +105,26 @@
       "apk": "APK {date}",
       "error": "Erreur dans la commande kenteken : {error}",
       "foreign_be": "Plaque belge : pas de source ouverte gratuite (la DIV ne partage rien), seulement les plaques néerlandaises (RDW).",
-      "foreign_de": "Plaque allemande : pas de source ouverte gratuite (le KBA ne partage rien), seulement les plaques néerlandaises (RDW)."
+      "foreign_de": "Plaque allemande : pas de source ouverte gratuite (le KBA ne partage rien), seulement les plaques néerlandaises (RDW).",
+      "help": "Recherche une plaque néerlandaise via les données ouvertes RDW : marque et modèle, année, couleur, carburant, cylindrée/puissance, vitesse max, fin du contrôle technique. Aucune donnée personnelle."
     },
     "quote": {
-      "error": "Erreur dans la commande quote : {error}"
+      "error": "Erreur dans la commande quote : {error}",
+      "help": "Envoie une citation au hasard d'une liste locale."
     },
     "uptime": {
       "days": "{n}j",
       "hours": "{n}h",
       "minutes": "{n}m",
       "result": "Disponibilité : {duration} (depuis {started})",
-      "error": "Erreur dans la commande uptime : {error}"
+      "error": "Erreur dans la commande uptime : {error}",
+      "help": "Indique depuis combien de temps le bot tourne depuis son dernier redémarrage."
     },
     "topcommands": {
       "no_data": "Top commandes ({label}) : pas encore de données",
       "header": "Top commandes ({label}) :",
-      "error": "Erreur lors de la récupération des top commandes : {error}"
+      "error": "Erreur lors de la récupération des top commandes : {error}",
+      "help": "Top 5 des commandes les plus utilisées (option : topc <jours>, 24 h par défaut)"
     },
     "status": {
       "no_service": "Statut : service non chargé.",
@@ -120,17 +135,20 @@
       "last_issue": "dernier (il y a {age}) : {text}",
       "no_issues": "aucun problème",
       "header": "Statut :",
-      "error": "Erreur dans status : {error}"
+      "error": "Erreur dans status : {error}",
+      "help": "status affiche uptime, radio, contacts et la dernière erreur (admin)."
     },
     "toprepeaters": {
       "no_data": "Top répéteurs ({label}) : pas encore de données",
       "header": "Top répéteurs ({label}) :",
-      "error": "Erreur lors de la récupération des top répéteurs : {error}"
+      "error": "Erreur lors de la récupération des top répéteurs : {error}",
+      "help": "Top 3 des répéteurs les plus actifs (option : topr <jours>, 24 h par défaut)"
     },
     "topusers": {
       "no_data": "Top utilisateurs ({label}) : pas encore de données",
       "header": "Top utilisateurs ({label}) :",
-      "error": "Erreur lors de la récupération des top utilisateurs : {error}"
+      "error": "Erreur lors de la récupération des top utilisateurs : {error}",
+      "help": "Top 5 des utilisateurs les plus actifs (option : topu <jours>, 24 h par défaut)"
     },
     "whois": {
       "usage": "Utilisation : whois <nom ou préfixe de clé>",
@@ -143,14 +161,17 @@
       "hop": "{n} saut",
       "hops": "{n} sauts",
       "last_seen": "vu pour la dernière fois {ago}",
-      "error": "Erreur dans la commande whois : {error}"
+      "error": "Erreur dans la commande whois : {error}",
+      "level": "niveau {level} {title} ({xp} XP)",
+      "help": "Recherche un nœud connu par nom ou début de clé (nom, rôle, vu la dernière fois, sauts, lieu, niveau de jeu)."
     },
     "feestdag": {
       "today": "Aujourd'hui",
       "tomorrow": "Demain",
       "none": "{label} ({date}) : aucun jour férié officiel aux Pays-Bas ou en Belgique.",
       "header": "{label} ({date}) :",
-      "error": "Erreur dans la commande feestdag : {error}"
+      "error": "Erreur dans la commande feestdag : {error}",
+      "help": "Affiche les jours fériés officiels aux Pays-Bas et en Belgique aujourd'hui (ou 'feestdag morgen' pour demain)."
     },
     "morse": {
       "usage": "Utilisation : morse <texte> ou morse <.... .- .-..>",
@@ -158,7 +179,8 @@
       "decoded": "Morse -> texte : {text}",
       "encode_error": "Aucun caractère pris en charge trouvé à encoder.",
       "encoded": "Morse : {text}",
-      "error": "Erreur dans la commande morse : {error}"
+      "error": "Erreur dans la commande morse : {error}",
+      "help": "Convertit du texte en morse, ou du morse en texte (détection automatique)."
     },
     "file": {
       "usage": "Utilisation : file <lieu>",
@@ -173,7 +195,8 @@
         "Accident": "accident",
         "GeneralObstruction": "obstruction",
         "VehicleObstruction": "panne/véhicule"
-      }
+      },
+      "help": "Bouchons et incidents à moins de 20 km d'un lieu (données ouvertes NDW, NL)."
     },
     "f1": {
       "decimal_sep": ",",
@@ -280,12 +303,12 @@
       "no_team_standings": "F1 : le championnat constructeurs n'est pas encore disponible.",
       "no_result": "F1 : aucun résultat disponible pour le moment.",
       "no_session": "Aucune session F1 en cours.",
-      "usage": "F1 : utilisez f1, f1 stand, f1 team, f1 uitslag, f1 nu, f1 voorspel <code> ou f1 spel.",
+      "usage": "F1 : utilisez f1, f1 stand, f1 team, f1 uitslag, f1 nu, f1 kalender, f1 voorspel <code> ou f1 spel.",
       "error": "Erreur dans f1 : {error}",
       "game_off": "F1 : le jeu de pronostics est désactivé.",
       "predict_dm_only": "Les pronostics ne fonctionnent que par DM, ainsi je suis sûr que c'est bien vous et personne ne peut voter à votre place. Envoyez-moi : f1 voorspel VER",
       "no_next_to_predict": "F1 : il n'y a pas de prochaine course à pronostiquer pour le moment.",
-      "predict_prompt": "Qui gagne le {gp} ? f1 voorspel <code>, par ex. {example}",
+      "predict_prompt": "Qui gagne le {gp} ? f1 voorspel <code>, ou ton top 3 : f1 voorspel A B C. Ex. {example}",
       "game_standing": "Classement : ",
       "no_points_yet": "pas encore de points",
       "your_points": "Vous : {points} pt en {races} courses",
@@ -296,12 +319,17 @@
       "predict_no_key": "Je ne peux pas déterminer votre clé. Réessayez en message direct.",
       "predict_locked": "Les pronostics pour cette course sont clos (les qualifications ont commencé).",
       "predict_unknown_code": "Je ne connais pas « {code} ». Utilisez les 3 lettres, par exemple {example}.",
-      "predict_bad_format": "Utilisez les 3 lettres du pilote, par exemple f1 voorspel VER.",
+      "predict_bad_format": "1 code (le vainqueur) ou 3 (ton top 3), ex. f1 voorspel VER ou f1 voorspel VER NOR LEC.",
       "predict_changed": "Modifié : vous pronostiquez maintenant {code} (c'était {previous}).",
       "predict_recorded": "Enregistré : vous pronostiquez {code} comme vainqueur.",
       "game_result_header": "Jeu : {n} participants. ",
       "game_good": "Bons pronostics : {names}",
-      "game_none_good": "Personne n'a trouvé le vainqueur ou une place sur le podium"
+      "game_none_good": "Personne n'a trouvé le vainqueur ou une place sur le podium",
+      "calendar_header": "Calendrier {season} : ",
+      "no_calendar": "Pas de calendrier des courses.",
+      "help": "f1 = prochaine course ; f1 stand / team / uitslag / nu / kalender ; f1 voorspel <code> (DM seulement) et f1 spel pour le jeu de pronostics.",
+      "predict_recorded_top3": "Noté : ton top 3 est {code}.",
+      "predict_duplicate": "Chaque pilote une seule fois dans ton top 3."
     },
     "rptr": {
       "no_service": "rptr : la liaison Home Assistant est désactivée. Activez HARepeater dans Plugins et redémarrez l'add-on.",
@@ -337,15 +365,18 @@
       "trend_v_per_day": " V/jour",
       "trend_low_in": ", bas dans ~{days} j",
       "measurements": "{n} mesures",
-      "decimal_sep": ","
+      "decimal_sep": ",",
+      "help": "rptr affiche batterie, uptime, airtime et voisins du répéteur ; rptr buren = les voisins ; rptr accu [7d] = historique batterie ; rptr list = tous les répéteurs."
     },
     "helpall": {
       "bad_page": "Help : la page {page} n'existe pas (1-{total} disponibles).",
       "page": "Help {page}/{total} : {names}",
-      "error": "Erreur dans la commande helpall : {error}"
+      "error": "Erreur dans la commande helpall : {error}",
+      "help": "Liste complète des commandes de canal (sans admin/DM seul) : 'helpall' pour la page 1, puis 'helpall 2', 'helpall 3', ..."
     },
     "info": {
-      "error": "Erreur dans info bot : {error}"
+      "error": "Erreur dans info bot : {error}",
+      "help": "info bot explique ce qu'est ce bot et ce qu'il faut pour avoir le vôtre (DM seulement)."
     },
     "quiz": {
       "no_question": "Aucune question reçue d'OpenTDB",
@@ -354,7 +385,8 @@
       "already_active": "Une question de quiz est déjà en cours sur ce canal - répondez avec quiz a/b/c/d.",
       "question": "Quiz : {question}",
       "answer_hint": "Réponse : quiz a/b/c/d (60s)",
-      "error": "Erreur dans la commande quiz : {error}"
+      "error": "Erreur dans la commande quiz : {error}",
+      "help": "Envoie une question de quiz à choix multiple. Répondez en 60 s avec 'quiz a', 'quiz b', 'quiz c' ou 'quiz d'. Questions en anglais."
     },
     "hangman": {
       "wrong_suffix": " | faux : {letters} ({n}/{max})",
@@ -373,7 +405,8 @@
       "running": "Partie en cours ({category}) : {status}",
       "usage": "Utilisation : hangman start [catégorie] ({categories})",
       "unknown_action": "Action hangman inconnue. Utilisation : start [catégorie], <lettre>, raad <mot>, stop.",
-      "error": "Erreur dans la commande hangman : {error}"
+      "error": "Erreur dans la commande hangman : {error}",
+      "help": "Jeu du pendu. 'hangman start [catégorie]' lance une partie (catégories : {categories}). Devinez avec 'hangman <lettre>' ou 'hangman raad <mot>'. 'hangman stop' arrête."
     },
     "poll": {
       "vote_recorded": "Vote enregistré ({ja} oui / {nee} non)",
@@ -389,7 +422,8 @@
       "unit_min": "{n} min",
       "unit_hour": "{n} h",
       "unit_day": "{n} jour",
-      "unit_days": "{n} jours"
+      "unit_days": "{n} jours",
+      "help": "Lance un vote oui/non : 'stem <question>' (question ~80 caractères max, sinon le message ne passe pas). Durée facultative avant (une seule, sans combiner) : 'stem 15m <question>', 'stem 2h <question>' ou 'stem 1d <question>' (10 min par défaut, 1 jour max). Les autres votent avec 'ja'/'nee' (oui/non). 'stem uitslag' montre le décompte, 'stem stop' termine le vote plus tôt."
     },
     "botlist": {
       "none": "Botlist : aucun nom manuel. Automatique : emoji robot ou le mot bot dans le nom.",
@@ -408,7 +442,8 @@
       "deleted": "Botlist : {name} retiré de la liste ; maintenant {verdict} selon les règles automatiques.",
       "usage": "Botlist : utilisez botlist, botlist add|not|del|check <nom>.",
       "value_error": "Botlist : {error}.",
-      "error": "Erreur dans botlist : {error}"
+      "error": "Erreur dans botlist : {error}",
+      "help": "botlist affiche les listes ; botlist add <nom> = toujours un bot, botlist not <nom> = jamais un bot, botlist del <nom> = retirer, botlist check <nom> (admin)."
     },
     "cleanup": {
       "no_service": "Cleanup : service non chargé.",
@@ -418,7 +453,8 @@
       "none": "Cleanup : {before} contacts, cible {target}. Rien à supprimer : {protected} protégés, {recent} actifs <{keep_days}j, plus ancien non protégé {oldest}j.",
       "preview": "Cleanup : {before} contacts, cible {target} : {planned} seraient supprimés ({shown}{more}). « cleanup now » l'exécute.",
       "done": "Cleanup terminé : {removed}/{planned} supprimés, {after} contacts maintenant.",
-      "error": "Erreur dans cleanup : {error}"
+      "error": "Erreur dans cleanup : {error}",
+      "help": "cleanup montre ce qui serait nettoyé, cleanup now le fait ; cleanup stale pour les contacts silencieux (admin)."
     },
     "dx": {
       "help": "dx = records de sauts (semaine, mois, toujours) ; dx top [week|mois|toujours] ; dx moi ; dx <nom>.",
@@ -517,7 +553,8 @@
       "error": "Erreur noodnummers : {error}"
     },
     "weetje": {
-      "error": "Erreur weetje : {error}"
+      "error": "Erreur weetje : {error}",
+      "help": "Une anecdote au hasard (en néerlandais)"
     },
     "peiling": {
       "help": "peiling [15m|2h|1d] question | a | b (jusqu'à {max} choix), voter avec kies <n°> ; peiling uitslag ; peiling stop.",
@@ -619,7 +656,9 @@
       "error": "Erreur badge : {error}"
     },
     "help": {
-      "list_link": "Toutes les commandes expliquées : {url} | help <commande> = aide ici"
+      "list_link": "Toutes les commandes : {url} | help <commande> = aide",
+      "list_lang": "en",
+      "sample_suffix": " | help <cmd>=détails, helpall=tout"
     },
     "wx": {
       "subcommands": [
@@ -1004,6 +1043,20 @@
         "💀 AUCUN SYSTÈME : Le mainframe n'a aucune info noyau. Un mystère.",
         "🦹‍♂️ CLASSIFIÉ : Lex Luthor a classé toutes les infos système. Accès refusé."
       ]
+    },
+    "games": {
+      "no_bots": "{name} est un bot : les bots ne participent pas aux jeux.",
+      "pointer": "Les jeux, c'est dans {channel}"
+    },
+    "ping": {
+      "response": "Pong ! Plus d'infos : tapez test"
+    },
+    "dm": {
+      "help": "Tapez dm dans un canal : le bot vous envoie un DM, vous pouvez ensuite l'utiliser en privé (help donne la liste).",
+      "hello": "Salut {name} ! Vos commandes ici, help donne la liste. Rien ne s'affiche ? Ajoutez {bot} en contact.",
+      "already": "Vous êtes déjà en DM avec moi : tapez help pour la liste.",
+      "unknown": "{name}, je ne connais pas encore votre nœud. Envoyez un advert (flood) et réessayez dm.",
+      "error": "dm a échoué : {error}"
     }
   },
   "common": {

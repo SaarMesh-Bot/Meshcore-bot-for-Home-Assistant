@@ -12,7 +12,7 @@ archived, nothing to claim or to lose.
 from typing import Any
 
 from ..mesh_archive import BADGES, badges_of, sync
-from ..mesh_community import fit_bytes, split_args
+from ..mesh_community import fit_bytes, is_bot_name, split_args
 from ..models import MeshMessage
 from .base_command import BaseCommand
 
@@ -22,10 +22,10 @@ class BadgeCommand(BaseCommand):
 
     name = "badge"
     keywords = ["badge", "badges"]
-    description = "Mesh RPG: behaalde mijlpalen (badge, badge <naam>)"
+    description = "Mesh RPG: milestones reached (badge, badge <name>)"
     category = "games"
 
-    short_description = "Mesh RPG: behaalde mijlpalen"
+    short_description = "Mesh RPG: milestones reached"
     usage = "badge [<naam>]"
     examples = ["badge", "badge Piet"]
 
@@ -42,6 +42,8 @@ class BadgeCommand(BaseCommand):
         return self.translate("commands.badge.help")
 
     def build(self, name: str, max_bytes: int) -> str:
+        if is_bot_name(self.bot, name):
+            return fit_bytes(self.translate("commands.games.no_bots", name=name), max_bytes)
         earned = badges_of(self.bot, name)
         if not earned:
             return self.translate("commands.badge.none", name=name)

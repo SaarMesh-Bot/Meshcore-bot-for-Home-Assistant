@@ -23,10 +23,10 @@ class NoodnummersCommand(BaseCommand):
 
     name = "noodnummers"
     keywords = ["noodnummers", "nood"]
-    description = "Noodnummers en hulpnummers voor deze regio (112 eerst)"
+    description = "Emergency and help numbers for this region (112 first)"
     category = "emergency"
 
-    short_description = "Noodnummers en hulpnummers voor de regio"
+    short_description = "Emergency and help numbers for the region"
     usage = "noodnummers"
     examples = ["noodnummers"]
 

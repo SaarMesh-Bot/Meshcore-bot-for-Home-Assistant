@@ -186,6 +186,7 @@ class HARepeaterService(BaseServicePlugin):
         if states is None:
             return False
         self.repeaters = parse_states(states)
+        self._name_neighbours()
         self.last_read = time.time()
         self.last_error = ""
         chosen = select(self.repeaters, self.wanted)
@@ -194,6 +195,7 @@ class HARepeaterService(BaseServicePlugin):
             self._reported_found = found
             self.logger.info("HARepeater: %d apparaat(en) met batterijsensor gevonden in Home Assistant: %s", len(found),
                              ", ".join(f"{p} {n} ({'gevolgd' if f else 'niet gevolgd'})" for p, n, f in found) or "geen")
+        self._fix_old_uptime(chosen)   # once: uptimes stored in the wrong unit before 2.17.1
         self._alerts(chosen)      # compares with what is stored, so before the new reading is stored
         self._store(chosen)
         self._check_battery(chosen)
@@ -305,6 +307,56 @@ class HARepeaterService(BaseServicePlugin):
         except Exception:  # noqa: BLE001
             pass
         return True
+
+    def _name_neighbours(self) -> None:
+        """Neighbours meshcore-ha gives no name get one from the bot's own contact list (by key prefix), for rptr buren."""
+        missing = [n["prefix"] for r in self.repeaters.values() for n in r["neighbors"] if not n.get("name")]
+        if not missing:
+            return
+        try:
+            try:
+                from ..repeater_page import contact_names
+            except ImportError:  # pragma: no cover - unit tests that import the files directly
+                from repeater_page import contact_names   # type: ignore[no-redef]
+            with self.bot.db_manager.connection() as conn:
+                known = contact_names(conn, missing)
+        except Exception:  # noqa: BLE001 - names are a nicety
+            return
+        for r in self.repeaters.values():
+            for n in r["neighbors"]:
+                if not n.get("name") and n["prefix"].lower() in known:
+                    n["name"] = known[n["prefix"].lower()]
+
+    def _fix_old_uptime(self, chosen: list) -> None:
+        """Before 2.17.1 an uptime that meshcore-ha gives in days was read as minutes, so the stored uptime_s is 1440 times
+        too small. Recognised per repeater by the last stored row that is far too small (under 1% of the live value): its
+        value x 1440 plus its age must match the live uptime within a day. Then every such row of that repeater is
+        corrected, once; rows stored correctly after it (2.17.1 and later) are left alone."""
+        for r in chosen:
+            live, key = r.get("uptime_s"), r["public_key"]
+            flag = f"harepeater.uptime_fixed2.{key[:10]}"
+            if not live:
+                continue
+            try:
+                if self.bot.db_manager.get_metadata(flag):
+                    continue
+                with self.bot.db_manager.connection() as conn:
+                    row = conn.execute("SELECT id, uptime_s, recorded_at FROM repeater_telemetry WHERE repeater_key=? AND uptime_s > 0 "
+                                       "AND uptime_s * 100 < ? ORDER BY id DESC LIMIT 1", (key, live)).fetchone()
+                    if not row:
+                        self.bot.db_manager.set_metadata(flag, "1")
+                        continue
+                    last_id, stored, at = row
+                    expected = stored * 1440 + (time.time() - at)
+                    if abs(live - expected) <= 86400:
+                        n = conn.execute("UPDATE repeater_telemetry SET uptime_s = uptime_s * 1440 WHERE repeater_key=? AND id <= ? "
+                                         "AND uptime_s > 0 AND uptime_s * 100 < ?", (key, last_id, live)).rowcount
+                        conn.commit()
+                        self.logger.info("HARepeater: uptime van %s in %d oude metingen rechtgezet (dagen waren als minuten gelezen)",
+                                         r["name"], n)
+                self.bot.db_manager.set_metadata(flag, "1")
+            except Exception as e:  # noqa: BLE001
+                self.logger.warning("HARepeater: oude uptime rechtzetten mislukt: %s", e)
 
     def _previous(self, key: str, n: int) -> list:
         try:

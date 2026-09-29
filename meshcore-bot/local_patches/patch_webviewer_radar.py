@@ -60,7 +60,7 @@ patch(
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if request.path == '/radar' }}" href="/radar">
-                            <i class="fas fa-satellite-dish"></i> Channel radar
+                            <i class="fas fa-satellite-dish"></i> Radar
                         </a>
                     </li>
 """,

@@ -56,13 +56,13 @@ check(sections(B, MOVED_SECTIONS) == moved_a, "verhuisde secties zijn na de upda
 others = [s for s in A.sections() if s not in MOVED_SECTIONS]
 def _strip(sec): return {k: v for k, v in sec.items() if not (k == "rate_limit_seconds")}
 check({s: _strip(dict(A[s])) for s in others} == {s: _strip(dict(B[s])) for s in others}, "alle andere secties zijn ook identiek (alleen de nieuwe zendgrens-sleutel in [Bot] komt erbij)")
-check(set(B.sections()) - set(A.sections()) == {"HARepeater", "F1", "F1_Command", "Heartbeat", "Localization", "AutoLanguage", "Reminders", "Community", "ChannelRadar"} and set(A.sections()) <= set(B.sections()), "alleen de nieuwe secties HARepeater, F1, F1_Command, Heartbeat, Localization, AutoLanguage, Reminders, Community en ChannelRadar komen erbij, geen enkele sectie is weg")
-check(B["Reminders"]["enabled"] == "true" and B["Reminders"]["language"] == "nl" and B["Community"]["enabled"] == "true", "Reminders en Community staan na de update aan (anders werken herinner en dx/xp maar half)")
+check(set(B.sections()) - set(A.sections()) == {"HARepeater", "F1", "F1_Command", "Heartbeat", "Localization", "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount"} and set(A.sections()) <= set(B.sections()), "alleen de nieuwe secties HARepeater, F1, F1_Command, Heartbeat, Localization, AutoLanguage, Reminders, Community, ChannelRadar, NightMode, GamesChannel, BotNetwork en InstallCount komen erbij, geen enkele sectie is weg")
+check(B["Reminders"]["enabled"] == "true" and B["Reminders"]["language"] == B["Localization"]["language"] and B["Community"]["enabled"] == "true", "Reminders en Community staan na de update aan (anders werken herinner en dx/xp maar half)")
 check(B["F1"]["enabled"] == "false" and B["F1"]["channel"] == "#f1" and B["F1_Command"]["channels"] == "#f1", "F1 staat na de update UIT; het f1-commando krijgt alleen #f1 als kanaal")
 check("f1" not in B["Channels"]["monitor_channels"].lower(), "#f1 staat NIET bij de kanalen van de bot (zo werken ping, wx en de rest daar niet)")
 check(B["Bot"]["rate_limit_seconds"] == "4", "zendgrens: zonder eigen optie wordt het standaard 4 seconden")
 check(B["Heartbeat"]["enabled"] == "false" and B["Heartbeat"]["interval_minutes"] == "5" and B["Heartbeat"]["entity_id"] == "sensor.meshcore_bot_heartbeat", "Heartbeat staat na de update UIT, elke 5 minuten, standaard sensornaam")
-check(B["Localization"]["language"] == "nl", "taal: standaard Nederlands")
+check(B["Localization"]["language"] == "en", "taal: zonder keuze Engels (nieuwe installatie)")
 check(B["HARepeater"]["enabled"] == "false" and B["HARepeater"]["read_interval_minutes"] == "5" and B["HARepeater"]["low_battery_mv"] == "3600", "HARepeater staat na de update UIT met de standaardwaarden")
 check(B["AutoLanguage"]["enabled"] == "false", "AutoLanguage staat na de update UIT")
 
@@ -147,5 +147,43 @@ check(read(d3).has_section("Scheduled_Messages") and dict(read(d3)["Scheduled_Me
 before = sections(read(d), read(d).sections())
 run(GEN, opts2, d)
 check(sections(read(d), read(d).sections()) == before, "tweede run zonder wijzigingen verandert niets")
+
+# ---- G. location of the bot and the command prefix (GitHub issue #1): only in config.ini when set
+d7 = tempfile.mkdtemp()
+o7 = copy.deepcopy(NEW); o7["bot"].update({"latitude": 50.89, "longitude": 5.98, "command_prefix": "/", "language": "de"})
+run(GEN, o7, d7); G7 = read(d7)["Bot"]
+check(G7.get("bot_latitude") == "50.89" and G7.get("bot_longitude") == "5.98", "plek van de bot uit de opties (airplanes, wx, kaart)")
+check(G7.get("command_prefix") == "/" and G7.get("require_command_prefix") == "false", "voorvoegsel / en niet verplicht: /test en test werken allebei")
+check(read(d7)["Localization"]["language"] == "de" and read(d7)["Reminders"]["language"] == "de", "taal de: ook de herinneringen in het Duits")
+o7["bot"].update({"latitude": None, "command_prefix": "", "require_command_prefix": True}); o7["bot"].pop("longitude")
+run(GEN, o7, d7); G7 = read(d7)["Bot"]
+check("bot_latitude" not in G7 and "command_prefix" not in G7 and "require_command_prefix" not in G7,
+      "opties weer leeg: plek en voorvoegsel verdwijnen uit config.ini (geen half ingevulde plek)")
+
+# ---- H. old BotNetwork keys (radio variant 2.20.0, broker fields 2.21.0) are cleaned up; card values stay
+d8 = tempfile.mkdtemp()
+run(GEN, NEW, d8)
+c8 = read(d8)
+c8["BotNetwork"].update({"enabled": "true", "channel": "mcbots", "max_per_hour": "4", "broker": "x", "region": "NL-LI", "trusted": "[]"})
+with open(f"{d8}/config.ini", "w") as fh: c8.write(fh)
+run(GEN, NEW, d8); B8 = read(d8)["BotNetwork"]
+check("channel" not in B8 and "max_per_hour" not in B8 and "broker" not in B8, "oude BotNetwork-sleutels (kanaal, broker) opgeruimd")
+check(B8.get("enabled") == "true" and B8.get("region") == "NL-LI" and B8.get("trusted") == "", "kaartwaarden blijven staan; \"[]\" wordt een lege lijst")
+
+# ---- I. bot network: off for a fresh installation and after an update (the owner chooses); a card choice stays
+d9 = tempfile.mkdtemp(); run(GEN, NEW, d9)
+check(read(d9)["BotNetwork"].get("enabled") == "false", "nieuwe installatie: botnetwerk staat uit (eigenaar kiest zelf)")
+check(read(d)["BotNetwork"].get("enabled") == "false", "update van een oude versie: botnetwerk uit")
+c9 = read(d9); c9["BotNetwork"]["enabled"] = "true"
+with open(f"{d9}/config.ini", "w") as fh: c9.write(fh)
+run(GEN, NEW, d9)
+check(read(d9)["BotNetwork"].get("enabled") == "true", "op de kaart aangezet: blijft aan na een herstart")
+
+# ---- J. install count: on by default, a card choice stays
+check(read(d9)["InstallCount"].get("enabled") == "true", "telling installaties: standaard aan")
+c9 = read(d9); c9["InstallCount"]["enabled"] = "false"
+with open(f"{d9}/config.ini", "w") as fh: c9.write(fh)
+run(GEN, NEW, d9)
+check(read(d9)["InstallCount"].get("enabled") == "false", "telling op de kaart uitgezet: blijft uit")
 
 print(f"\n{len(fails)} fouten"); sys.exit(1 if fails else 0)

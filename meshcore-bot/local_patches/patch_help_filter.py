@@ -176,19 +176,27 @@ patch(
         import random
         from .help_filter import display_name, is_public_command
         help_cmd = self.commands.get('help')
+        # Own text on the help card (Plugins -> help: "Own help text") wins: a bare 'help' answers exactly that.
+        own_text = (self.bot.config.get('Help_Command', 'text', fallback='') or '').strip()
+        if own_text:
+            return self.format_keyword_response(own_text, message) if message is not None else own_text
         # With a link to the full command list set on the help card, bare 'help' sends that link instead of a sample.
         list_url = (self.bot.config.get('Help_Command', 'list_url', fallback='') or '').strip()
         if list_url:
             if help_cmd is not None and hasattr(help_cmd, 'translate'):
+                # COMMANDS.md is Dutch: someone who writes in another language gets COMMANDS.en.md next to it
+                if list_url.endswith('/COMMANDS.md') and help_cmd.translate('commands.help.list_lang') != 'nl':
+                    list_url = list_url[:-len('COMMANDS.md')] + 'COMMANDS.en.md'
                 return help_cmd.translate('commands.help.list_link', url=list_url)
-            return f"Alle commando's met uitleg: {list_url} | help <commando> = uitleg hier"
+            return f"All commands: {list_url} | help <command> = details"
         primary_names = sorted({
             display_name(name, cmd)
             for name, cmd in self.commands.items()
             if is_public_command(name, cmd, help_cmd, message)
         })
         prefix = "Help: "
-        sample_suffix = " | help <cmd>=uitleg, helpall=alles"
+        sample_suffix = (help_cmd.translate('commands.help.sample_suffix') if help_cmd is not None and hasattr(help_cmd, 'translate')
+                         else " | help <cmd>=details, helpall=all")
         sample_size = min(8, len(primary_names))
         sample = sorted(random.sample(primary_names, sample_size)) if primary_names else []
         max_total = 140
@@ -217,6 +225,10 @@ patch(
          "help": ("When set, a bare 'help' answers with this link (for example a page with every command and what it does) "
                   "instead of a few random commands. 'help <command>' and 'help 2' stay as they are. Keep it short: it "
                   "has to fit one mesh message.")},
+        {"key": "text", "label": "Own help text", "type": "str", "default": "",
+         "help": ("When set, a bare 'help' answers with exactly this text (it wins over the link above). Placeholders such "
+                  "as {sender} work like in keywords. A 'help' keyword under Keywords is never used: help is handled "
+                  "before keywords, so put your own text here.")},
     ]
 """,
 )

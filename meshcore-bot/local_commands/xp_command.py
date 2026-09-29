@@ -15,7 +15,7 @@ import time
 from typing import Any
 
 from ..mesh_archive import known_names, sync, week_start_day, xp_of
-from ..mesh_community import pack_lines, split_args, without_bots
+from ..mesh_community import is_bot_name, pack_lines, split_args, without_bots
 from ..models import MeshMessage
 from .base_command import BaseCommand
 
@@ -28,10 +28,10 @@ class XpCommand(BaseCommand):
 
     name = "xp"
     keywords = ["xp", "level"]
-    description = "Mesh RPG: je XP, level en titel (xp, xp <naam>, xp top [week])"
+    description = "Mesh RPG: your XP, level and title (xp, xp <name>, xp top [week])"
     category = "games"
 
-    short_description = "Mesh RPG: XP, level en titel"
+    short_description = "Mesh RPG: XP, level and title"
     usage = "xp [<naam>|top [week]]"
     examples = ["xp", "xp Piet", "xp top", "xp top week"]
 
@@ -48,6 +48,8 @@ class XpCommand(BaseCommand):
         return self.translate("commands.xp.help")
 
     def person(self, name: str) -> str:
+        if is_bot_name(self.bot, name):
+            return self.translate("commands.games.no_bots", name=name)
         info = xp_of(self.bot, name)
         if not info["xp"]:
             return self.translate("commands.xp.none", name=name)

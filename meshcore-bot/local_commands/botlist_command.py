@@ -33,10 +33,10 @@ class BotlistCommand(BaseCommand):
 
     name = "botlist"
     keywords = ["botlist", "botlijst"]
-    description = "Namen als bot markeren of juist niet (admin)"
+    description = "Mark names as a bot, or as never a bot (admin)"
     category = "admin"
 
-    short_description = "Bots markeren (admin)"
+    short_description = "Mark bots (admin)"
     usage = "botlist [add|not|del|check] [naam]"
     examples = ["botlist", "botlist add Echobot", "botlist not Talbot", "botlist del Echobot", "botlist check DX1ABC-BOT"]
 
@@ -55,10 +55,7 @@ class BotlistCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return (
-            "botlist toont de lijsten; botlist add <naam> = altijd bot, botlist not <naam> = nooit bot, "
-            "botlist del <naam> = weg uit de lijsten, botlist check <naam> (admin)."
-        )
+        return self.translate("commands.botlist.help")
 
     def _arguments(self, message: MeshMessage) -> list:
         """Words after the command word (any '!' in front is ignored)."""

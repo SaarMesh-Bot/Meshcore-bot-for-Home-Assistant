@@ -50,9 +50,12 @@ The bot name always gets `|🤖` at the end, so people can see it is a bot.
 | Answer direct messages | Also answers DMs and room server messages. |
 | Admin public keys | Keys allowed to use admin commands (`reload`, `advert`, `announce`, ...). Only honoured for real DMs. |
 | Delay between message parts | Seconds between the parts of a long reply. |
-| Language of the replies | `nl` (default) or `en`. The fixed fallback language of the bot's own replies; Dutch covers about 70% of upstream's texts and falls back to English for the rest. This add-on's own extra commands are fully translated (nl/en/de/fr) and use it too, unless **AutoLanguage** (below) overrides it per message. |
+| Language of the replies | `en` (default for new installations), `nl`, `de` or `fr`. The language of the bot's replies: its own texts and every extra command of this add-on, including `help`, `helpall` and the standard hint texts. With **AutoLanguage** on (below), someone who writes in another of these languages is answered in that language. |
 | Minimum time between replies | The bot answers at most once per this many seconds in total (default 4; upstream uses 10). A second command within that time gets no answer. Lower means more airtime. |
 | Log level | `DEBUG` shows why a message was ignored. |
+| Latitude / Longitude of the bot | Where the bot is (for example `50.89` / `5.98`). Used by `airplanes`, `wx`, `rain`, `sun`, the distances in `test` and the dashboard map. Both empty = no fixed position. |
+| Command prefix | Optional character(s) before commands, for example `/` so that `/test` works; several separated by commas. Empty = none (the legacy `!` always works). |
+| Require the prefix | Off (default): `/test` and `test` both work. On: only commands with the prefix are answered. |
 
 ### Room server
 
@@ -192,6 +195,11 @@ disappears* (was in the two previous replies, missing now). Each has its own swi
 The command `rptr` (see *Extra commands*) shows the same in the mesh, `rptr accu [24u|7d]` the battery over a period. The service asks Home Assistant for all states, so it needs the
 add-on permission `homeassistant_api` (on by default).
 
+**Repeater page.** The dashboard has a *Repeater* menu item: the history of every repeater HARepeater follows, one
+point per status reply, over 24 hours, 7 or 30 days: battery (V and %), temperature, uptime, noise floor, airtime,
+last SNR, and its latest neighbour list with the place and the distance to the repeater (from the bot's Contacts; a
+neighbour meshcore-ha gives no name gets its name there too, marked *contacts*). Pick the repeater at the top. Read-only.
+
 ### Heartbeat: is the bot alive?
 
 Everything the bot reports about itself comes from the bot, so when the whole add-on is down nothing tells you. The **Heartbeat** service
@@ -255,12 +263,14 @@ on average less than two a day (P2000 sends 25 to 30), about 1.5 seconds of airt
 instance because the channel is not on the radio) the bot waits 15 minutes and tries again, and logs one warning.
 
 **Commands**, in `#f1` and by direct message: `f1` (next race, with all times in a race week), `f1 stand`, `f1 team`, `f1 uitslag`, `f1 nu` (the live
-session) and the game below.
+session), `f1 kalender` (the coming races with date and local time, from `sensor.f1_current_season`) and the game below.
 
 **Prediction game.** Pick the winner of the next race with `f1 voorspel VER` (the three letters of the driver). **This only works by direct message**:
 a channel message only carries a display name, which anyone could copy, while a direct message carries your public key, which cannot be faked. The
 bot stores that key (never shown) so nobody can vote for someone else. You can change your pick until the first qualifying session of the weekend
-starts. After the race: winner right = 5 points, a pick that finished second or third = 2, otherwise 0. `f1 spel` shows the standings (and, by DM,
+starts. After the race: winner right = 5 points, a pick that finished second or third = 2, otherwise 0. Or predict your
+**top 3** in order: `f1 voorspel VER NOR LEC`. Per driver the right place = 5, in the top 3 but on another place = 2, and
++3 when all three are exactly right (at most 18); the three numbers are on the F1 card. `f1 spel` shows the standings (and, by DM,
 your own points and pick). The names in the standings are the names people had when they last played.
 
 ### Contacts and map
@@ -363,6 +373,9 @@ For a busy channel where the bot should listen but not run commands, typically t
   switching it on the bot first listens for *rollout_days* (default 7) and marks everyone who is active as already greeted, so a busy
   channel is not greeted all at once. In that card's *Other config values*: `dead_air_delay_seconds` (wait before greeting, seconds) and
   `defer_to_human_greeting` (skip the greeting if someone already welcomed the newcomer by name). **The greeter never greets other bots.**
+  *Include mesh info* adds counts (*Mesh info format*, fields `{total_contacts}`, `{repeaters}`, `{companions}`,
+  `{recent_activity_24h}`); `\n` is a new line, and a greeting that ends in `|` gives the mesh info its own part. A `|` only
+  starts a new message when needed: parts that fit together (up to 130 bytes) are sent as one message, one line each.
 - **Stays quiet when another bot answers.** If another bot serves your region, both would answer the same message. Bots are
   recognised by the robot emoji in their name (`Name|🤖`, which this add-on always adds to its own bot name) or by the word
   "bot" in it (`DX1ABC-BOT`, `Echobot`, `BE-XYZ-Town-Bot`, `BotAmsterdam`; any case, but not when a letter follows, so `Botond`
@@ -371,6 +384,11 @@ For a busy channel where the bot should listen but not run commands, typically t
   **Bots** page (tick boxes, top bar) or with the admin command `botlist` (see *Extra commands*). With *Wait for other bots first* on the
   card above 0, the bot waits that many seconds plus a random extra of up to 8 seconds, so two bots do not answer at the same moment. If
   another bot has spoken in that channel in the meantime, or was already active there recently, the hint is not sent.
+- **Night mode** (card **NightMode**, off by default): keeps what the bot sends on its own quiet at night, from *Night starts
+  at* to *Night ends at* (default 23:00-07:00, local time, may run past midnight). Per kind: scheduled messages (skipped),
+  feeds (items that come in at night are skipped, so they do not all go out in the morning) and, only when you switch it
+  on, the webhook (it then answers 200 with `{"skipped": "night mode"}`, so Home Assistant sees no error). Answers to people
+  are never held back. Changes on the card apply at once.
 - **A weekly announcement** is no longer an add-on option. Make it an ordinary scheduled message on the dashboard's **Schedule** page:
   channel, day, time and text (at most 130 bytes per message). It is not coordinated with other bots: if another bot in your region also
   posts one, choose a different day or time. Set *Bot, Time zone* if the bot should not use the system time zone.
@@ -382,6 +400,8 @@ Use the channel names exactly as they are named on your radio.
 Every command has its own channel list. In the bot's dashboard open **Plugins**, pick a command and fill in **Channels**
 (comma-separated). Blank means the channels the bot listens on; DMs always work. If someone uses the command in another channel,
 the bot answers *"Dat commando werkt hier niet. We helpen je graag verder in: #bot"* with the channels you listed, if that command has its *Hint* setting on.
+A channel that only some commands list (such as `#f1` on the `f1` card) gets its own `help` there: the help of just those
+commands.
 
 **Your dashboard settings are kept.** The add-on rewrites `config.ini` at every start, but only the settings that the add-on
 options manage (for example weather units and admins). The settings of **Notifications**, **ContactCleanup**, **RoomServer Login**,
@@ -432,15 +452,47 @@ Commands for everyone on the mesh. Each has a card on the Plugins page with an o
   people answer by direct message (`voorspel 1`), the one who asked closes it (`voorspel sluit`) and gives the answer (`voorspel uitslag 1`):
   1 point for everyone who had it. `voorspel` and `voorspel stand` also work in a channel. One open question at a time. Like the F1 game it
   goes by public key, so nobody can answer for someone else.
-- People are recognised by the name they use on the mesh (a channel message carries nothing else). Rankings leave bots out.
-- **Channel radar:** the dashboard's *Channel radar* page shows which hashtag channels are in use around the bot: per
+- People are recognised by the name they use on the mesh (a channel message carries nothing else). Bots do not take part: rankings leave them out, a bot cannot join the F1 prediction game, and `xp`, `dx` or `badge` with a bot's name answers that bots don't take part.
+- **Channel radar:** the dashboard's *Radar* page shows which hashtag channels are in use around the bot: per
   channel the group messages of today, the last 7 and 30 days and when it was last heard, and whether that channel is on
   your radio. A group message starts with a channel byte and a 2-byte check code; the radar compares them with the keys of
-  about 200 common names and tens of thousands of generated variants such as `mesh-zl` or `maastricht-chat` (a hashtag
+  the channels on your radio (private channels too, because the radio knows their keys; a channel you add there is picked up
+  within a minute and counted from the start of the packet log), about 200 common names and tens of thousands of generated variants such as `mesh-zl` or `maastricht-chat` (a hashtag
   channel's key follows from its name), and only lists a channel when both match; a generated name only from 2 messages.
   When the list of names changes, the days still in the packet log (about 3) are counted again. It
   never decrypts anything and sends nothing. Messages on channels it cannot name (private channels, unknown names) are
-  counted by channel byte. Add names you suspect on the **ChannelRadar** card (on by default).
+  counted by channel byte. Private channels that are not on your radio stay unknown. Add names you suspect on the **ChannelRadar** card (on by default).
+- **Games channel** (card **GamesChannel**, off by default): fill in a channel (for example `#games`, also under *Bot >
+  Channels to listen on*) and the game commands on the card's list (quiz, hangman, stem, peiling/kies, checkin, karma,
+  voorspel) only run there. Elsewhere they stay silent, or answer "Games are played in #games" when *Point to the games
+  channel* is on (at most once per 30 minutes per channel). Direct messages always work, lookups such as `xp`, `dx`,
+  `badge` and `topu` work everywhere, and XP keeps counting in every channel.
+- **Bot network** (card **BotNetwork**, off by default: you choose; switch it on and restart the add-on to join, off
+  again to leave): bots running this add-on
+  share what their radio hears over the internet (MQTT), so it costs no airtime and works at any distance. With the card
+  on, the bot joins the network's own MQTT server (`mqtt.vipje.nl`, TLS; fixed in the add-on, so every bot meets on the same server). Each bot publishes a
+  **hello** once a day (add-on version), **info** once a week (radio settings, optional *Region*), a **status** every hour
+  (last 24 h: nodes heard as people/repeaters/rooms, new nodes today, people who wrote, channel messages, commands
+  answered, most hops today, uptime, night mode; from the radio: noise floor, signal, airtime, battery, packet counters),
+  with the info also the radio's firmware, model and the first 12 characters of its public key, and every 24 hours when changed the **channel names** its Channel radar
+  found and the **names you marked as bots** (each rhythm adjustable on the card). With *Find neighbours* on (off by
+  default: it transmits one short request a day) also the **repeaters the radio hears directly** (key prefix and SNR). Messages are kept on the broker, so a
+  bot that joins sees the others at once. Every message is **signed** with the bot's own key: a changed or unsigned
+  message is ignored, and a bot name stays bound to the key it first came with, so nobody can pretend to be a known bot.
+  The login to that server is shared and public; who is who is decided by the signatures, never by the login. What
+  goes over it can be read by any bot of the network (and by the server's maintainer): numbers, bot names, radio
+  settings, key prefixes of radios and repeaters, and hashtag channel names - never messages, people's names, private
+  keys or private channels. Each of *Share status*, *Share channel names* and *Share bot names* can be switched off
+  on its own. Channel and bot names from other bots are used (Channel radar, bot recognition) when they come
+  from a bot on your *Trusted bots* list or from at least two bots. The **Bot network** page of the dashboard (only in
+  the menu while the card is on) shows every bot with its numbers (this bot in bold), the network totals, charts of noise
+  floor, receive airtime, messages and people over 24 hours, 7 or 30 days (every hourly status is kept 30 days), which
+  repeaters each bot hears directly, and the shared channel and bot names.
+- **Install count** (card **InstallCount**, **on by default**): once a day the bot sends one retained MQTT message to
+  the network's server (`mqtt.vipje.nl`) under `meshcore-bot-ha/count/v1/<random id>`: `{"v": <add-on version>, "d":
+  <date>}`. The id is a random number made at the first start and kept in the bot's database; it does not come from the
+  radio, the bot's name or any key. Nothing from the mesh is sent and it uses no airtime; the server sees the IP address,
+  as with any connection. Switch the card off and nothing is sent (takes effect after a restart).
 - **Games page:** the dashboard has a *Games* menu item (next to *Bots*) with all standings in one place: Mesh RPG, DX Jacht, karma,
   check-in streaks, the open `voorspel` question and the F1 prediction game. Read-only, refreshes every minute, bots left out.
   Click a name in Mesh RPG to unfold where that person's XP comes from (messages, commands, check-ins, karma, best DX) and
@@ -462,8 +514,10 @@ Commands for everyone on the mesh. Each has a card on the Plugins page with an o
 
 ### Advanced
 
-- **Keyword replies**: one `keyword = "reply"` per entry. Placeholders: `{sender}`, `{connection_info}`,
-  `{timestamp}`, `{phrase_part}`.
+- **Keyword replies**: one `keyword = "reply"` per entry. Placeholders: `{sender}`, `{connection_info}` (route, bytes per
+  hop when known, SNR, RSSI), `{bytes_per_hop}` (1, 2 or 3), `{hops}`, `{timestamp}`, `{phrase_part}`. `help` is handled before
+  keywords, so a `help` keyword is never used: set your own help text on the **help** card instead. Without a `ping` keyword,
+  `ping` answers "Pong!" with a pointer to `test`, in the bot's language.
 - **Extra config lines**: one `Section.key = value` per entry, applied last, so it wins over every
   other option. Any setting of the bot can be set this way, see
   [config.ini.example](https://github.com/agessaman/meshcore-bot/blob/main/config.ini.example).
@@ -472,8 +526,20 @@ Commands for everyone on the mesh. Each has a card on the Plugins page with an o
   **Bot > Channels** and the ones it saw last time, and asks the radio again for any that are missing. Change the interval with the
   extra config line `Connection.channel_recheck_minutes = 60` (`0` = only the three startup checks). Look for `Channel check:` in the log.
 
-The add-on rebuilds the bot's `config.ini` from these options on every start. Changes made in the
-bot's own web viewer settings pages are therefore not kept; use the options here.
+### Where is config.ini?
+
+Inside the add-on, in its own data folder (`/data/config.ini` in the container), not in Home Assistant's `/config` or
+`custom_components`: an add-on is a separate container. You never need to edit it by hand:
+
+- The options on this page (Configuration tab) are written into it at every start.
+- Everything else is on the dashboard's **Plugins** page: one card per command and service. Those settings are kept across
+  restarts and updates (a timestamped backup is made at every save).
+- Anything that has no field: **Extra config lines** above (`Section.key = value`).
+- To copy the file (and the database) out, or to move the bot to another Home Assistant: see *Moving the bot* below.
+
+**Translations** are built into the add-on (English, Dutch, German and French for everything this add-on adds). Pick the
+language with *Bot > Language of the replies*. Want another language? A pull request with a translated
+`meshcore-bot/local_shared/local_translations/xx.json` is very welcome.
 
 ## Extra commands
 
@@ -491,6 +557,7 @@ and need internet.
 | `feestdag` | Public holidays NL/BE |
 | `file <place>` | Traffic jams and incidents near a place |
 | `hangman`, `quiz`, `poll` (`stem`) | Games and channel polls |
+| `dm` | Typed in a channel: the bot sends the asker a DM, so they can use it privately (card *dm*: own text with `{name}`/`{bot}`, wait per person, default 10 min). A channel message carries only a name: when that name is not in the radio's contacts, the bot asks for an advert instead. |
 | `f1 [stand\|team\|uitslag\|nu\|voorspel <code>\|spel]` | Formula 1: next race, standings, last result, live session, and the prediction game (`voorspel` by direct message only). Works in the `#f1` channel and by DM; see *Formula 1 channel*. |
 | `rptr [buren\|accu [24u\|7d]\|list\|name]` | Status of your repeater from Home Assistant (battery, uptime, airtime, neighbours; costs no airtime). `rptr accu 7d` shows the battery over a period: now, lowest, highest and the trend, with an estimate when it will be low. |
 | `helpall [page]` | Complete command list, one page at a time |

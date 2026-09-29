@@ -8,7 +8,8 @@
         <h1 class="mb-3"><i class="fas fa-satellite-dish"></i> Channel radar</h1>
         <p class="text-muted mb-1">
             Which hashtag channels are in use around the bot. Every group message the radio hears starts with a channel byte
-            and a short check code; the radar compares those with the keys of about 200 known channel names, the names on the
+            and a short check code; the radar compares those with the keys of the channels on your radio (private ones too, added
+            there are picked up within a minute), about 200 known channel names, the names on the
             <em>ChannelRadar</em> card and tens of thousands of generated variants (mesh-zl, maastricht-chat, ...; shown from 2 messages). A channel is only listed when both match, so it is certain. Messages are never
             decrypted and nothing is sent. A message heard via several repeaters counts once. Refreshes every minute.
         </p>
@@ -43,7 +44,7 @@
             <div class="card-header"><i class="fas fa-question-circle"></i> Unknown channels</div>
             <div class="card-body">
                 <p class="small text-muted">
-                    Messages on channels whose name is not in the list: private channels with their own key, or a hashtag
+                    Messages on channels whose name is not in the list: private channels that are not on your radio, or a hashtag
                     name nobody added yet. Shown by channel byte (several channels can share one). Add a name you suspect on
                     the ChannelRadar card; from then on it is recognised.
                 </p>

@@ -201,5 +201,12 @@ listed = [l.strip() for l in (addon / "local_patches" / "ORDER").read_text().spl
 present = sorted(p.name for p in (addon / "local_patches").glob("patch_*.py"))
 check(sorted(listed) == present and len(set(listed)) == len(listed), "local_patches/ORDER noemt elke patch precies één keer")
 check("**/__pycache__" in (addon / ".dockerignore").read_text(), ".dockerignore houdt __pycache__ buiten het image")
+# the Dutch and the English command list name the same commands, in the same order
+import re as _re
+_root = _pl.Path(__file__).resolve().parent.parent
+_cmds = lambda t: _re.findall(r"^\| `([^`]+)`", t, _re.M)
+_nl, _en = _cmds((_root / "COMMANDS.md").read_text()), _cmds((_root / "COMMANDS.en.md").read_text())
+check(_nl and _nl == _en, f"COMMANDS.md en COMMANDS.en.md noemen dezelfde commando's ({len(_nl)} / {len(_en)}; verschil: {sorted(set(_nl) ^ set(_en))})")
+
 print(f"\n{len(fails)} fouten")
 sys.exit(1 if fails else 0)

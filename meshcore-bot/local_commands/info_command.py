@@ -74,11 +74,11 @@ class InfoCommand(BaseCommand):
 
     name = "info"
     keywords = ["info bot", "infobot"]
-    description = "Wat deze bot is en wat je nodig hebt voor een eigen bot"
+    description = "What this bot is and what you need for a bot of your own"
     category = "general"
     requires_dm = True
 
-    short_description = "Over deze bot"
+    short_description = "About this bot"
     usage = "info bot"
     examples = ["info bot"]
 
@@ -104,7 +104,7 @@ class InfoCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "info bot vertelt wat deze bot is en wat je nodig hebt voor een eigen bot (alleen via DM)."
+        return self.translate("commands.info.help")
 
     async def execute(self, message: MeshMessage) -> bool:
         try:

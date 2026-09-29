@@ -33,10 +33,10 @@ class TopUsersCommand(BaseCommand):
 
     name = "topusers"
     keywords = ["topu"]
-    description = "Top 5 actiefste gebruikers (optioneel: topu <dagen>, standaard 24u)"
+    description = "Top 5 most active users (optional: topu <days>, default 24 h)"
     category = "analytics"
 
-    short_description = "Top 5 actiefste gebruikers (24u, of 'topu N' voor N dagen)"
+    short_description = "Top 5 most active users (24 h, or 'topu N' for N days)"
     usage = "topu [dagen]"
     examples = ["topu", "topu 7"]
 
@@ -53,6 +53,9 @@ class TopUsersCommand(BaseCommand):
                      "(for example a room server that shows up with your own messages, or another bot)."),
         },
     ]
+
+    def get_help_text(self) -> str:
+        return self.translate("commands.topusers.help")
 
     def __init__(self, bot: Any):
         super().__init__(bot)

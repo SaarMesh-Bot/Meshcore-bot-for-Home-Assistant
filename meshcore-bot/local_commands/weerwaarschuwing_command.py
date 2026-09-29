@@ -33,11 +33,11 @@ class WeerwaarschuwingCommand(BaseCommand):
 
     name = "weerwaarschuwing"
     keywords = ["weerwaarschuwing", "gladheid"]
-    description = "Actuele officiële KNMI-weerwaarschuwing"
+    description = "Current official KNMI weather warning (NL)"
     category = "general"
     requires_internet = True
 
-    short_description = "Actuele KNMI-weerwaarschuwing"
+    short_description = "Current KNMI weather warning"
     usage = "weerwaarschuwing"
     examples = ["weerwaarschuwing"]
 
@@ -53,7 +53,7 @@ class WeerwaarschuwingCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "De meest recente officiële KNMI-weerwaarschuwing (incl. code geel/oranje/rood, gladheid/ijzel)."
+        return self.translate("commands.weerwaarschuwing.help")
 
     async def _latest_txt_filename(self, session: aiohttp.ClientSession) -> Optional[str]:
         params = {"maxKeys": 10, "orderBy": "created", "sorting": "desc"}

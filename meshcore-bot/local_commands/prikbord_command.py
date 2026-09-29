@@ -31,10 +31,10 @@ class PrikbordCommand(BaseCommand):
 
     name = "prikbord"
     keywords = ["prikbord"]
-    description = "Prikbord: korte berichten die een paar dagen blijven staan (prikbord, prikbord <tekst>, prikbord weg <nr>)"
+    description = "Notice board: short messages that stay for a few days (prikbord, prikbord <text>, prikbord weg <nr>)"
     category = "general"
 
-    short_description = "Prikbord met korte berichten (een paar dagen)"
+    short_description = "Notice board with short messages (a few days)"
     usage = "prikbord [<tekst>|<nr>|weg <nr>]"
     examples = ["prikbord", "prikbord pomp te leen, Weert", "prikbord 3", "prikbord weg 3"]
 

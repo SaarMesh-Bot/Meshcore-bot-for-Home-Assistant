@@ -25,10 +25,10 @@ class CheckinCommand(BaseCommand):
 
     name = "checkin"
     keywords = ["checkin", "meld", "inchecken"]
-    description = "Dagelijks inchecken met een reeks-teller (checkin, checkin top)"
+    description = "Daily check-in with a streak counter (checkin, checkin top)"
     category = "fun"
 
-    short_description = "Dagelijks inchecken, met reeks"
+    short_description = "Daily check-in, with streak"
     usage = "checkin [top]"
     examples = ["checkin", "meld", "checkin top"]
 

@@ -29,6 +29,15 @@ except ImportError:  # pragma: no cover - unit tests import the files directly
     import f1_data as F   # type: ignore[no-redef]
     from f1_game import F1Game   # type: ignore[no-redef]
 
+try:
+    from ..mesh_community import is_bot_name, without_bots
+except ImportError:  # pragma: no cover - unit tests that import the files directly: nobody is a bot
+    def is_bot_name(bot: Any, name: str) -> bool:   # type: ignore[misc]
+        return False
+
+    def without_bots(bot: Any, rows: Any, limit: int, name_index: int = 0) -> list:   # type: ignore[misc]
+        return list(rows)[:limit]
+
 STATES_URL = "http://supervisor/core/api/states"
 STATE_KEY = "f1.state"
 IDLE_READ_S = 300
@@ -74,7 +83,14 @@ class F1Service(BaseServicePlugin):
         {"key": "live_read_seconds", "label": "Read Home Assistant every (during a session)", "type": "int", "default": 30,
          "min": 15, "max": 300, "unit": "s", "help": "Reading costs no airtime. Outside sessions it reads every 5 minutes."},
         {"key": "game_enabled", "label": "Prediction game", "type": "bool", "default": True,
-         "help": "f1 voorspel <code> by direct message; points after the race; f1 spel shows the standings."},
+         "help": ("f1 voorspel <code> (the winner) or f1 voorspel <1st> <2nd> <3rd> (your top 3), by direct message; "
+                  "points after the race; f1 spel shows the standings.")},
+        {"key": "points_exact", "label": "Top 3: points for the right place", "type": "int", "default": 5, "min": 0, "max": 50,
+         "help": "Per driver in a top-3 prediction who finished exactly where you said."},
+        {"key": "points_in_top3", "label": "Top 3: points for the right driver on another place", "type": "int", "default": 2,
+         "min": 0, "max": 50, "help": "Per driver in your top 3 who did finish in the top 3, but on another place."},
+        {"key": "points_bonus", "label": "Top 3: bonus when all three are right", "type": "int", "default": 3, "min": 0, "max": 50,
+         "help": "Extra when the whole top 3 is exactly right. A winner-only prediction keeps 5 (right) / 2 (on the podium)."},
     ]
 
     def __init__(self, bot: Any):
@@ -111,8 +127,10 @@ class F1Service(BaseServicePlugin):
         }
         self.live_read = max(15, getint("live_read_seconds", 30))
         self.game_enabled = getbool("game_enabled", True)
+        self.top3_points = {"exact": getint("points_exact", 5), "in_top3": getint("points_in_top3", 2), "bonus": getint("points_bonus", 3)}
         self.tz = F.get_tz(self.cfg["timezone"])
-        language = (get("language", "nl") or "nl").strip().lower()
+        bot_language = (cfg.get("Localization", "language", fallback="en") if cfg.has_section("Localization") else "en") or "en"
+        language = (get("language", bot_language) or bot_language).strip().lower()
         get_translator = getattr(bot, "get_translator", None)
         self.translate = get_translator(language).translate if get_translator else bot.translator.translate
 
@@ -292,19 +310,19 @@ class F1Service(BaseServicePlugin):
         if not (self.game_enabled and self.game):
             return
         try:
-            scored = self.game.score(action["season"], action["round"], action["results"])
+            scored = self.game.score(action["season"], action["round"], action["results"], self.top3_points)
         except Exception as e:  # noqa: BLE001
             self._complain("game", f"F1: punten berekenen mislukt: {e}")
             return
         if not scored:
             return
-        good = [f"{n} ({p} pt)" for n, _pick, p in scored if p > 0]
+        good = [f"{n} ({p} pt)" for n, _pick, p in scored if p > 0 and not is_bot_name(self.bot, n)]
         head = self.translate("commands.f1.game_result_header", n=len(scored))
         parts = [
             self.translate("commands.f1.game_good", names=", ".join(good[:6]))
             if good else self.translate("commands.f1.game_none_good")
         ]
-        table = self.game.standings(action["season"], 5)
+        table = without_bots(self.bot, self.game.standings(action["season"], 15), 5)
         if table:
             parts.append(
                 self.translate("commands.f1.game_standing")

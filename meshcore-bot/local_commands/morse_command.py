@@ -33,10 +33,10 @@ class MorseCommand(BaseCommand):
 
     name = "morse"
     keywords = ["morse"]
-    description = "Tekst <-> morsecode (usage: morse hallo wereld, of morse .... .- .-.. .-.. ---)"
+    description = "Text <-> Morse code (usage: morse hello world, or morse .... . .-.. .-.. ---)"
     category = "general"
 
-    short_description = "Tekst <-> morsecode"
+    short_description = "Text <-> Morse code"
     usage = "morse <tekst>"
     examples = ["morse sos", "morse .... .- .-.. .-.. ---"]
 
@@ -52,7 +52,7 @@ class MorseCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "Zet tekst om naar morsecode, of morsecode terug naar tekst (automatisch herkend)."
+        return self.translate("commands.morse.help")
 
     @staticmethod
     def _encode(text: str) -> str:

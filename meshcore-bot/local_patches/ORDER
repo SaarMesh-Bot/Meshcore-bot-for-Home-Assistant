@@ -108,6 +108,10 @@ patch_dm_sent_listeners.py
 # prediction game), its data/text/planning module and game, and the `f1` command.
 patch_channel_hint.py
 
+# Games channel (card GamesChannel): game commands only in one channel, with an optional pointer elsewhere. Anchors on
+# the lines patch_channel_hint.py added to command_manager, so it runs right after it.
+patch_games_channel.py
+
 # Reply in the sender's own language (auto-detected from what they typed), for every command. Settings card
 # only (see the file); patch_sender_language_detection.py does the actual work in command_manager.py.
 patch_sender_language_detection.py
@@ -116,6 +120,15 @@ patch_sender_language_detection.py
 # (or as never a bot) on top of the automatic recognition (robot emoji, the word bot) in channel_hint.py.
 patch_greeter_skip_bots.py
 
+# Greeter: a greeting that ends in "|" sends the mesh info as its own message (instead of glued to the last part).
+patch_greeter_mesh_info_message.py
+
+# Greeter: the rollout (only marking people, no greetings) runs once, not again every week; see the patch.
+patch_greeter_rollout_once.py
+
+# `help` in a channel with its own commands (such as #f1 for `f1`) lists only those; see local_shared/channel_help.py.
+patch_channel_help.py
+
 # The webhook's secret token is a password field on its card (upstream shows it in clear).
 patch_webhook_secret_password.py
 
@@ -123,12 +136,21 @@ patch_webhook_secret_password.py
 # See local_patches/patch_webviewer_bots.py, local_shared/bots_admin.py and local_web/bots.html.
 patch_webviewer_bots.py
 
+# /api/botnet for the "Bots in the network" part of the Bots page; anchors on the route patch_webviewer_bots.py added.
+patch_webviewer_botnet.py
+
 # Games page (2.14.2): read-only standings of Mesh RPG, DX Jacht, karma, check-in streaks, voorspel and the F1 game,
 # bots left out; see local_shared/games_admin.py. Anchors on the Bots menu item, so it runs after the Bots patch.
 patch_webviewer_games.py
 
 # Channel radar page (which hashtag channels are in use around the bot); anchors on the Games menu item.
 patch_webviewer_radar.py
+
+# Repeater page (history of the repeaters the HARepeater service follows); anchors on the Channel radar route and menu item.
+patch_webviewer_repeater.py
+
+# Bot network page (bots in the network, charts, who hears which repeater); anchors on the Repeater route and menu item.
+patch_webviewer_botnet_page.py
 
 # Home Assistant sidebar (ingress): one WSGI layer that makes the web viewer work under the
 # ingress path prefix; see local_shared/ingress_support.py. It only acts on requests that carry
@@ -142,3 +164,10 @@ patch_contact_capacity_quiet.py
 # The add-on's own keys in sections upstream checks ([Bot], [Feed_Manager], [Help_Command]) are documented in
 # config.ini.example, so the bot no longer warns "unknown key" about them at every start.
 patch_config_example_keys.py
+
+# Night mode: scheduled messages, feed items and (optionally) the webhook stay quiet at night; answers to people are
+# never touched. See local_patches/patch_night_mode.py and local_shared/night_mode.py (card Plugins -> NightMode).
+patch_night_mode.py
+
+# test: bytes per hop (1, 2 or 3) in {connection_info} and a new {bytes_per_hop} placeholder (GitHub issue #1).
+patch_test_bytes_per_hop.py

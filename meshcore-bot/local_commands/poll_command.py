@@ -58,10 +58,10 @@ class PollCommand(BaseCommand):
 
     name = "poll"
     keywords = ["stem", "poll", "ja", "nee"]
-    description = "Ja/nee-stemming op een kanaal (usage: stem [Nm|Nd] <vraag>, dan ja/nee)"
+    description = "Yes/no vote in a channel (usage: stem [Nm|Nd] <question>, then ja/nee)"
     category = "fun"
 
-    short_description = "Ja/nee-stemming"
+    short_description = "Yes/no vote"
     usage = "stem [Nm|Nh|Nd] <vraag>"
     examples = ["stem pizza vanavond?", "stem 15m pizza vanavond?", "stem 2h wie kookt?", "stem 1d wie kookt?", "stem uitslag", "stem stop"]
 
@@ -84,14 +84,7 @@ class PollCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return (
-            "Start een ja/nee-stemming: 'stem <vraag>' (vraag max ~80 tekens, "
-            "anders past het bericht niet). Optioneel een duur ervoor (precies "
-            "één van de drie, niet combineren): 'stem 15m <vraag>', "
-            "'stem 2h <vraag>' of 'stem 1d <vraag>' (standaard 10 min, max 1 dag). "
-            "Anderen stemmen met 'ja'/'nee'. 'stem uitslag' toont de tussenstand, "
-            "'stem stop' beëindigt de stemming vroegtijdig."
-        )
+        return self.translate("commands.poll.help")
 
     @staticmethod
     def _tally(votes: dict) -> tuple[int, int]:

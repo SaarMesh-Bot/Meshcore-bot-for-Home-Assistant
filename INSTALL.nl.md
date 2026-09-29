@@ -53,7 +53,9 @@ bot en, als je die gebruikt, meshcore-ha.
    | Botnaam | De naam op de mesh, bijvoorbeeld je woonplaats. Zet er geen emoji achter: `|🤖` komt er vanzelf achter. |
    | Kanalen om op te luisteren | Eén kanaal per regel, precies zoals op de radio, bijvoorbeeld `#bot` en `#test`. |
    | Admin-publieke sleutels | Je eigen publieke sleutel van 64 tekens (stap 1). |
-   | Taal van de antwoorden | `nl` of `en`. |
+   | Taal van de antwoorden | `en` (standaard), `nl`, `de` of `fr`. |
+   | Breedte-/lengtegraad | Optioneel: waar de bot staat, voor `airplanes`, het weer en afstanden. |
+   | Voorvoegsel voor commando's | Optioneel, bijvoorbeeld `/` zodat `/test` werkt (gewoon `test` blijft werken). |
    | Tijdzone | Bijvoorbeeld `Europe/Amsterdam`; leeg = de tijdzone van het systeem. |
 
    De rest kan blijven zoals het is. Klik **Opslaan**.
@@ -87,6 +89,7 @@ Klik in de Home Assistant-zijbalk op **MeshCore Bot**. De belangrijkste pagina's
 | Bots | Welke namen als bot tellen (voor spellen, ranglijsten en "nooit een andere bot antwoorden"). |
 | Games | Standen van alle spellen, zonder bots. |
 | Radar | Welke kanalen er in je omgeving actief zijn (geteld zonder iets te ontsleutelen). |
+| Repeater | Geschiedenis van je repeater: batterij, ruisvloer, airtime, buren (vraagt HARepeater). |
 | Schedule | Berichten die de bot op een vast tijdstip plaatst. |
 
 Op **Plugins** werken kaarten van **commando's** meteen. Kaarten van **services** vragen een herstart van de add-on; dat
@@ -103,6 +106,10 @@ Een nieuwe installatie begint rustig: alles wat een eigen opstelling vraagt, sta
 | **RoomServer Login** | Logt de bot in op je room server, zodat commando's daar ook werken en meldingen erheen kunnen. |
 | **Notifications** | Berichten over de bot zelf (gestart, radio weg, ...) naar een room, kanaal of DM. |
 | **Webhook** | Laat Home Assistant berichten op de mesh zetten. **Zet eerst een geheime token.** |
+| **BotNetwork** | Deelt wat je radio hoort met andere bots van deze add-on, via internet (geen zendtijd). Staat standaard uit: zet hem aan als je mee wilt doen (in de README staat wat er gedeeld wordt). |
+| **InstallCount** | **Staat standaard aan**: één keer per dag een anoniem bericht (willekeurig nummer, versie, datum), zodat de maker weet hoeveel installaties er draaien. Zet hem uit en er gaat niets (zie de README). |
+| **GamesChannel** | Houdt de spellen (quiz, hangman, stem, ...) in één kanaal, bijvoorbeeld `#games`. |
+| **NightMode** | Houdt geplande berichten en feeds 's nachts stil (standaard 23:00-07:00). Antwoorden aan mensen gaan altijd door. |
 | Community, Reminders, ChannelRadar | Spellen, `herinner` en de radar. Staan standaard aan. |
 
 Met **meshcore-ha**: **HARepeater** (status van je repeater, `rptr`) en **HomeAssistantBridge** (de antwoorden van de bot

@@ -1,5 +1,69 @@
 # Changelog
 
+## 1.1.0
+
+**English by default** (thanks to the first user report, GitHub issue #1)
+- *Bot > Language of the replies* now offers English, Dutch, German and French; new installations start in English.
+  Everything this add-on adds follows it: `help <command>` for every extra command, `helpall`, the short `help` list and the
+  standard hint texts. The descriptions on the dashboard's Plugins cards are in English.
+- `ping` answers "Pong!" with a pointer to `test`, in the bot's language (new installations no longer get a fixed `ping`
+  keyword).
+- `test` shows the bytes per hop (1, 2 or 3) when known; new keyword placeholder `{bytes_per_hop}`.
+- New options: *Command prefix* (for example `/`, so `/test` works; `test` keeps working unless you require it) and the
+  bot's *Latitude* / *Longitude* (used by `airplanes`, `wx`, `rain`, `sun`, distances in `test` and the map).
+- The help card has a field *Own help text*: a bare `help` then answers exactly that (a `help` keyword is never used).
+- `help` links to the English command list (`COMMANDS.en.md`) for someone who writes in English, German or French, when
+  the link on the help card points to this repository's `COMMANDS.md`.
+- Documentation: where config.ini is and how to change settings without it.
+
+**Fixed**
+- `test`: the bytes per hop (for example `| 1B/hop |`) now really shows. The command builds its reply in another place than
+  keywords do, and only the keyword route had it. `{bytes_per_hop}` now works in every command template too.
+- Greeter: the rollout (a period in which people already active are only remembered, not greeted) now runs once. Upstream
+  started a new one by itself every week, so the greeter kept going quiet for a week at a time.
+
+**New**
+- `dm`: typed in a channel, the bot sends you a direct message, so you can use it privately from then on (card *dm*: own
+  text, wait per person). When your node is not in the radio's contacts yet, it says so and asks for an advert.
+- F1 prediction game: predict your top 3 (`f1 voorspel VER NOR LEC`): right place 5, right driver on another place 2, all
+  three exactly right +3 (adjustable on the F1 card). One code still predicts the winner, as before.
+- Bot network (card *BotNetwork*): bots running this add-on share what their radio hears over the internet (MQTT, no
+  airtime, any distance): hello, radio info, an hourly status, channel and bot names, and optionally the repeaters the
+  radio hears directly. Signed messages, never message content or private keys. Off by default: switch the card on to
+  join. Its own dashboard page *Bot network* (only while the card is on): every bot with its numbers, network
+  totals, charts over 24 h / 7 / 30 days, and which repeaters each bot hears directly.
+- Install count (card *InstallCount*, **on by default**): once a day one anonymous message (a random number, the
+  add-on version and the date) to the maintainer's server, so the maintainer knows how many installations run. Nothing
+  about you, your radio or the mesh. Switch the card off to send nothing; see the README.
+- GitHub: issue forms for joining the bot network, bug reports and ideas.
+- Games channel (card *GamesChannel*, off by default): the game commands only in one channel, for example `#games`, with
+  an optional pointer elsewhere; XP keeps counting everywhere.
+
+- `help` in a channel with its own commands (a command card whose *Channels* lists it, such as `#f1` for `f1`) answers with
+  the help of just those commands, instead of a pointer to other channels.
+- Greeter: end the greeting with `|` to give the mesh info (contacts, repeaters, companions, active in 24 h) its own part.
+  A `|` only starts a new message when needed: parts that fit together (up to 130 bytes) go out as one message, one line each.
+- Shorter reply to a bare `help`, so the full link to the command list (COMMANDS.md) fits one mesh message in every language.
+- Channel radar: the channels on your own radio are recognised by themselves, with their own keys, so private channels and
+  hashtag names that are on no list (such as `#public`) show up too. A channel added on the radio is picked up within a minute.
+- Channel radar: when it counts the packet log again (new names or channels), the first, partial day of the log keeps its
+  count instead of losing the messages from before the log started.
+- Bots do not take part anywhere: `xp`, `dx` and `badge` with a bot's name say so, a bot cannot predict in the F1 game, and bots
+  never show in the F1 standings.
+- Night mode (card *NightMode*, off by default): scheduled messages and feeds stay quiet at night (default 23:00-07:00),
+  the webhook too if you want; answers to people always go out.
+- `whois` also shows someone's Mesh RPG level, title and XP (not for bots).
+- `f1 kalender`: the coming races with date and local time (from the f1_sensor season calendar).
+- Dashboard: a new *Repeater* page with the history of your repeater (battery, temperature, noise floor, airtime, SNR,
+  neighbours) over 24 hours, 7 or 30 days. The *Channel radar* menu item is now called *Radar*, so the menu fits one line.
+- Repeater uptime (`rptr`, Repeater page) is read in the unit Home Assistant gives it: meshcore-ha reports it in days,
+  which was read as minutes (a repeater up for 60 days showed "1 h").
+- Repeater: uptimes stored in the wrong unit are corrected once, automatically. Neighbours that meshcore-ha gives no
+  name get it from the bot's Contacts (also in `rptr buren`); the Repeater page also shows where each neighbour is and how
+  far it is from the repeater.
+- The command list in English as well (`COMMANDS.en.md`).
+- README and installation guide: new repository name and an *Add repository* button.
+
 ## 1.0.0
 
 First public release: [agessaman/meshcore-bot](https://github.com/agessaman/meshcore-bot) v1.1.0 as a Home Assistant add-on,

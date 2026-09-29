@@ -17,10 +17,10 @@ class QuoteCommand(BaseCommand):
 
     name = "quote"
     keywords = ["quote", "citaat"]
-    description = "Willekeurig citaat"
+    description = "Random quote"
     category = "fun"
 
-    short_description = "Willekeurig citaat"
+    short_description = "Random quote"
     usage = "quote"
     examples = ["quote", "citaat"]
 
@@ -36,7 +36,7 @@ class QuoteCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "Stuurt een willekeurig citaat uit een lokale lijst."
+        return self.translate("commands.quote.help")
 
     async def execute(self, message: MeshMessage) -> bool:
         try:

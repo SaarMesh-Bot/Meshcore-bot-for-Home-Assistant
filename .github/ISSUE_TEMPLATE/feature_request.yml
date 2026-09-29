@@ -1,0 +1,16 @@
+name: Idea or wish
+description: A new command, a setting, or something that could be better
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: What should the bot do, and who on the mesh would it help?
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Example
+      description: For a command, what someone would type and what the bot would answer.

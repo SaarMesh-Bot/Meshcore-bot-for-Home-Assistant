@@ -23,10 +23,10 @@ class HangmanCommand(BaseCommand):
 
     name = "hangman"
     keywords = ["hangman"]
-    description = "Letterraadspel (usage: hangman start [categorie], hangman <letter>, hangman raad <woord>, hangman stop)"
+    description = "Letter guessing game (usage: hangman start [category], hangman <letter>, hangman raad <word>, hangman stop)"
     category = "fun"
 
-    short_description = "Letterraadspel"
+    short_description = "Letter guessing game"
     usage = "hangman start [categorie]"
     examples = ["hangman start dieren", "hangman a", "hangman raad olifant", "hangman stop"]
 
@@ -43,11 +43,7 @@ class HangmanCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return (
-            "Letterraadspel. 'hangman start [categorie]' begint een spel "
-            f"(categorieën: {', '.join(HANGMAN_WORDS.keys())}). Raad met "
-            "'hangman <letter>' of 'hangman raad <woord>'. 'hangman stop' stopt."
-        )
+        return self.translate("commands.hangman.help", categories=', '.join(HANGMAN_WORDS.keys()))
 
     @staticmethod
     def _board(word: str, guessed: set) -> str:

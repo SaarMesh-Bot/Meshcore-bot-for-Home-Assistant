@@ -543,6 +543,13 @@ async def main():
     check(r and r[0].startswith("XP top (ooit): 1. Piet 106") and "BOT" not in r[0] and OWN not in r[0], f"xp top zonder bots: {r}")
     r = await run(xp, "xp top week")
     check(r and r[0].startswith("XP top (deze week):"), "xp top week")
+    for text in ("xp BE-ExampleNode-BOT", f"xp {OWN}"):
+        r = await run(xp, text)
+        check(r and r[0].endswith("is een bot: bots doen niet mee met de spellen."), f"{text}: bots doen niet mee ({r})")
+    r = await run(C.DxCommand(bot), "dx BE-ExampleNode-BOT")
+    check(r == ["BE-ExampleNode-BOT is een bot: bots doen niet mee met de spellen."], f"dx <bot>: bots doen niet mee ({r})")
+    r = await run(C.BadgeCommand(bot), "badge Echo🤖")
+    check(r == ["Echo🤖 is een bot: bots doen niet mee met de spellen."], f"badge <bot>: bots doen niet mee ({r})")
     r = await run(xp, "xp Niemand")
     check(r == ["Niemand heeft nog geen XP."], "xp: onbekende naam")
     r = await run(C.BadgeCommand(bot), "badge", name="Piet")
@@ -550,6 +557,54 @@ async def main():
     check("level5" not in MA.badges_of(bot, "Piet"), "badge: level 5 nog niet gehaald")
     r = await run(C.BadgeCommand(bot), "badge Niemand")
     check(r == ["Niemand heeft nog geen badges."], "badge: niemand")
+
+    # ------------------------------------------------------------------ dm: a DM to whoever types dm in a channel
+    from modules.commands.dm_command import DmCommand
+    sent_dms, dm_ok = [], {"v": True}
+
+    async def fake_send_dm(recipient, text):
+        sent_dms.append((recipient, text))
+        return dm_ok["v"]
+    bdm = make_bot(db)
+    bdm.command_manager.send_dm = fake_send_dm
+    dmc = DmCommand(bdm)
+    r = await run(dmc, "dm", name="Piet")
+    check(r == [] and sent_dms == [("Piet", f"Hoi Piet! Stuur je commando's hier, help geeft de lijst. Zie je dit niet? Voeg {OWN} toe als contact.")],
+          f"dm in een kanaal: DM naar de vrager, niets in het kanaal ({r}, {sent_dms})")
+    r = await run(dmc, "dm", name="Piet")
+    check(r == [] and len(sent_dms) == 1, "dm: binnen de wachttijd geen tweede DM (geen spam)")
+    dm_ok["v"] = False
+    r = await run(dmc, "dm", name="Onbekend")
+    check(r == ["Onbekend, ik ken je node nog niet. Stuur een advert (flood) en probeer dm opnieuw."], f"dm: persoon niet in de contacten -> uitleg in het kanaal ({r})")
+    dm_ok["v"] = True
+    r = await run(dmc, "dm", name="Onbekend")
+    check(r == [] and sent_dms[-1][0] == "Onbekend", "dm: mislukte poging telt niet mee voor de wachttijd")
+    r = await run(dmc, "dm", name="Piet", is_dm=True, pubkey="aa" * 32)
+    check(r == ["Je zit al in een DM met mij: typ help voor de lijst."], f"dm in een DM: uitleg ({r})")
+    bdm2 = make_bot(db, {"Dm_Command": {"text": "Yo {name}, dit is {bot}", "cooldown_minutes": "1"}})
+    bdm2.command_manager.send_dm = fake_send_dm
+    await run(DmCommand(bdm2), "dm", name="Klaas")
+    check(sent_dms[-1] == ("Klaas", f"Yo Klaas, dit is {OWN}"), f"dm: eigen tekst van de kaart met {{name}} en {{bot}} ({sent_dms[-1]})")
+    check(not DmCommand(make_bot(db, {"Dm_Command": {"enabled": "false"}})).can_execute(MeshMessage(content="dm", sender_id="x", channel="#test")),
+          "dm: kaart uit = geen antwoord")
+    check([f["key"] for f in DmCommand.settings_schema] == ["text", "cooldown_minutes"], "dm-kaart: tekst en wachttijd per persoon")
+
+    # ------------------------------------------------------------------ whois shows the Mesh RPG level (people only)
+    from modules.commands.whois_command import WhoisCommand
+    with db.connection() as c:
+        for col in ("device_type TEXT", "hop_count INTEGER", "advert_count INTEGER", "city TEXT", "state TEXT", "country TEXT"):
+            with contextlib.suppress(sqlite3.OperationalError):
+                c.execute(f"ALTER TABLE complete_contact_tracking ADD COLUMN {col}")
+        c.execute("INSERT INTO complete_contact_tracking (public_key, name, role, hop_count) VALUES ('ee'||hex(randomblob(31)), 'BE-ExampleNode-BOT', 'companion', 2)")
+        c.execute("INSERT INTO complete_contact_tracking (public_key, name, role, hop_count) VALUES ('dd'||hex(randomblob(31)), 'Stil', 'companion', 1)")
+        c.commit()
+    wh = WhoisCommand(bot)
+    r = await run(wh, "whois Piet")
+    check(r and "level 1 Luisteraar (106 XP)" in r[0], f"whois: level, titel en XP van een speler ({r})")
+    r = await run(wh, "whois ExampleNode-BOT")
+    check(r and "level" not in r[0] and "BE-ExampleNode-BOT" in r[0], f"whois van een bot: geen level ({r})")
+    r = await run(wh, "whois Stil")
+    check(r and "level" not in r[0] and "Stil" in r[0], f"whois zonder XP: geen level ({r})")
 
     # ------------------------------------------------------------------ Community service
     csvc = C.CommunityService(bot)
@@ -602,8 +657,8 @@ async def main():
     from modules.command_manager import CommandManager
     from modules.commands.help_command import HelpCommand
     URL = "https://github.com/example/meshcore-bot-commands"
-    for lang, expect in (("nl", f"Alle commando's met uitleg: {URL} | help <commando> = uitleg hier"),
-                         ("en", f"All commands explained: {URL} | help <command> = help here")):
+    for lang, expect in (("nl", f"Alle commando's: {URL} | help <commando> = uitleg"),
+                         ("en", f"All commands: {URL} | help <command> = details")):
         b = make_bot(db, {"Help_Command": {"list_url": URL}})
         b.translator = Translator(lang, "translations/", "local/translations")
         b.config["Localization"] = {"language": lang}
@@ -611,12 +666,56 @@ async def main():
         fake = types.SimpleNamespace(bot=b, commands={"help": hc, "dx": C.DxCommand(b)})
         text = CommandManager.get_general_help(fake, MeshMessage(content="help", sender_id="Piet", channel="#test"))
         check(text == expect and len(text.encode()) <= 130, f"help ({lang}) met link op de kaart: {text!r}")
+    # the real link of the published repository must fit one mesh message in every language
+    REAL = "https://github.com/vipje/Meshcore-bot-for-Home-Assistant/blob/main/COMMANDS.md"
+    for lang in ("nl", "en", "de", "fr"):
+        b = make_bot(db, {"Help_Command": {"list_url": REAL}})
+        b.translator = Translator(lang, "translations/", "local/translations")
+        b.config["Localization"] = {"language": lang}
+        hc = HelpCommand(b)
+        fake = types.SimpleNamespace(bot=b, commands={"help": hc, "dx": C.DxCommand(b)})
+        text = CommandManager.get_general_help(fake, MeshMessage(content="help", sender_id="Piet", channel="#test"))
+        want = REAL if lang == "nl" else REAL.replace("COMMANDS.md", "COMMANDS.en.md")   # other languages: the English list
+        check(want in text and len(text.encode()) <= 130, f"help ({lang}) met de echte lijst-link past in 130 bytes: {len(text.encode())} {text!r}")
     b = make_bot(db)
     fake = types.SimpleNamespace(bot=b, commands={"help": HelpCommand(b), "dx": C.DxCommand(b)})
     text = CommandManager.get_general_help(fake, MeshMessage(content="help", sender_id="Piet", channel="#test"))
     check(text.startswith("Help: ") and "helpall=alles" in text and "github" not in text, f"help zonder link: zoals vroeger ({text!r})")
     check(any(f["key"] == "list_url" and f["default"] == "" for f in HelpCommand.settings_schema), "help-kaart heeft het veld 'Link to the full command list', standaard leeg")
     check(Translator("nl", "translations/", "local/translations").translate("commands.help.general", commands_list="x") != "commands.help.general", "upstream's eigen help-teksten blijven werken naast de nieuwe sleutel")
+
+    # ------------------------------------------------------------------ help in a channel with its own commands (#f1, #p2000-zl)
+    from modules.channel_help import channel_help_text
+    from modules.commands.f1_command import F1Command
+    own = {"Help_Command": {"list_url": URL},
+           "F1_Command": {"enabled": "true", "channels": "#f1"}, "F1": {"enabled": "true"},
+           "Aed_Command": {"enabled": "true", "channels": "Vip Bot,#test,#bot,#p2000-zl"},
+           "Noodnummers_Command": {"enabled": "true", "channels": "Vip Bot,#test,#bot,#p2000-zl"}}
+    b = make_bot(db, own)
+    cm = CommandManager.__new__(CommandManager)
+    cm.bot, cm.logger, cm.monitor_channels = b, logging.getLogger("cm"), ["#bot", "#test"]
+    cm.command_prefixes, cm.require_command_prefix, cm.channel_keywords = [], False, None
+    cm._command_prefix_default = ""
+    cm.keywords, cm.custom_syntax = {}, {}
+    b.command_manager = cm
+    cm.commands = {"help": HelpCommand(b), "dx": C.DxCommand(b), "f1": F1Command(b), "aed": C.AedCommand(b),
+                   "noodnummers": C.NoodnummersCommand(b)}
+    ask = lambda ch, text="help": cm.check_keywords(MeshMessage(content=text, sender_id="Piet", channel=ch))
+    r = ask("#f1")
+    check(len(r) == 1 and r[0][0] == "help" and r[0][1].startswith("f1 = volgende race") and "aed" not in r[0][1],
+          f"help in #f1: alleen de f1-help ({r})")
+    check(ask("#f1", "help f1") == r, "help f1 in #f1: ook de f1-help")
+    r = ask("#p2000-zl")
+    check(len(r) == 1 and r[0][1].startswith("aed <plaats>: ") and " | noodnummers" in r[0][1] and "f1" not in r[0][1],
+          f"help in #p2000-zl: aed en noodnummers ({r})")
+    r = ask("#test")
+    check(len(r) == 1 and URL in r[0][1], f"help in #test: gewone help met link ({r})")
+    check(ask("#limburg") == [], "help in een kanaal zonder eigen commando's: niets (zoals voorheen)")
+    b.config["F1"]["enabled"] = "false"
+    cm.commands["f1"] = F1Command(b)
+    check(ask("#f1") == [], "F1 uit: help in #f1 zegt niets")
+    msg = MeshMessage(content="help", sender_id="Piet", channel="#f1"); msg.is_dm = True
+    check(channel_help_text(cm, msg) == "", "DM: geen kanaalhelp")
 
     # ------------------------------------------------------------------ hint text variants (test in the public channel)
     from modules.channel_hint import ChannelHint

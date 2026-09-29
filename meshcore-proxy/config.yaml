@@ -1,5 +1,5 @@
 name: MeshCore Proxy
-version: "1.0.0"
+version: "1.1.0"
 slug: meshcore_proxy
 description: Shares one physical MeshCore radio over TCP between several clients (meshcore-ha, MeshCore Bot, ...)
 url: https://github.com/vipje/Meshcore-bot-for-Home-Assistant
@@ -25,6 +25,7 @@ options:
   serial_port: /dev/ttyACM0
   baudrate: 115200
   listen_port: 5010
+  priority_port: 5011
   turn_quiet_seconds: 0.75
   turn_max_seconds: 8.0
   log_level: INFO
@@ -32,6 +33,7 @@ schema:
   serial_port: "str"
   baudrate: "int(1200,4000000)"
   listen_port: "port"
+  priority_port: "int(0,65535)?"
   turn_quiet_seconds: "float(0.1,10)"
   turn_max_seconds: "float(1,60)"
   log_level: "list(DEBUG|INFO|WARNING|ERROR)"

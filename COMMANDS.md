@@ -1,5 +1,7 @@
 # Commando's van de MeshCore-bot
 
+*[English](COMMANDS.en.md)*
+
 Zo gebruikt de **Vip|HA|🤖**-bot ze; een eigen bot werkt hetzelfde, met de kanalen die je zelf instelt.
 
 De bot antwoordt in de taal waarin je schrijft: Nederlands, Engels, Duits of Frans.
@@ -22,8 +24,8 @@ Tekens: **DM** = alleen via een DM · **#f1** = in het kanaal #f1 of via DM · �
 
 | Commando | Voorbeeld | Wat het doet |
 |---|---|---|
-| `ping` | `ping` | Snelle controle: de bot antwoordt 'Pong!'. |
-| `test`<br><sub>ook: t</sub> | `test [zin]` | Verbindingsinfo van je bericht: route, SNR, RSSI en tijd. |
+| `ping` | `ping` | Snelle controle: de bot antwoordt 'Pong!' met de tip dat `test` meer info geeft. |
+| `test`<br><sub>ook: t</sub> | `test [zin]` | Verbindingsinfo van je bericht: route, bytes per hop (1, 2 of 3), SNR, RSSI en tijd. |
 | `hello`<br><sub>ook: hi, hey, hola, bonjour, ...</sub> | `hello` | Groet terug (robotstijl). Let op: 'hallo' zit er niet bij. |
 | `help` | `help  /  help 2  /  help dx` | Lijst van commando's per pagina, of uitleg over één commando. |
 | `helpall` | `helpall` | De volledige commandolijst, elke keer de volgende pagina. |
@@ -31,6 +33,7 @@ Tekens: **DM** = alleen via een DM · **#f1** = in het kanaal #f1 of via DM · �
 | `version`<br><sub>ook: ver</sub> | `version` | Welke versie van de bot draait. |
 | `contact` | `contact` | Contactgegevens van de bot. |
 | `channels`<br><sub>ook: channel</sub> | `channels [lijst\|#kanaal]` | Overzicht van bekende hashtag-kanalen. |
+| `dm` | `dm` | Typ in een kanaal: de bot stuurt je een DM, daarna kun je hem privé gebruiken. |
 | `info bot`<br><sub>ook: infobot</sub> | `info bot` | Wat deze bot is en wat je nodig hebt voor een eigen bot. **DM** |
 
 ## Mesh en radio
@@ -44,7 +47,7 @@ Tekens: **DM** = alleen via een DM · **#f1** = in het kanaal #f1 of via DM · �
 | `multitest`<br><sub>ook: mt</sub> | `multitest` | Luistert 6 seconden en toont alle routes waarlangs je bericht binnenkwam. |
 | `prefix`<br><sub>ook: lookup</sub> | `prefix 4a` | Welke repeaters een bepaalde prefix hebben, met locatie. 🌐 |
 | `meshkaart`<br><sub>ook: nodes</sub> | `meshkaart` | Hoeveel nodes, repeaters en rooms de bot hoort (24 uur, 7 dagen, ooit). |
-| `whois` | `whois <naam of sleutel>` | Contactkaart van een bekende node. |
+| `whois` | `whois <naam of sleutel>` | Contactkaart van een bekende node, met level en titel in Mesh RPG. |
 | `rptr` | `rptr  /  rptr buren  /  rptr accu 7d` | Status van de repeater van de beheerder: batterij, uptime, airtime, buren. |
 | `stats` | `stats [messages\|channels\|paths\|adverts]` | Statistieken van de afgelopen 24 uur. |
 | `topu` | `topu  /  topu 7` | Top 5 actiefste gebruikers (24 uur of N dagen), zonder bots. |
@@ -75,7 +78,7 @@ Tekens: **DM** = alleen via een DM · **#f1** = in het kanaal #f1 of via DM · �
 
 | Commando | Voorbeeld | Wat het doet |
 |---|---|---|
-| `f1` | `f1  /  f1 stand  /  f1 uitslag  /  f1 nu  /  f1 voorspel VER  /  f1 spel` | Volgende race, WK-stand, uitslag, live sessie en het F1-voorspellingsspel (voorspellen via DM). **#f1** |
+| `f1` | `f1  /  f1 stand  /  f1 uitslag  /  f1 nu  /  f1 kalender  /  f1 voorspel VER  /  f1 spel` | Volgende race, WK-stand, uitslag, live sessie, de komende races en het F1-voorspellingsspel: de winnaar (`f1 voorspel VER`) of je top 3 (`f1 voorspel VER NOR LEC`), via DM. **#f1** |
 
 ## Handig (Nederland en België)
 
@@ -131,5 +134,6 @@ Tekens: **DM** = alleen via een DM · **#f1** = in het kanaal #f1 of via DM · �
 ## Spellen, goed om te weten
 
 - **XP (Mesh RPG):** 1 per bericht (max 20 per dag), 2 per commando (max 10 per dag), 5 per check-in, 10 per karmapunt dat je krijgt, 5 per hop van je beste DX (tot 10 hops, dus max 50). Ook wat je in Publiek schrijft telt mee.
-- **Bots doen niet mee** in de ranglijsten.
+- **Bots doen niet mee**: ze staan niet in de ranglijsten, kunnen niet voorspellen in het F1-spel, en `xp`, `dx` of `badge` met een botnaam antwoordt "bots doen niet mee".
+- **Spellenkanaal:** een bot kan de spellen in één kanaal houden (kaart *GamesChannel*). De **Vip|HA|🤖**-bot doet dat: `quiz`, `hangman`, `stem`, `peiling`, `checkin`, `karma`, `voorspel`, `xp` en `dx` werken in **`#games`** en via DM; in andere kanalen zegt de bot waar je moet zijn. XP blijft in elk kanaal tellen.
 - `voorspel`, `herinner` en `f1 voorspel` gaan via een DM: daar zit je sleutel bij, zodat niemand namens jou kan spelen.

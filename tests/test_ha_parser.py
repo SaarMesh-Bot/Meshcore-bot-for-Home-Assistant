@@ -96,4 +96,15 @@ nb = P.neighbours_text(r, TR); print("   ", nb, f"({len(nb.encode())} bytes)")
 check(nb.startswith(f"{NAME} buren (4): BE-Nabij 12,0 dB | NL-AB-RP02 9,5 dB") and len(nb.encode()) <= 130, "buren-tekst: sterkste eerst en binnen de lengte")
 check(P.neighbours_text(dict(r, neighbors=[]), TR).endswith("geen gegevens"), "geen buren: nette melding")
 check(P.dec(3.0, TR) == "3,0" and P.duration(59, TR) == "0m" and P.duration(7200, TR) == "2u" and P.duration(90000, TR) == "1d 1u", "hulpfuncties")
+# durations in the sensor's own unit: meshcore-ha suggests days for uptime (the Vip repeater showed "1 h" after 60 days)
+D = P.duration_seconds
+check(D({"state": "60.25", "attributes": {"unit_of_measurement": "d"}}) == 5205600, "uptime in dagen: 60,25 d = 5.205.600 s")
+check(D({"state": "2", "attributes": {"unit_of_measurement": "h"}}) == 7200 and D({"state": "90", "attributes": {"unit_of_measurement": "s"}}) == 90,
+      "uptime in uren en seconden")
+check(D({"state": "10", "attributes": {"unit_of_measurement": "min"}}) == 600 and D({"state": "10", "attributes": {}}) == 600, "minuten, en zonder eenheid ook minuten (zoals vroeger)")
+check(D({"state": "60", "attributes": {"unit_of_measurement": "d", "raw_seconds": 42}}) == 42, "raw_seconds wint altijd")
+check(D({"state": "unknown", "attributes": {"unit_of_measurement": "d"}}) is None and D(None) is None, "onbekend blijft None")
+days = P.parse_states([s("sensor", "bat", "4.1", {"raw_millivolts": 4100}), s("sensor", "uptime", "60.25", {"unit_of_measurement": "d"})], now=NOW)[PFX]
+check(days["uptime_s"] == 5205600 and P.duration(days["uptime_s"], TR).startswith("60d"), f"hele repeater: uptime in dagen goed omgerekend ({days['uptime_s']})")
+
 print(f"\n{len(fails)} fouten"); sys.exit(1 if fails else 0)

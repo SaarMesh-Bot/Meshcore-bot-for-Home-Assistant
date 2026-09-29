@@ -143,4 +143,48 @@ assert g.should_execute(mk("Talbot")) is True               # uitzondering: wel 
 g.bot = types.SimpleNamespace(config=None, logger=logging.getLogger("x"), db_manager=None)
 assert g.should_execute(mk("Iemand")) is True
 print("3 greeter: OK")
+
+# ---------- 4. mesh info als eigen bericht (begroeting eindigt op "|")
+def parts(greeting, fmt="\n\nMesh info: {total_contacts} contacten, {companions} companions", include=True):
+    g.greeting_message = greeting; g.mesh_info_format = fmt; g.include_mesh_info = include
+    g.per_channel_greetings = False; g.channel_greetings = {}
+    g._get_greeting_for_channel = lambda c: greeting
+    info = {"total_contacts": 3779, "repeaters": 2659, "companions": 1120, "recent_activity_24h": 211}
+    return asyncio.run(g._format_greeting_parts("Jan", None, info))
+twee = "Hallo @[{sender}], welkom!\nTesten? #test."
+assert parts(twee + " |") == ["Hallo @[Jan], welkom!\nTesten? #test.", "Mesh info: 3779 contacten, 1120 companions"], parts(twee + " |")
+assert parts(twee + "|") == ["Hallo @[Jan], welkom!\nTesten? #test.", "Mesh info: 3779 contacten, 1120 companions"]
+# zonder "|" op het eind: zoals upstream, vastgeplakt aan het laatste deel
+assert parts(twee) == ["Hallo @[Jan], welkom!\nTesten? #test.\n\nMesh info: 3779 contacten, 1120 companions"]
+assert parts("A | B") == ["A", "B\n\nMesh info: 3779 contacten, 1120 companions"]
+# mesh info uit: "|" op het eind geeft geen leeg bericht
+assert parts(twee + " |", include=False) == ["Hallo @[Jan], welkom!\nTesten? #test."]
+# lege opmaak: geen leeg extra bericht
+assert parts(twee + " |", fmt="") == ["Hallo @[Jan], welkom!\nTesten? #test."]
+print("4 greeter mesh info eigen bericht: OK")
+
+# ---------- 5. "|" splitst alleen als het niet in één bericht past
+def sent(greeting, fmt, max_len=147):
+    out = []
+    async def chunked(message, parts): out.extend(parts); return True
+    g.send_response_chunked = chunked
+    g.get_max_message_length = lambda m: max_len
+    g.get_greeted_users_count = lambda: 0
+    g.greeting_message = greeting; g.mesh_info_format = fmt; g.include_mesh_info = True
+    g._get_greeting_for_channel = lambda c: greeting
+    async def info(): return {"total_contacts": 3779, "repeaters": 2659, "companions": 1120, "recent_activity_24h": 211}
+    g._get_mesh_info = info
+    assert asyncio.run(g._send_greeting(mk("Jan"))) is True
+    return out
+lang = "Hallo @[{sender}], welkom op de mesh! 👋\nWil je de bot testen? Dat kan in #test. |"
+mesh = "Mesh info: {total_contacts} contacten, {repeaters} repeaters, {companions} companions, {recent_activity_24h} actief in 24u"
+r = sent(lang, mesh)                                     # 80 + 79 bytes: past niet samen -> 2 berichten
+assert r == ["Hallo @[Jan], welkom op de mesh! 👋\nWil je de bot testen? Dat kan in #test.",
+             "Mesh info: 3779 contacten, 2659 repeaters, 1120 companions, 211 actief in 24u"], r
+r = sent("Hoi @[{sender}]! | Test in #test. |", "Mesh: {total_contacts} contacten")   # kort: alles in één bericht
+assert r == ["Hoi @[Jan]!\nTest in #test.\nMesh: 3779 contacten"], r
+assert all(len(x.encode()) <= 130 for x in sent(lang, mesh, max_len=500))   # nooit boven 130, ook bij een korte botnaam
+r = sent("Hoi @[{sender}]! | Test in #test. |", "Mesh: {total_contacts} contacten", max_len=30)   # lange botnaam: minder ruimte
+assert r == ["Hoi @[Jan]!\nTest in #test.", "Mesh: 3779 contacten"], r
+print("5 greeter: delen samen als het past: OK")
 print("ALLES OK")

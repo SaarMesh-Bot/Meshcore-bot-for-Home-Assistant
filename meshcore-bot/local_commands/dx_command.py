@@ -18,7 +18,7 @@ import time
 from typing import Any, Optional
 
 from ..mesh_archive import dx_best, month_start_day, sync, week_start_day
-from ..mesh_community import local_now, pack_lines, split_args, without_bots
+from ..mesh_community import is_bot_name, local_now, pack_lines, split_args, without_bots
 from ..models import MeshMessage
 from .base_command import BaseCommand
 
@@ -34,10 +34,10 @@ class DxCommand(BaseCommand):
 
     name = "dx"
     keywords = ["dx"]
-    description = "DX Jacht: records voor het bericht met de meeste hops (dx, dx top, dx ik, dx <naam>)"
+    description = "DX hunt: records for the message with the most hops (dx, dx top, dx ik, dx <name>)"
     category = "fun"
 
-    short_description = "DX Jacht: hop-records per week, maand en ooit"
+    short_description = "DX hunt: hop records per week, month and ever"
     usage = "dx [top [week|maand|ooit]|ik|<naam>]"
     examples = ["dx", "dx top", "dx top maand", "dx ik"]
 
@@ -94,6 +94,8 @@ class DxCommand(BaseCommand):
         return pack_lines(self.translate("commands.dx.top_header", label=label), items, max_bytes)
 
     def _person(self, name: str) -> str:
+        if is_bot_name(self.bot, name):
+            return self.translate("commands.games.no_bots", name=name)
         parts = []
         for word in ("week", "maand", "ooit"):
             since, label = self._window(word)

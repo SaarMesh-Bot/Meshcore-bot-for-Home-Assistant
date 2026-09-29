@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Bot network - MeshCore Bot Data Viewer{% endblock %}
+
+{% block content %}
+<style>
+    .bn-tile { min-height: 5.5rem; }
+    .bn-tile .bn-value { font-size: 1.6rem; font-weight: 600; line-height: 1.2; }
+    .bn-tile .bn-sub { font-size: .8rem; }
+    .bn-chart { position: relative; height: 240px; }
+    .bn-self td { font-weight: 600; }
+</style>
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-3"><i class="fas fa-network-wired"></i> Bot network</h1>
+        <p class="text-muted mb-1">
+            Bots running this add-on share what their radio hears over the internet (card <em>BotNetwork</em>, no airtime): a hello
+            once a day, radio settings once a week, a status every hour (last 24 h), the repeaters they hear directly, and the
+            channel and bot names they found. This bot is shown in bold. Read-only; refreshes every 5 minutes.
+        </p>
+        <p class="text-muted small" id="bn-updated">Loading...</p>
+        <div id="bn-message" role="status" aria-live="polite"></div>
+    </div>
+</div>
+
+<div id="bn-main" hidden>
+    <div class="row g-3 mb-4" id="bn-tiles"></div>
+
+    <div class="card mb-4">
+        <div class="card-header"><i class="fas fa-robot"></i> Bots</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead><tr>
+                        <th scope="col">Bot</th><th scope="col">Region</th><th scope="col">Version</th>
+                        <th scope="col" title="Frequency (MHz) / SF / bandwidth (kHz) / CR">Radio</th>
+                        <th scope="col">Device</th>
+                        <th scope="col" class="text-end" title="Nodes heard in 24 h: people / repeaters / rooms">Heard</th>
+                        <th scope="col" class="text-end" title="People who wrote in 24 h">Spoke</th>
+                        <th scope="col" class="text-end" title="Channel messages in 24 h">Messages</th>
+                        <th scope="col" class="text-end" title="Commands answered in 24 h">Commands</th>
+                        <th scope="col" class="text-end" title="Most hops today">DX</th>
+                        <th scope="col" class="text-end" title="Noise floor of the bot's radio (dBm)">Noise</th>
+                        <th scope="col" class="text-end" title="Transmit / receive airtime of the bot's radio, % of its uptime">Airtime</th>
+                        <th scope="col" class="text-end" title="Repeaters the radio hears directly (zero-hop)">Neighbours</th>
+                        <th scope="col" class="text-end">Last heard</th>
+                    </tr></thead>
+                    <tbody id="bn-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+        <h2 class="h5 mb-0 me-2">History</h2>
+        <div class="btn-group btn-group-sm" role="group" aria-label="Period" id="bn-period">
+            <button type="button" class="btn btn-outline-primary" data-days="1">24 hours</button>
+            <button type="button" class="btn btn-outline-primary active" data-days="7">7 days</button>
+            <button type="button" class="btn btn-outline-primary" data-days="30">30 days</button>
+        </div>
+        <small class="text-muted" id="bn-hist-note"></small>
+    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-6"><div class="card h-100"><div class="card-header"><i class="fas fa-wave-square"></i> Noise floor (dBm)</div>
+            <div class="card-body"><div class="bn-chart"><canvas id="c-nf" role="img" aria-label="Noise floor per bot over time"></canvas></div></div></div></div>
+        <div class="col-12 col-lg-6"><div class="card h-100"><div class="card-header"><i class="fas fa-tower-broadcast"></i> Receive airtime (%)</div>
+            <div class="card-body"><div class="bn-chart"><canvas id="c-rxa" role="img" aria-label="Receive airtime per bot over time"></canvas></div></div></div></div>
+        <div class="col-12 col-lg-6"><div class="card h-100"><div class="card-header"><i class="fas fa-comments"></i> Channel messages (last 24 h)</div>
+            <div class="card-body"><div class="bn-chart"><canvas id="c-m" role="img" aria-label="Channel messages per bot over time"></canvas></div></div></div></div>
+        <div class="col-12 col-lg-6"><div class="card h-100"><div class="card-header"><i class="fas fa-users"></i> People who wrote (last 24 h)</div>
+            <div class="card-body"><div class="bn-chart"><canvas id="c-p" role="img" aria-label="People who wrote per bot over time"></canvas></div></div></div></div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-xl-7"><div class="card h-100">
+            <div class="card-header"><i class="fas fa-satellite-dish"></i> Who hears which repeater</div>
+            <div class="card-body p-0"><div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead><tr><th scope="col">Repeater</th><th scope="col">Place</th><th scope="col">Prefix</th>
+                        <th scope="col">Heard directly by (SNR dB)</th></tr></thead>
+                    <tbody id="bn-heard"></tbody>
+                </table>
+            </div></div>
+            <div class="card-footer small text-muted">Names and places come from this bot's own Contacts, by key prefix.</div>
+        </div></div>
+        <div class="col-12 col-xl-5"><div class="card h-100">
+            <div class="card-header"><i class="fas fa-hashtag"></i> Shared names</div>
+            <div class="card-body">
+                <p class="small mb-2"><strong>Channels</strong><br><span id="bn-channels" class="text-muted">-</span></p>
+                <p class="small mb-0"><strong>Bots</strong><br><span id="bn-bots" class="text-muted">-</span></p>
+                <p class="small text-muted mt-3 mb-0">A number in brackets is how many bots reported the name. Names are used (Channel
+                    radar, bot recognition) when they come from a trusted bot or from at least two bots.</p>
+            </div>
+        </div></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+    // Names come from the network and are not trusted: everything is built with textContent, never as HTML.
+    const state = { days: '7', net: null, hist: null };
+    const charts = {};
+    const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#6b7280', '#84cc16', '#f97316'];
+
+    function el(tag, text, cls) {
+        const n = document.createElement(tag);
+        if (text !== undefined && text !== null) n.textContent = String(text);
+        if (cls) n.className = cls;
+        return n;
+    }
+
+    function ago(ts, now) {
+        if (!ts) return '-';
+        const s = Math.max(0, (now || Math.floor(Date.now() / 1000)) - ts);
+        if (s < 90) return 'just now';
+        if (s < 5400) return Math.round(s / 60) + ' min ago';
+        if (s < 129600) return Math.round(s / 3600) + ' h ago';
+        return Math.round(s / 86400) + ' days ago';
+    }
+
+    function api(path) {
+        return fetch(path, { headers: { 'X-Requested-With': 'XMLHttpRequest' } }).then(function (resp) {
+            return resp.json().catch(function () { return {}; }).then(function (body) {
+                if (!resp.ok) throw new Error(body.error || ('HTTP ' + resp.status));
+                return body;
+            });
+        });
+    }
+
+    function say(text, cls) {
+        const box = document.getElementById('bn-message');
+        box.replaceChildren();
+        if (text) box.appendChild(el('div', text, 'alert ' + (cls || 'alert-danger') + ' py-2'));
+    }
+
+    function tile(label, value, sub) {
+        const col = el('div', null, 'col-6 col-md-4 col-xl-2');
+        const card = el('div', null, 'card bn-tile h-100');
+        const body = el('div', null, 'card-body py-2');
+        body.appendChild(el('div', label, 'text-muted small'));
+        body.appendChild(el('div', value, 'bn-value'));
+        if (sub) body.appendChild(el('div', sub, 'bn-sub text-muted'));
+        card.appendChild(body); col.appendChild(card);
+        return col;
+    }
+
+    // One colour per bot name, the same in the table and every chart.
+    function colorOf(name) {
+        const names = (state.net ? state.net.peers.map(function (p) { return p.name; }) : []);
+        let i = names.indexOf(name);
+        if (i < 0) { i = 0; for (let k = 0; k < name.length; k++) i = (i * 31 + name.charCodeAt(k)) >>> 0; }
+        return COLORS[i % COLORS.length];
+    }
+
+    function renderTiles(d) {
+        const t = d.totals || {};
+        const box = document.getElementById('bn-tiles');
+        box.replaceChildren();
+        box.appendChild(tile('Bots', (t.bots || 0) + (d.peers.some(function (p) { return p.self; }) ? 1 : 0), (t.online || 0) + ' online (2 h)'));
+        box.appendChild(tile('People wrote', t.p || 0, 'together, last 24 h'));
+        box.appendChild(tile('Messages', t.m || 0, 'channel messages, 24 h'));
+        box.appendChild(tile('Commands', t.c || 0, 'answered, 24 h'));
+        box.appendChild(tile('New nodes', t.new || 0, 'today'));
+        box.appendChild(tile('Repeaters', d.heard.length, 'heard directly by a bot'));
+    }
+
+    function renderBots(d) {
+        const body = document.getElementById('bn-body');
+        body.replaceChildren();
+        if (!d.peers.length) {
+            const tr = el('tr'); const td = el('td', 'No bot in the network yet.', 'text-center text-muted py-3'); td.colSpan = 14;
+            tr.appendChild(td); body.appendChild(tr); return;
+        }
+        d.peers.forEach(function (p) {
+            const s = p.status || {};
+            const info = p.info || {};
+            const tr = el('tr', null, p.self ? 'bn-self' : '');
+            const nameCell = el('td');
+            const dot = el('span', '●', 'me-1'); dot.style.color = colorOf(p.name); dot.setAttribute('aria-hidden', 'true');
+            nameCell.appendChild(dot);
+            nameCell.appendChild(document.createTextNode(p.name));
+            if (p.self) nameCell.appendChild(el('span', 'this bot', 'badge bg-primary ms-2'));
+            if (p.trusted) nameCell.appendChild(el('span', 'trusted', 'badge bg-success ms-2'));
+            nameCell.title = ['first seen ' + new Date(p.first_seen * 1000).toLocaleDateString(), p.id ? 'id ' + p.id : '',
+                              s.up ? 'bot up ' + Math.round(s.up / 3600) + ' h' : '', s.nm === '1' ? 'night mode' : ''].filter(Boolean).join(' · ');
+            tr.appendChild(nameCell);
+            const air = (s.txa !== undefined || s.rxa !== undefined) ? (s.txa || '0') + ' / ' + (s.rxa || '0') + ' %' : '-';
+            const nbs = (p.neighbors || []).length;
+            const cells = [p.region || '-', p.version || '-', p.radio || '-', [info.mdl, info.fw].filter(Boolean).join(' · ') || '-',
+                           s.n || '-', s.p || '-', s.m || '-', s.c || '-', s.dx || '-',
+                           s.nf !== undefined ? s.nf + ' dBm' : '-', air, nbs || '-', ago(p.last_seen, d.generated_at)];
+            cells.forEach(function (v, i) {
+                const td = el('td', v, i >= 4 ? 'text-end' : '');
+                if (i === 11 && nbs) {
+                    td.title = p.neighbors.map(function (n) { return (n.name || n.key) + ' ' + (n.snr === null ? '?' : n.snr + ' dB'); }).join('\n');
+                }
+                if (i === 3 && info.node) td.title = 'node ' + info.node + (info.fwd ? ' · build ' + info.fwd : '');
+                tr.appendChild(td);
+            });
+            body.appendChild(tr);
+        });
+    }
+
+    function renderHeard(d) {
+        const body = document.getElementById('bn-heard');
+        body.replaceChildren();
+        if (!d.heard.length) {
+            const tr = el('tr'); const td = el('td', 'No neighbour lists yet (switch on "Find neighbours" on the BotNetwork card).', 'text-center text-muted py-3');
+            td.colSpan = 4; tr.appendChild(td); body.appendChild(tr); return;
+        }
+        d.heard.forEach(function (h) {
+            const tr = el('tr');
+            tr.appendChild(el('td', h.name || '?', h.name ? '' : 'text-muted'));
+            tr.appendChild(el('td', h.place || '-', h.place ? '' : 'text-muted'));
+            tr.appendChild(el('td', h.key, 'font-monospace'));
+            const by = el('td');
+            h.by.forEach(function (b, i) {
+                const tag = el('span', b.bot + ' ' + (b.snr === null || b.snr === undefined ? '?' : Number(b.snr).toFixed(1)), 'badge me-1 mb-1');
+                tag.style.backgroundColor = colorOf(b.bot);
+                tag.title = b.seen ? 'last heard ' + ago(b.seen, d.generated_at) : '';
+                by.appendChild(tag);
+            });
+            tr.appendChild(by);
+            body.appendChild(tr);
+        });
+    }
+
+    function renderNames(d) {
+        const fmt = function (list) { return list.map(function (x) { return x.name + (x.reported_by > 1 ? ' (' + x.reported_by + ')' : ''); }).join(', '); };
+        document.getElementById('bn-channels').textContent = d.channels.length ? fmt(d.channels) : '-';
+        document.getElementById('bn-bots').textContent = d.bots.length ? fmt(d.bots) : '-';
+    }
+
+    function tickLabel(ms) {
+        const dt = new Date(ms);
+        if (state.days === '1') return dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return dt.toLocaleDateString([], { day: 'numeric', month: 'short' });
+    }
+
+    function chart(id, field, unit, digits) {
+        const h = state.hist;
+        const ink = getComputedStyle(document.body).color || '#888';
+        const grid = 'rgba(128,128,128,0.18)';
+        const datasets = h.bots.map(function (b) {
+            const c = colorOf(b.name);
+            return { label: b.name, data: b.t.map(function (t, i) { return { x: t * 1000, y: b[field][i] }; }),
+                     borderColor: c, backgroundColor: c, borderWidth: b.self ? 3 : 2, pointRadius: 0, pointHoverRadius: 5,
+                     pointHitRadius: 12, spanGaps: 3 * 3600 * 1000, tension: 0.2 };
+        });
+        const cfg = {
+            type: 'line',
+            data: { datasets: datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false, animation: false, parsing: false,
+                interaction: { mode: 'nearest', intersect: false },
+                plugins: {
+                    legend: { display: datasets.length > 1, labels: { color: ink, boxWidth: 12 } },
+                    tooltip: { callbacks: {
+                        title: function (items) { return items.length ? new Date(items[0].parsed.x).toLocaleString() : ''; },
+                        label: function (item) { return item.dataset.label + ': ' + (item.parsed.y === null ? 'no value' : Number(item.parsed.y).toFixed(digits) + ' ' + unit); }
+                    } }
+                },
+                scales: {
+                    x: { type: 'linear', min: (h.generated_at - h.days * 86400) * 1000, max: h.generated_at * 1000,
+                         ticks: { color: ink, maxTicksLimit: 7, callback: function (v) { return tickLabel(v); } }, grid: { color: grid } },
+                    y: { ticks: { color: ink, maxTicksLimit: 6 }, grid: { color: grid } }
+                }
+            }
+        };
+        if (charts[id]) charts[id].destroy();
+        charts[id] = new Chart(document.getElementById(id), cfg);
+    }
+
+    function loadHistory() {
+        return api('/api/botnet/history?days=' + encodeURIComponent(state.days)).then(function (h) {
+            state.hist = h;
+            const points = h.bots.reduce(function (n, b) { return n + b.t.length; }, 0);
+            document.getElementById('bn-hist-note').textContent = points ? points + ' status reports in this period' :
+                'No history yet: the charts fill up with every hourly status (kept 30 days).';
+            chart('c-nf', 'nf', 'dBm', 0);
+            chart('c-rxa', 'rxa', '%', 2);
+            chart('c-m', 'm', '', 0);
+            chart('c-p', 'p', '', 0);
+        }).catch(function (e) {
+            document.getElementById('bn-hist-note').textContent = 'Could not load the history: ' + e.message;
+        });
+    }
+
+    function load() {
+        api('/api/botnet').then(function (d) {
+            state.net = d;
+            if (!d.enabled) {
+                document.getElementById('bn-main').hidden = true;
+                document.getElementById('bn-updated').textContent = '';
+                say('The bot network is off. Switch it on on the BotNetwork card (Plugins page) and restart the add-on.', 'alert-info');
+                return;
+            }
+            say('');
+            document.getElementById('bn-main').hidden = false;
+            renderTiles(d);
+            renderBots(d);
+            renderHeard(d);
+            renderNames(d);
+            document.getElementById('bn-updated').textContent = 'Updated ' + new Date(d.generated_at * 1000).toLocaleTimeString();
+            return loadHistory();
+        }).catch(function (e) {
+            say('Could not load the bot network: ' + e.message);
+        });
+    }
+
+    document.querySelectorAll('#bn-period button').forEach(function (b) {
+        b.addEventListener('click', function () {
+            document.querySelectorAll('#bn-period button').forEach(function (x) { x.classList.toggle('active', x === b); });
+            state.days = b.getAttribute('data-days');
+            loadHistory();
+        });
+    });
+
+    load();
+    setInterval(load, 300000);
+})();
+</script>
+{% endblock %}

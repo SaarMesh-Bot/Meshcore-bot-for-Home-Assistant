@@ -36,11 +36,11 @@ class StoringCommand(BaseCommand):
 
     name = "storing"
     keywords = ["storing"]
-    description = "Storingsstatus telecomprovider (usage: storing <kpn|vodafone|ziggo|odido|t-mobile>)"
+    description = "Outage status of a Dutch telecom provider (usage: storing <kpn|vodafone|ziggo|odido|t-mobile>)"
     category = "general"
     requires_internet = True
 
-    short_description = "Storingsstatus telecomprovider"
+    short_description = "Telecom provider outage status"
     usage = "storing <kpn|vodafone|ziggo|odido|t-mobile>"
     examples = ["storing kpn", "storing ziggo"]
 
@@ -56,11 +56,7 @@ class StoringCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        providers = ", ".join(_PROVIDERS)
-        return (
-            f"Storingsstatus van een telecomprovider ({providers}), via de "
-            "community-site storingradar.com - geen officiële providerbron."
-        )
+        return self.translate("commands.storing.help", providers=', '.join(_PROVIDERS))
 
     async def _fetch_status(self, session: aiohttp.ClientSession, provider: str) -> Optional[re.Match]:
         url = _BASE_URL.format(provider=provider)

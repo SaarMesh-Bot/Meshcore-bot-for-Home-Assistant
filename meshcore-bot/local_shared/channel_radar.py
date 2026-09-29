@@ -89,11 +89,50 @@ def channel_byte(key16: bytes) -> int:
     return hashlib.sha256(key16).digest()[0]
 
 
-def build_table(names: Iterable[str], generated: Iterable[str] = ()) -> dict:
-    """{channel byte: [(label, key16), ...]} for the public channel and every name; `names` first, so a name on the
-    main list wins over the same generated one."""
+def radio_channels(db: Any) -> list:
+    """[(label, key16)] for every channel on the bot's own radio (upstream's `channels` table, filled from the radio):
+    hashtag channels as "#name", private channels by their name. The radio knows their keys, so even a private channel is
+    recognised for certain. The public channel is left out (it is always there as PUBLIC_LABEL)."""
+    out, seen = [], set()
+    try:
+        with db.connection() as conn:
+            if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='channels'").fetchone():
+                return []
+            rows = conn.execute("SELECT channel_name, channel_key_hex FROM channels ORDER BY channel_idx").fetchall()
+    except Exception:  # noqa: BLE001 - no radio list yet: only the name lists
+        return []
+    for name, key_hex in rows:
+        name = (name or "").strip()
+        if not name:
+            continue
+        try:
+            key = bytes.fromhex(key_hex or "")[:16]
+        except ValueError:
+            key = b""
+        if name.startswith("#"):
+            name = name.lower()
+            key = key if len(key) == 16 else key_for_name(name)
+        if len(key) != 16 or key == PUBLIC_KEY or name.lower() in seen:
+            continue
+        seen.add(name.lower())
+        out.append((name, key))
+    return out
+
+
+def radio_signature(channels: Iterable[tuple]) -> str:
+    return hashlib.sha256("\n".join(sorted(f"{label.lower()}:{key.hex()}" for label, key in channels)).encode()).hexdigest()[:16]
+
+
+def build_table(names: Iterable[str], generated: Iterable[str] = (), radio: Iterable[tuple] = ()) -> dict:
+    """{channel byte: [(label, key16), ...]} for the public channel, the channels on the radio (with their real keys) and
+    every name; the radio first and then `names`, so they win over the same generated name."""
     table: dict = {channel_byte(PUBLIC_KEY): [(PUBLIC_LABEL, PUBLIC_KEY)]}
     seen = {PUBLIC_LABEL}
+    for label, key in radio:
+        if label.lower() in seen:
+            continue
+        seen.add(label.lower())
+        table.setdefault(channel_byte(key), []).append((label, key))
     for raw in list(names) + list(generated):
         name = raw.strip().lower().lstrip("#")
         if not name or "#" + name in seen:
@@ -154,7 +193,13 @@ def main_names(bot: Any) -> set:
     if bot.config.has_section("ChannelRadar"):
         extra = bot.config.get("ChannelRadar", "extra_names", fallback="") or ""
     names = list(DEFAULT_NAMES) + [n for n in str(extra).split(",") if n.strip()]
-    return {PUBLIC_LABEL} | {"#" + n.strip().lower().lstrip("#") for n in names}
+    radio = {label for label, _ in radio_channels(bot.db_manager)}
+    try:
+        from .bot_network import network_channels
+        names += network_channels(bot)
+    except Exception:  # noqa: BLE001
+        pass
+    return {PUBLIC_LABEL} | {"#" + n.strip().lower().lstrip("#") for n in names} | radio
 
 
 def names_signature(names: Iterable[str]) -> str:

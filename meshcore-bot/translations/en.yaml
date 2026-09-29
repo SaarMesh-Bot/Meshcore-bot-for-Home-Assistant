@@ -42,13 +42,25 @@ configuration:
         description: The bot answers at most once per this many seconds in total (a second command within that time gets no answer). Upstream uses 10, this add-on 4. Lower means more airtime on the mesh.
       language:
         name: Language of the replies
-        description: The language of the bot's own replies (weather, dice, help and so on). Dutch covers about 70% of the built-in texts, the rest stays English. The extra commands of this add-on are Dutch either way.
+        description: "The language of the bot's replies: en (English), nl (Dutch), de (German) or fr (French). Covers the bot's own texts and every extra command of this add-on, including help and helpall. New installations start in English. With AutoLanguage switched on (Plugins page), someone who writes in another of these languages gets the answer in that language."
       log_level:
         name: Log level
         description: Use DEBUG when something is dropped silently and you need to see why.
       timezone:
         name: Time zone
         description: Time zone name such as Europe/Amsterdam, used for scheduled messages such as the weekly announcement. Empty = the system time zone.
+      latitude:
+        name: Latitude of the bot
+        description: "Where the bot is, for example 50.89 (two decimals are enough). Used by airplanes, wx, rain, sun, the distances in test and the dashboard map. Leave empty (together with longitude) to not use a fixed position. Only sent to the weather and flight services those commands ask."
+      longitude:
+        name: Longitude of the bot
+        description: For example 5.98. Only used together with the latitude above.
+      command_prefix:
+        name: Command prefix
+        description: "Optional character(s) before commands, for example / so that /test works. Several separated by commas (/, !). Empty = no prefix (the legacy ! always works)."
+      require_command_prefix:
+        name: Require the prefix
+        description: "Off (default): /test and test both work. On: only commands with the prefix are answered."
   weather:
     name: Weather and units
     description: Used by wx, gwx, rain, aqi and other weather commands.

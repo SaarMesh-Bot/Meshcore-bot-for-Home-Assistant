@@ -28,11 +28,11 @@ class WegwerkCommand(BaseCommand):
 
     name = "wegwerk"
     keywords = ["wegwerk"]
-    description = "Wegwerkzaamheden nabij een plaats (usage: wegwerk <plaats>)"
+    description = "Road works near a place (usage: wegwerk <place>, NL)"
     category = "general"
     requires_internet = True
 
-    short_description = "Wegwerkzaamheden nabij een plaats"
+    short_description = "Road works near a place"
     usage = "wegwerk <plaats>"
     examples = ["wegwerk Heerlen"]
 
@@ -48,7 +48,7 @@ class WegwerkCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "Wegwerkzaamheden/rijstrookmaatregelen binnen 20km van een plaats (NDW open data)."
+        return self.translate("commands.wegwerk.help")
 
     async def execute(self, message: MeshMessage) -> bool:
         try:

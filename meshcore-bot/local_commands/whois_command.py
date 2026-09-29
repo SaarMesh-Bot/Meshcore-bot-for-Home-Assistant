@@ -18,10 +18,10 @@ class WhoisCommand(BaseCommand):
 
     name = "whois"
     keywords = ["whois"]
-    description = "Contactkaart van een bekende node (usage: whois <naam of sleutel>)"
+    description = "Contact card of a known node (usage: whois <name or key>)"
     category = "mesh"
 
-    short_description = "Contactkaart van een bekende node"
+    short_description = "Contact card of a known node"
     usage = "whois <naam of sleutel-prefix>"
     examples = ["whois Pluto", "whois a1b2c3"]
 
@@ -37,7 +37,7 @@ class WhoisCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "Zoekt een bekende node op naam of sleutel-prefix (naam, rol, laatst gezien, hops, locatie)."
+        return self.translate("commands.whois.help")
 
     @staticmethod
     def _parse_timestamp(value: Any) -> Optional[datetime]:
@@ -69,6 +69,21 @@ class WhoisCommand(BaseCommand):
             return self.translate("commands.whois.hours_ago", n=hours)
         days = hours // 24
         return self.translate("commands.whois.days_ago", n=days)
+
+    def _level(self, name: Optional[str]) -> str:
+        """Mesh RPG level and title of a person (not of a bot, not without XP); empty when there is nothing to show."""
+        try:
+            from ..mesh_archive import xp_of
+            from ..mesh_community import is_bot_name
+            if not name or is_bot_name(self.bot, name):
+                return ""
+            info = xp_of(self.bot, name)
+            if not info or not info.get("xp"):
+                return ""
+            return self.translate("commands.whois.level", level=info["level"], title=self.translate(f"commands.xp.title.{info['title']}"),
+                                  xp=info["xp"])
+        except Exception:  # noqa: BLE001 - the contact card works without the games
+            return ""
 
     async def execute(self, message: MeshMessage) -> bool:
         try:
@@ -120,6 +135,9 @@ class WhoisCommand(BaseCommand):
                 location_bits = [b for b in (city, state, country) if b]
                 if location_bits:
                     bits.append(", ".join(location_bits))
+                level = self._level(name)
+                if level:
+                    bits.append(level)
 
                 lines.append(" | ".join(bits))
 

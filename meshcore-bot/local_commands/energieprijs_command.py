@@ -21,11 +21,11 @@ class EnergieprijsCommand(BaseCommand):
 
     name = "energieprijs"
     keywords = ["energieprijs"]
-    description = "Actuele dynamische stroomprijs (EnergyZero)"
+    description = "Current dynamic electricity price (EnergyZero, NL)"
     category = "general"
     requires_internet = True
 
-    short_description = "Actuele dynamische stroomprijs"
+    short_description = "Current dynamic electricity price"
     usage = "energieprijs"
     examples = ["energieprijs"]
 
@@ -41,7 +41,7 @@ class EnergieprijsCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "Actuele dynamische stroomprijs (incl. btw), plus het laagste/hoogste uurtarief van vandaag."
+        return self.translate("commands.energieprijs.help")
 
     async def execute(self, message: MeshMessage) -> bool:
         try:

@@ -276,8 +276,10 @@ async def main():
     check(r[0].startswith("Aangepast: je voorspelt nu NOR (was VER)"), "per DM: aanpassen")
     r = await run("f1 voorspel XXX", is_dm=True, pubkey=D, name="Dirk")
     check("ken ik niet" in r[0] and svc.game.pick_of("2026", "16", D) == "NOR", "onbekende code")
+    r = await run("f1 voorspel ver nor lec", is_dm=True, pubkey="e1" * 32, name="Toppie")
+    check(r == ["Genoteerd: jouw top 3 is VER, NOR, LEC."] and svc.game.pick_of("2026", "16", "e1" * 32) == "VER,NOR,LEC", f"f1 voorspel met top 3 via het commando ({r})")
     r = await run("f1 voorspel", is_dm=True, pubkey=D, name="Dirk")
-    check(r[0].startswith("Wie wint de GP Italië (Monza)? f1 voorspel <code>, bv. "), "zonder code: uitleg met voorbeelden")
+    check(r[0].startswith("Wie wint de GP Italië (Monza)? f1 voorspel <code>, of je top 3: f1 voorspel A B C. Bv. "), f"zonder code: uitleg met voorbeelden ({r[0]})")
     r = await run("f1 voorspel VER", is_dm=True, pubkey=None, name="Onbekend")
     check("sleutel" in r[0], "DM zonder bekende sleutel: geweigerd")
     past = {"quali": S.ts(2026, 9, 19, 14), "race": S.ts(2026, 9, 20, 13)}
@@ -292,6 +294,16 @@ async def main():
     check("Jij: 5 pt in 1 races" in " ".join(r), "f1 spel per DM: je eigen punten")
     r = await run("f1 spel", is_dm=True, pubkey=D, name="Dirk")
     check("Jij: 0 pt in 0 races, je voorspelt NOR" in " ".join(r), "en je eigen voorspelling")
+    # bots do not take part: a bot cannot predict, and a bot already in the points never shows in the standings
+    BOTKEY = "b0" * 32
+    r = await run("f1 voorspel VER", is_dm=True, pubkey=BOTKEY, name="Echo-BOT")
+    check(r and "bots doen niet mee" in r[0] and svc.game.pick_of("2026", "16", BOTKEY) is None, f"een bot kan niet voorspellen ({r})")
+    with svc.game.db.connection() as c:
+        c.execute("INSERT INTO f1_predictions (season, round, pubkey, name, pick, created_at) VALUES ('2026', '15', ?, 'Old|🤖', 'VER', 1)", (BOTKEY,))
+        c.execute("INSERT INTO f1_points (season, round, pubkey, name, pick, points) VALUES ('2026', '15', ?, 'Old|🤖', 'VER', 50)", (BOTKEY,))
+        c.commit()
+    r = await run("f1 spel")
+    check(r[0].startswith("Spel 2026: Stand: 1 Alice 5 | 2 Bob 2 | 3 Cor 2") and "Old" not in " ".join(r), f"f1 spel: een bot met punten staat niet in de stand ({r[0]})")
     svc.game_enabled = False
     r = await run("f1 voorspel VER", is_dm=True, pubkey=D)
     check("staat uit" in r[0], "spel uitgezet: melding")

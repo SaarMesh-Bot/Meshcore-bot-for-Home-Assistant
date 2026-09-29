@@ -9,7 +9,8 @@ come from meshcore-ha's own code (custom_components/meshcore/sensor.py):
     sensor.meshcore_<10 hex>_neighbor_count
 
 Units in Home Assistant: `bat` is in volts (attribute raw_millivolts = millivolts); `uptime`, `airtime` and
-`rx_airtime` are in MINUTES (attribute raw_seconds when present). The full public key and the node type
+`rx_airtime` are durations: minutes by default, but meshcore-ha suggests days for uptime and a user can pick any unit,
+so the state's unit_of_measurement (s, min, h, d, w) decides; the attribute raw_seconds wins when present. The full public key and the node type
 (2 = repeater, 3 = room server) are attributes of the contact's binary sensor.
 """
 from __future__ import annotations
@@ -41,6 +42,25 @@ METRICS = {
     "ch1_temperature": "temperature",
     "ch1_voltage": "ch1_voltage",
 }
+
+
+# seconds per unit of a Home Assistant duration sensor
+DURATION_UNITS = {"s": 1, "sec": 1, "min": 60, "h": 3600, "hr": 3600, "d": 86400, "w": 604800}
+
+
+def duration_seconds(state: Optional[dict]) -> Optional[int]:
+    """Seconds of a duration sensor: raw_seconds when present, else the state in its own unit (minutes if it has none)."""
+    if not state:
+        return None
+    attrs = state.get("attributes") or {}
+    secs = num(attrs.get("raw_seconds"))
+    if secs is not None:
+        return int(secs)
+    value = num(state.get("state"))
+    if value is None:
+        return None
+    unit = str(attrs.get("unit_of_measurement") or "min").strip().lower()
+    return int(round(value * DURATION_UNITS.get(unit, 60)))
 
 
 def num(value: Any) -> Optional[float]:
@@ -146,9 +166,7 @@ def parse_states(states: list, now: Optional[float] = None) -> dict:
         rep["battery_mv"] = int(mv) if mv is not None else (int(round(rep["battery_v"] * 1000)) if rep.get("battery_v") else None)
         for field, key in (("uptime_s", "uptime"), ("airtime_s", "airtime")):
             item = next((st for rest, st in items if _split_metric(rest, slug) == key and not st["entity_id"].startswith("binary_")), None)
-            secs = num(((item or {}).get("attributes") or {}).get("raw_seconds")) if item else None
-            minutes = rep.get(f"{key}_min")
-            rep[field] = int(secs) if secs is not None else (int(round(minutes * 60)) if minutes is not None else None)
+            rep[field] = duration_seconds(item)
         # how old is this data? the battery sensor changes with every status reply from the repeater
         rep["stats_key"] = str(battery_attrs.get("last_updated") or bat[1].get("last_updated") or "")
         changed = parse_time(bat[1].get("last_updated"))

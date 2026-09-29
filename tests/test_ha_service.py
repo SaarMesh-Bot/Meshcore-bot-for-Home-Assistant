@@ -85,6 +85,9 @@ async def main():
     check(s2._last_key.get(F.KEY) == "2026-09-21T20:30:00", "na een herstart weet de service wat al is opgeslagen")
     s2._session = None
     await s.stop()
+    with db.connection() as c:
+        check(c.execute("SELECT MIN(uptime_s) FROM repeater_telemetry").fetchone()[0] == 1107330, "juiste uptimes (minuten) worden niet 'rechtgezet'")
+
 
     # fouten van Home Assistant
     state["status"] = 401
@@ -131,6 +134,47 @@ async def main():
 
     # current(): selectie op naam of sleutel
     check([r["prefix"] for r in s5.current("rptr")] == [F.PFX] and s5.current("bestaat-niet") == [] and [r["prefix"] for r in s5.current("a1b2")] == [F.PFX], "current(): zoeken op naam en sleutel")
+    # uptime stored in the wrong unit before 2.17.1 (days read as minutes): corrected once, from the live value
+    db_u = DB(f"{tmp}/uptime.db"); bot_u, cap_u = make_bot(db_u)
+    su = HARepeaterService(bot_u); await su.start(); su._task.cancel()
+    with db_u.connection() as c:
+        c.execute("CREATE TABLE complete_contact_tracking (public_key TEXT, name TEXT, last_heard TEXT)")
+        c.execute("INSERT INTO complete_contact_tracking VALUES (?, 'Naamloos-Maar-Bekend', '2026-09-24 10:00:00')", ("a98031aa22bb" + "0" * 52,))
+        for i, (up, ago) in enumerate(((3600, 7200), (3631, 3600))):
+            c.execute("INSERT INTO repeater_telemetry (recorded_at, repeater_key, repeater_name, battery_mv, uptime_s, stats_key) VALUES (?,?,?,?,?,?)",
+                      (int(NOW - ago), F.KEY, F.NAME, 4100, up, f"old{i}"))
+        c.commit()
+    days = [dict(x, state="60.52", attributes=dict(x["attributes"], unit_of_measurement="d")) if "_uptime_" in x["entity_id"] else x
+            for x in payload(stats_key="2026-09-24T20:21:00")]
+    state["payload"] = days
+    await su.refresh()
+    with db_u.connection() as c:
+        ups = [r[0] for r in c.execute("SELECT uptime_s FROM repeater_telemetry ORDER BY id").fetchall()]
+    check(ups == [3600 * 1440, 3631 * 1440, 5228928], f"oude uptimes x1440 rechtgezet, nieuwe meting in seconden ({ups})")
+    check(any("rechtgezet" in m for _, m in cap_u.records), "het rechtzetten staat in het logboek")
+    names = {n["prefix"][:6]: n["name"] for n in su.repeaters[F.PFX]["neighbors"]}
+    check(names.get("a98031") == "Naamloos-Maar-Bekend" and names.get("984d7b") == "NL-AB-RP02", f"buur zonder naam krijgt die uit Contacts, andere namen blijven ({names})")
+    with db_u.connection() as c:
+        stored = dict(c.execute("SELECT substr(neighbor_prefix,1,6), neighbor_name FROM ha_repeater_neighbors").fetchall())
+    check(stored.get("a98031") == "Naamloos-Maar-Bekend", "en zo wordt hij ook opgeslagen (Repeater-pagina, rptr buren)")
+    await su.refresh()
+    with db_u.connection() as c:
+        check([r[0] for r in c.execute("SELECT uptime_s FROM repeater_telemetry ORDER BY id").fetchall()] == ups, "maar één keer (geen dubbele vermenigvuldiging)")
+    await su.stop()
+
+    # the real case: 2.17.1 already stored a correct reading after the wrong ones; the wrong ones are still found and fixed
+    db_v = DB(f"{tmp}/uptime2.db"); bot_v, cap_v = make_bot(db_v)
+    sv = HARepeaterService(bot_v); await sv.start(); sv._task.cancel()
+    with db_v.connection() as c:
+        for i, (up, ago) in enumerate(((3600, 7200), (3631, 3600), (5227000, 900))):
+            c.execute("INSERT INTO repeater_telemetry (recorded_at, repeater_key, repeater_name, battery_mv, uptime_s, stats_key) VALUES (?,?,?,?,?,?)",
+                      (int(NOW - ago), F.KEY, F.NAME, 4100, up, f"v{i}"))
+        c.commit()
+    await sv.refresh()
+    with db_v.connection() as c:
+        ups_v = [r[0] for r in c.execute("SELECT uptime_s FROM repeater_telemetry ORDER BY id").fetchall()]
+    check(ups_v[:3] == [3600 * 1440, 3631 * 1440, 5227000], f"foute metingen vóór een goede worden ook gevonden en rechtgezet, de goede blijft ({ups_v})")
+    await sv.stop()
     await runner.cleanup()
     print(f"\n{len(fails)} fouten"); sys.exit(1 if fails else 0)
 

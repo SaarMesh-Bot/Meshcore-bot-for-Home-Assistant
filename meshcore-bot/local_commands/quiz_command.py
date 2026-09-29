@@ -26,7 +26,7 @@ class QuizCommand(BaseCommand):
 
     name = "quiz"
     keywords = ["quiz"]
-    description = "Kort multiple-choice vraagje (usage: quiz, dan quiz a/b/c/d)"
+    description = "Short multiple-choice question (usage: quiz, then quiz a/b/c/d)"
     category = "fun"
     requires_internet = True
 
@@ -47,10 +47,7 @@ class QuizCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return (
-            "Stuurt een multiple-choice trivia-vraag. Antwoord binnen 60s met "
-            "'quiz a', 'quiz b', 'quiz c' of 'quiz d'. Engelstalige vragen."
-        )
+        return self.translate("commands.quiz.help")
 
     async def _fetch_question(self) -> dict:
         async with aiohttp.ClientSession() as session:

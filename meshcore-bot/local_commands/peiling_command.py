@@ -54,10 +54,10 @@ class PeilingCommand(BaseCommand):
 
     name = "peiling"
     keywords = ["peiling", "kies"]
-    description = "Meerkeuze-peiling op een kanaal: peiling [duur] vraag | a | b | c, stemmen met kies <nr>"
+    description = "Multiple-choice poll in a channel: peiling [duration] question | a | b | c, vote with kies <nr>"
     category = "fun"
 
-    short_description = "Meerkeuze-peiling (stem met kies <nr>)"
+    short_description = "Multiple-choice poll (vote with kies <nr>)"
     usage = "peiling [Nm|Nu|Nd] <vraag> | <keuze> | <keuze> ..."
     examples = ["peiling Waar eten we? | pizza | friet | chinees", "peiling 1u Beste antenne? | 5 dBi | 8 dBi", "kies 2", "peiling uitslag", "peiling stop"]
 

@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}Repeater - MeshCore Bot Data Viewer{% endblock %}
+
+{% block content %}
+<style>
+    .rp-tile { min-height: 5.5rem; }
+    .rp-tile .rp-value { font-size: 1.6rem; font-weight: 600; line-height: 1.2; }
+    .rp-tile .rp-sub { font-size: .8rem; }
+    .rp-chart { position: relative; height: 220px; }
+</style>
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-3"><i class="fas fa-broadcast-tower"></i> Repeater</h1>
+        <p class="text-muted mb-1">
+            History of the repeaters the <em>HARepeater</em> service follows (via meshcore-ha): battery, temperature, noise floor,
+            airtime, signal and neighbours, one point per status reply. Read-only; refreshes every 5 minutes.
+        </p>
+        <p class="text-muted small" id="rp-updated">Loading...</p>
+        <div id="rp-message" role="status" aria-live="polite"></div>
+    </div>
+</div>
+
+<div id="rp-main" hidden>
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+        <label for="rp-select" class="form-label mb-0 me-1">Repeater</label>
+        <select id="rp-select" class="form-select form-select-sm w-auto"></select>
+        <div class="btn-group btn-group-sm ms-md-3" role="group" aria-label="Period" id="rp-period">
+            <button type="button" class="btn btn-outline-primary" data-days="1">24 hours</button>
+            <button type="button" class="btn btn-outline-primary active" data-days="7">7 days</button>
+            <button type="button" class="btn btn-outline-primary" data-days="30">30 days</button>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3" id="rp-tiles"></div>
+
+    <div class="row g-3">
+        <div class="col-12 col-lg-6"><div class="card h-100"><div class="card-header"><i class="fas fa-battery-three-quarters"></i> Battery (V)</div>
+            <div class="card-body"><div class="rp-chart"><canvas id="c-battery" role="img" aria-label="Battery voltage over time"></canvas></div></div></div></div>
+        <div class="col-12 col-lg-6"><div class="card h-100"><div class="card-header"><i class="fas fa-wave-square"></i> Noise floor (dBm)</div>
+            <div class="card-body"><div class="rp-chart"><canvas id="c-noise" role="img" aria-label="Noise floor over time"></canvas></div></div></div></div>
+        <div class="col-12 col-lg-6"><div class="card h-100"><div class="card-header"><i class="fas fa-tower-broadcast"></i> Airtime (%)</div>
+            <div class="card-body"><div class="rp-chart"><canvas id="c-airtime" role="img" aria-label="Airtime utilisation over time"></canvas></div></div></div></div>
+        <div class="col-12 col-lg-6"><div class="card h-100"><div class="card-header"><i class="fas fa-temperature-half"></i> Temperature (°C)</div>
+            <div class="card-body"><div class="rp-chart"><canvas id="c-temp" role="img" aria-label="Temperature over time"></canvas></div></div></div></div>
+        <div class="col-12 col-lg-6"><div class="card h-100"><div class="card-header"><i class="fas fa-signal"></i> Last SNR (dB)</div>
+            <div class="card-body"><div class="rp-chart"><canvas id="c-snr" role="img" aria-label="Last SNR over time"></canvas></div></div></div></div>
+        <div class="col-12 col-lg-6"><div class="card h-100"><div class="card-header"><i class="fas fa-users"></i> Neighbours <small class="text-muted" id="rp-nb-at"></small></div>
+            <div class="card-body p-0"><div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead><tr><th scope="col">Name</th><th scope="col">Place</th><th scope="col">Prefix</th><th scope="col" class="text-end">SNR (dB)</th><th scope="col" class="text-end">Heard</th></tr></thead>
+                    <tbody id="rp-nb-body"></tbody>
+                </table>
+            </div></div></div></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+    // Names come from the mesh; everything is built with textContent, never as HTML.
+    const state = { key: null, days: '7', data: null };
+    const charts = {};
+    const LINE = '#3b82f6';
+
+    function el(tag, text, cls) {
+        const n = document.createElement(tag);
+        if (text !== undefined && text !== null) n.textContent = String(text);
+        if (cls) n.className = cls;
+        return n;
+    }
+
+    function ago(s) {
+        if (s === null || s === undefined) return '-';
+        s = Math.max(0, Math.floor(s));
+        if (s < 90) return 'just now';
+        if (s < 5400) return Math.round(s / 60) + ' min ago';
+        if (s < 129600) return Math.round(s / 3600) + ' h ago';
+        return Math.round(s / 86400) + ' days ago';
+    }
+
+    function duration(s) {
+        if (s === null || s === undefined) return '-';
+        const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+        return d ? d + ' d ' + h + ' h' : (h ? h + ' h ' + m + ' min' : m + ' min');
+    }
+
+    function fmt(v, digits) {
+        return (v === null || v === undefined) ? '-' : Number(v).toFixed(digits);
+    }
+
+    function api(path) {
+        return fetch(path, { headers: { 'X-Requested-With': 'XMLHttpRequest' } }).then(function (resp) {
+            return resp.json().catch(function () { return {}; }).then(function (body) {
+                if (!resp.ok) throw new Error(body.error || ('HTTP ' + resp.status));
+                return body;
+            });
+        });
+    }
+
+    function say(text, cls) {
+        const box = document.getElementById('rp-message');
+        box.replaceChildren();
+        if (text) box.appendChild(el('div', text, 'alert ' + (cls || 'alert-danger') + ' py-2'));
+    }
+
+    function tile(label, value, sub) {
+        const col = el('div', null, 'col-6 col-md-4 col-xl-2');
+        const card = el('div', null, 'card rp-tile h-100');
+        const body = el('div', null, 'card-body py-2');
+        body.appendChild(el('div', label, 'text-muted small'));
+        body.appendChild(el('div', value, 'rp-value'));
+        if (sub) body.appendChild(el('div', sub, 'rp-sub text-muted'));
+        card.appendChild(body); col.appendChild(card);
+        return col;
+    }
+
+    function renderTiles(d) {
+        const t = document.getElementById('rp-tiles');
+        t.replaceChildren();
+        const l = d.latest || {};
+        const pct = (l.battery_pct === null || l.battery_pct === undefined) ? null : Math.round(l.battery_pct) + ' %';
+        t.appendChild(tile('Battery', l.battery_mv ? fmt(l.battery_mv / 1000, 2) + ' V' : '-', pct));
+        t.appendChild(tile('Temperature', l.temperature === null || l.temperature === undefined ? '-' : fmt(l.temperature, 1) + ' °C'));
+        t.appendChild(tile('Uptime', duration(l.uptime_s)));
+        t.appendChild(tile('Noise floor', l.noise_floor === null || l.noise_floor === undefined ? '-' : fmt(l.noise_floor, 0) + ' dBm'));
+        t.appendChild(tile('Airtime', l.airtime_util === null || l.airtime_util === undefined ? '-' : fmt(l.airtime_util, 1) + ' %'));
+        t.appendChild(tile('Neighbours', l.neighbor_count === null || l.neighbor_count === undefined ? '-' : l.neighbor_count,
+                           'last reply ' + ago(d.generated_at - l.ts)));
+    }
+
+    function tickLabel(ms) {
+        const dt = new Date(ms);
+        if (state.days === '1') return dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return dt.toLocaleDateString([], { day: 'numeric', month: 'short' });
+    }
+
+    function chart(id, values, unit, digits) {
+        const s = state.data.series;
+        const points = s.t.map(function (t, i) { return { x: t * 1000, y: values[i] === null || values[i] === undefined ? null : values[i] }; });
+        const ink = getComputedStyle(document.body).color || '#888';
+        const grid = 'rgba(128,128,128,0.18)';
+        const cfg = {
+            type: 'line',
+            data: { datasets: [{ data: points, borderColor: LINE, backgroundColor: LINE, borderWidth: 2, pointRadius: 0,
+                                 pointHoverRadius: 5, pointHitRadius: 12, spanGaps: false, tension: 0.2 }] },
+            options: {
+                responsive: true, maintainAspectRatio: false, animation: false, parsing: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: {
+                        title: function (items) { return items.length ? new Date(items[0].parsed.x).toLocaleString() : ''; },
+                        label: function (item) { return item.parsed.y === null ? 'no value' : Number(item.parsed.y).toFixed(digits) + ' ' + unit; }
+                    } }
+                },
+                scales: {
+                    x: { type: 'linear', min: (state.data.generated_at - Number(state.days) * 86400) * 1000, max: state.data.generated_at * 1000, ticks: { color: ink, maxTicksLimit: 7, callback: function (v) { return tickLabel(v); } },
+                         grid: { color: grid } },
+                    y: { ticks: { color: ink, maxTicksLimit: 6 }, grid: { color: grid } }
+                }
+            }
+        };
+        if (charts[id]) charts[id].destroy();
+        charts[id] = new Chart(document.getElementById(id), cfg);
+    }
+
+    function renderCharts() {
+        const s = state.data.series;
+        chart('c-battery', s.battery_mv.map(function (v) { return v === null ? null : v / 1000; }), 'V', 2);
+        chart('c-noise', s.noise_floor, 'dBm', 0);
+        chart('c-airtime', s.airtime_util, '%', 1);
+        chart('c-temp', s.temperature, '°C', 1);
+        chart('c-snr', s.last_snr, 'dB', 1);
+    }
+
+    function renderNeighbours(d) {
+        const body = document.getElementById('rp-nb-body');
+        body.replaceChildren();
+        document.getElementById('rp-nb-at').textContent = d.neighbors_at ? '(' + ago(d.generated_at - d.neighbors_at) + ')' : '';
+        if (!d.neighbors.length) {
+            const tr = el('tr'); const td = el('td', 'No neighbour list yet.', 'text-center text-muted py-3'); td.colSpan = 5;
+            tr.appendChild(td); body.appendChild(tr); return;
+        }
+        d.neighbors.forEach(function (n) {
+            const tr = el('tr');
+            const nameCell = el('td', n.name || '?');
+            if (n.from_contacts) {
+                const tag = el('span', 'contacts', 'badge bg-secondary ms-2');
+                tag.title = 'meshcore-ha gives no name; found in the bot\'s Contacts by key prefix';
+                nameCell.appendChild(tag);
+            }
+            tr.appendChild(nameCell);
+            const where = [n.place || '', (n.km === null || n.km === undefined) ? '' : n.km.toFixed(1) + ' km'].filter(Boolean).join(' · ');
+            tr.appendChild(el('td', where || '-', where ? '' : 'text-muted'));
+            tr.appendChild(el('td', n.prefix, 'font-monospace'));
+            tr.appendChild(el('td', fmt(n.snr, 1), 'text-end'));
+            tr.appendChild(el('td', ago(n.secs_ago), 'text-end text-muted'));
+            body.appendChild(tr);
+        });
+    }
+
+    function renderSelect(d) {
+        const sel = document.getElementById('rp-select');
+        sel.replaceChildren();
+        d.repeaters.forEach(function (r) {
+            const o = el('option', r.name + ' (' + r.readings + ' readings)');
+            o.value = r.key;
+            if (r.key === d.selected) o.selected = true;
+            sel.appendChild(o);
+        });
+    }
+
+    function load() {
+        const q = '/api/repeater?days=' + encodeURIComponent(state.days) + (state.key ? '&key=' + encodeURIComponent(state.key) : '');
+        api(q).then(function (d) {
+            state.data = d;
+            if (!d.repeaters.length) {
+                document.getElementById('rp-main').hidden = true;
+                say('No repeater data yet. Switch on HARepeater on the Plugins page (it needs the meshcore-ha integration with your ' +
+                    'repeater added) and restart the add-on; the first readings appear after its next status reply.', 'alert-info');
+                document.getElementById('rp-updated').textContent = '';
+                return;
+            }
+            say('');
+            state.key = d.selected;
+            document.getElementById('rp-main').hidden = false;
+            renderSelect(d);
+            renderTiles(d);
+            renderCharts();
+            renderNeighbours(d);
+            document.getElementById('rp-updated').textContent = 'Updated ' + new Date(d.generated_at * 1000).toLocaleTimeString() +
+                ' · ' + d.series.t.length + ' readings in this period';
+        }).catch(function (e) {
+            say('Could not load the repeater data: ' + e.message);
+        });
+    }
+
+    document.getElementById('rp-select').addEventListener('change', function (e) { state.key = e.target.value; load(); });
+    document.querySelectorAll('#rp-period button').forEach(function (b) {
+        b.addEventListener('click', function () {
+            document.querySelectorAll('#rp-period button').forEach(function (x) { x.classList.toggle('active', x === b); });
+            state.days = b.getAttribute('data-days');
+            load();
+        });
+    });
+
+    load();
+    setInterval(load, 300000);
+})();
+</script>
+{% endblock %}

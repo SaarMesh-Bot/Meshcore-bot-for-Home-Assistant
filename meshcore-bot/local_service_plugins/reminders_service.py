@@ -36,7 +36,8 @@ class RemindersService(BaseServicePlugin):
     def __init__(self, bot: Any):
         super().__init__(bot)
         cfg = bot.config
-        language = (cfg.get(self.config_section, "language", fallback="nl") if cfg.has_section(self.config_section) else "nl") or "nl"
+        bot_language = (cfg.get("Localization", "language", fallback="en") if cfg.has_section("Localization") else "en") or "en"
+        language = (cfg.get(self.config_section, "language", fallback=bot_language) if cfg.has_section(self.config_section) else bot_language) or bot_language
         get_translator = getattr(bot, "get_translator", None)
         self.translate = get_translator(language.strip().lower()).translate if get_translator else bot.translator.translate
         self._task: Optional[asyncio.Task] = None

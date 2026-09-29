@@ -30,11 +30,11 @@ class HerinnerCommand(BaseCommand):
 
     name = "herinner"
     keywords = ["herinner", "remind"]
-    description = "Persoonlijke herinnering via DM (herinner 30m <tekst>, herinner 18:30 <tekst>, herinner lijst)"
+    description = "Personal reminder by DM (herinner 30m <text>, herinner 18:30 <text>, herinner lijst)"
     category = "general"
     requires_dm = True
 
-    short_description = "Persoonlijke herinnering via DM"
+    short_description = "Personal reminder by DM"
     usage = "herinner <30m|2u|1d|HH:MM> <tekst>"
     examples = ["herinner 30m pizza uit de oven", "herinner 18:30 antenne binnenhalen", "herinner lijst", "herinner weg 2"]
 

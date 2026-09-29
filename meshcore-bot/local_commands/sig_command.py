@@ -38,10 +38,10 @@ class SigCommand(BaseCommand):
 
     name = "sig"
     keywords = ["sig", "signaal"]
-    description = "Signaal van je bericht: SNR, RSSI en hops, met een oordeel (handig bij antenne-tuning)"
+    description = "Signal of your message: SNR, RSSI and hops, with a verdict (handy when tuning an antenna)"
     category = "meshcore_info"
 
-    short_description = "Signaal van je bericht (SNR/RSSI) met oordeel"
+    short_description = "Signal of your message (SNR/RSSI) with a verdict"
     usage = "sig"
     examples = ["sig"]
 

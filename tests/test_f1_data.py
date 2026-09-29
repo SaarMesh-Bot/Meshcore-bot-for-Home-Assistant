@@ -193,5 +193,26 @@ check(not [a for _, a in qs if a["kind"] == "live_final"], "minder dan 10 positi
 prac, _ = simulate(S.ts(2026, 10, 2, 11, 25), S.ts(2026, 10, 2, 13, 0), lambda t: S.states(t, live_states=S.live("Practice 1", "live", None)), step=60)
 check(not [a for _, a in prac if a["kind"] in ("live", "live_final")], "vrije training: geen live-berichten")
 
+# ---- the season calendar (f1 kalender), from sensor.f1_current_season
+def _race(rnd, name, country, loc, day, time_="13:00:00Z"):
+    return {"season": "2026", "round": str(rnd), "raceName": name, "date": day, "time": time_,
+            "Circuit": {"circuitName": name, "Location": {"locality": loc, "country": country}}}
+season_state = {"entity_id": "sensor.f1_current_season", "state": "5", "attributes": {"season": "2026", "races": [
+    _race(18, "Singapore GP", "Singapore", "Marina Bay", "2026-10-11", "12:00:00Z"),
+    _race(16, "Italian GP", "Italy", "Monza", "2026-09-06"),
+    _race(17, "Azerbaijan GP", "Azerbaijan", "Baku", "2026-09-27", "11:00:00Z"),
+    _race(19, "US GP", "USA", "Austin", "2026-10-25", "19:00:00Z"),
+    {"round": "20", "raceName": "zonder datum"},
+]}}
+cal = F.parse([season_state])["calendar"]
+check([r["round"] for r in cal] == ["16", "17", "18", "19"], f"kalender: gesorteerd op datum, race zonder datum overgeslagen ({[r['round'] for r in cal]})")
+texts = F.calendar_text(cal, S.ts(2026, 9, 20, 10), TZ, TR)
+print("   ", texts)
+check(texts[0].startswith("Kalender 2026: R17 GP ") and "13:00" in texts[0] and "R16" not in " ".join(texts), "kalender: vanaf de volgende race, in NL-tijd (11:00Z = 13:00)")
+check(all(len(t.encode()) <= 130 for t in texts) and len(texts) <= 2, "kalender: hooguit 2 berichten van 130 bytes")
+check(F.calendar_text(cal, S.ts(2026, 9, 27, 12), TZ, TR)[0].startswith("Kalender 2026: R17"), "een race die net bezig is, telt nog mee")
+check(F.calendar_text(cal, S.ts(2026, 12, 1, 10), TZ, TR) == ["Geen racekalender beschikbaar."], "na het laatste race: nette melding")
+check(F.parse([])["calendar"] == [], "zonder seizoenssensor: lege kalender")
+
 print(f"\n{len(fails)} fouten")
 sys.exit(1 if fails else 0)

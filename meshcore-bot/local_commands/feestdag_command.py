@@ -24,11 +24,11 @@ class FeestdagCommand(BaseCommand):
 
     name = "feestdag"
     keywords = ["feestdag", "vandaag"]
-    description = "Feestdagen NL/BE (usage: feestdag, feestdag morgen)"
+    description = "Public holidays NL/BE (usage: feestdag, feestdag morgen)"
     category = "general"
     requires_internet = True
 
-    short_description = "Feestdagen NL/BE vandaag/morgen"
+    short_description = "Public holidays NL/BE today/tomorrow"
     usage = "feestdag [morgen]"
     examples = ["feestdag", "feestdag morgen"]
 
@@ -47,7 +47,7 @@ class FeestdagCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "Toont officiële feestdagen in NL en BE voor vandaag (of 'feestdag morgen')."
+        return self.translate("commands.feestdag.help")
 
     async def _get_holidays_for_year(self, year: int) -> dict[str, list[dict]]:
         cached_at = self._cache_fetched_at.get(year, 0)

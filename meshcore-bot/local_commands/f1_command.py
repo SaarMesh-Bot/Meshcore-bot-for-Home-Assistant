@@ -15,7 +15,8 @@ touches the radio except the reply itself.
 import time
 from typing import Any
 
-from ..f1_data import (fit, gp_name, gp_name_of, next_race_text, now_text, pack, results_text, winner_text)
+from ..f1_data import (calendar_text, fit, gp_name, gp_name_of, next_race_text, now_text, pack, results_text, winner_text)
+from ..mesh_community import is_bot_name, without_bots
 from ..models import MeshMessage
 from .base_command import BaseCommand
 
@@ -25,6 +26,7 @@ RESULT = {"uitslag", "result", "resultaat", "race"}
 LIVE = {"nu", "live", "now"}
 PREDICT = {"voorspel", "voorspelling", "predict", "gok"}
 GAME = {"spel", "game", "punten"}
+CALENDAR = {"kalender", "calendar", "agenda", "races", "kalendar"}
 MAX_BYTES = 130
 
 
@@ -33,12 +35,12 @@ class F1Command(BaseCommand):
 
     name = "f1"
     keywords = ["f1"]
-    description = "Formule 1: volgende race, stand, uitslag, live en het voorspellingsspel"
+    description = "Formula 1: next race, standings, result, live, calendar and the prediction game"
     category = "general"
 
-    short_description = "Formule 1 info en voorspellingsspel"
-    usage = "f1 [stand|team|uitslag|nu|voorspel <code>|spel]"
-    examples = ["f1", "f1 stand", "f1 uitslag", "f1 voorspel VER", "f1 spel"]
+    short_description = "Formula 1 info and prediction game"
+    usage = "f1 [stand|team|uitslag|nu|kalender|voorspel <code>|spel]"
+    examples = ["f1", "f1 stand", "f1 uitslag", "f1 kalender", "f1 voorspel VER", "f1 spel"]
 
     def __init__(self, bot: Any):
         super().__init__(bot)
@@ -52,7 +54,7 @@ class F1Command(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "f1 = volgende race; f1 stand / team / uitslag / nu; f1 voorspel <code> (alleen DM) en f1 spel voor het voorspellingsspel."
+        return self.translate("commands.f1.help")
 
     def _arguments(self, message: MeshMessage) -> list:
         tokens = (message.content or "").split()
@@ -111,6 +113,8 @@ class F1Command(BaseCommand):
                     results_text(f"{self.translate('commands.f1.result_label')} {gp_name_of(last, self.translate)}", last["results"])
                     + [winner_text(last, self.translate)],
                 )
+            if sub in CALENDAR:
+                return await self._reply(message, calendar_text(snap.get("calendar") or [], now, service.tz, self.translate))
             if sub in LIVE:
                 lines = now_text(snap, self.translate)
                 if lines:
@@ -135,7 +139,9 @@ class F1Command(BaseCommand):
         nxt = snap.get("next")
         if not nxt:
             return await self.send_response(message, self.translate("commands.f1.no_next_to_predict"))
-        code = args[0] if args else ""
+        if is_bot_name(self.bot, message.sender_id or ""):
+            return await self.send_response(message, fit(self.translate("commands.games.no_bots", name=message.sender_id), MAX_BYTES))
+        code = " ".join(args[:4])   # one code (the winner) or three (your top 3)
         if not code:
             codes = sorted(service.valid_codes())
             return await self.send_response(
@@ -158,7 +164,7 @@ class F1Command(BaseCommand):
             return await self.send_response(message, self.translate("commands.f1.game_off"))
         nxt = snap.get("next")
         season = (nxt or {}).get("season") or snap.get("standings_season") or ""
-        table = service.game.standings(season, 5)
+        table = without_bots(self.bot, service.game.standings(season, 15), 5)
         parts = []
         if table:
             parts.append(

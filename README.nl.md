@@ -81,6 +81,23 @@ Wat hij **niet** doet: luisteren twee bots op hetzelfde commandokanaal, dan antw
 je regio welke kanalen al een bot hebben, en geef je bot eigen kanalen (bijvoorbeeld `#bot`, `#test`) of spreek met de
 andere eigenaar af wie waar antwoordt.
 
+## Botnetwerk
+
+Bots met deze add-on kunnen via internet delen wat hun radio hoort (gehoorde nodes, drukte, kanaalnamen): geen zendtijd,
+en afstand maakt niet uit. Hij staat standaard uit: wil je meedoen, zet dan de kaart **BotNetwork** op de pagina
+*Plugins* van het dashboard aan en herstart de add-on (weer uitzetten = niet meer meedoen). Wat gedeeld wordt: aantallen (gehoorde nodes, berichten, commando's), radio-instellingen, de versie, botnamen en
+hashtag-kanaalnamen - nooit de inhoud van berichten, namen van mensen of sleutels. Stel je bot gerust
+voor met het formulier **Join the bot network** ([nieuw issue](https://github.com/vipje/Meshcore-bot-for-Home-Assistant/issues/new/choose)),
+dan kunnen anderen hem op hun lijst met vertrouwde bots zetten.
+
+## Telling van installaties
+
+Om te weten hoeveel installaties er draaien, stuurt de bot **één keer per dag één anoniem bericht** naar de server van de
+maker (`mqtt.vipje.nl`, dezelfde als het botnetwerk): een willekeurig nummer dat bij de eerste start gemaakt wordt, de
+versie van de add-on en de datum. Verder niets - niet de naam van je bot, je radio, je locatie of iets van de mesh - en
+geen zendtijd. Zoals bij elke internetverbinding ziet de server je IP-adres. Het staat **standaard aan**; zet de kaart
+**InstallCount** op de pagina *Plugins* van het dashboard uit en er gaat niets meer.
+
 ## Commando's
 
 De volledige lijst met alle commando's en wat ze doen staat in **[COMMANDS.md](COMMANDS.md)**. Op de mesh kun je ook

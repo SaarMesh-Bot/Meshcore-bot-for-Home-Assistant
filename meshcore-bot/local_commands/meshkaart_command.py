@@ -22,10 +22,10 @@ class MeshkaartCommand(BaseCommand):
 
     name = "meshkaart"
     keywords = ["meshkaart", "nodes"]
-    description = "Hoeveel nodes, repeaters en rooms de bot hoort (24u, 7 dagen, ooit)"
+    description = "How many nodes, repeaters and rooms the bot hears (24 h, 7 days, ever)"
     category = "meshcore_info"
 
-    short_description = "Aantal nodes/repeaters dat de bot hoort"
+    short_description = "Number of nodes/repeaters the bot hears"
     usage = "meshkaart"
     examples = ["meshkaart"]
 

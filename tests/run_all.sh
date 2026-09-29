@@ -20,7 +20,7 @@ if [ ! -x "$WORK/venv/bin/python" ]; then
   echo "== creating the test environment"
   python3 -m venv "$WORK/venv" || exit 2
   "$WORK/venv/bin/pip" install -q flask flask-socketio "flask-compress==1.15" requests pytz python-dateutil aiosqlite \
-      geopy maidenhead aiohttp apscheduler feedparser meshcore pyyaml || exit 2
+      geopy maidenhead aiohttp apscheduler feedparser meshcore pyyaml paho-mqtt pynacl || exit 2
 fi
 PY="$WORK/venv/bin/python"
 
@@ -44,6 +44,7 @@ cd "$WORK/sim"
 run "channel watchdog"                 "$PY" "$HERE/test_channel_watchdog.py"
 run "notification rate-limit fix"      "$PY" "$HERE/test_notify_limiter.py"
 run "botlist + greeter skips bots"     "$PY" "$HERE/test_botlist_greeter.py"
+run "greeter rollout runs once"       "$PY" "$HERE/test_greeter_rollout.py" "$SIM_TREE"
 run "bot name recognition"             "$PY" "$HERE/test_bot_names.py"
 run "channel hint settings live"       "$PY" "$HERE/test_channel_hint_live.py"
 run "repeater parser (meshcore-ha)"    "$PY" "$HERE/test_ha_parser.py"
@@ -60,12 +61,19 @@ run "F1: service and f1 command"      "$PY" "$HERE/test_f1_service.py" "$SIM_TRE
 run "community commands, games, topu without bots" "$PY" "$HERE/test_community.py" "$SIM_TREE"
 run "housekeeping: room login, config keys, contact capacity" "$PY" "$HERE/test_housekeeping.py" "$SIM_TREE"
 run "channel radar (Kanaalradar)" "$PY" "$HERE/test_channel_radar.py" "$SIM_TREE"
+run "language: English by default, help, ping, test bytes" "$PY" "$HERE/test_language.py" "$SIM_TREE"
+run "games channel (game commands in one channel)" "$PY" "$HERE/test_games_channel.py" "$SIM_TREE"
+run "bot network over the internet (signed, trust, schedule)" "$PY" "$HERE/test_bot_network.py" "$SIM_TREE"
+run "night mode (scheduled, feeds, webhook)" "$PY" "$HERE/test_night_mode.py" "$SIM_TREE"
 run "export/import via /share (moving the bot)" "$PY" "$HERE/test_data_transfer.py"
 run "generate_config (options -> config.ini)" "$PY" "$HERE/test_generator.py"
 run "settings cards (Plugins page)"    "$PY" "$HERE/test_cards.py" "$SIM_TREE"
 run "Bots page"                        "$PY" "$HERE/test_bots_page.py" "$SIM_TREE"
+run "Repeater page"                    "$PY" "$HERE/test_repeater_page.py" "$SIM_TREE"
+run "Bot network page"                 "$PY" "$HERE/test_botnet_page.py" "$SIM_TREE"
 run "sidebar (ingress), no password"   "$PY" "$HERE/test_ingress.py" "$SIM_TREE" ""
 run "sidebar (ingress), with password" "$PY" "$HERE/test_ingress.py" "$SIM_TREE" "secret"
+run "proxy: priority port"            "$PY" "$HERE/test_proxy_priority.py"
 
 if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   if [ ! -d "$WORK/jsd/node_modules/jsdom" ]; then

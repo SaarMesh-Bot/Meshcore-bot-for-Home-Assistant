@@ -34,10 +34,10 @@ class VoorspelCommand(BaseCommand):
 
     name = "voorspel"
     keywords = ["voorspel"]
-    description = "Voorspellingsspel voor elke vraag: voorspel nieuw <vraag> | a | b, antwoorden met voorspel <nr> (DM)"
+    description = "Prediction game for any question: voorspel nieuw <question> | a | b, answer with voorspel <nr> (DM)"
     category = "games"
 
-    short_description = "Voorspellingsspel voor elke vraag"
+    short_description = "Prediction game for any question"
     usage = "voorspel [nieuw <vraag> | a | b|<nr>|sluit|uitslag <nr>|stand]"
     examples = ["voorspel", "voorspel nieuw Wordt het zaterdag droog? | ja | nee", "voorspel 1", "voorspel stand"]
 

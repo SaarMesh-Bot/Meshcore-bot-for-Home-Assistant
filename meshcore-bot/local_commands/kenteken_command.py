@@ -53,11 +53,11 @@ class KentekenCommand(BaseCommand):
 
     name = "kenteken"
     keywords = ["kenteken"]
-    description = "Kentekencheck via RDW open data (usage: kenteken hdj60r)"
+    description = "Dutch number plate check via RDW open data (usage: kenteken hdj60r)"
     category = "general"
     requires_internet = True
 
-    short_description = "Kentekencheck (RDW)"
+    short_description = "Number plate check (RDW)"
     usage = "kenteken <plaat>"
     examples = ["kenteken hdj-60-r", "kenteken 1-abc-23"]
 
@@ -73,11 +73,7 @@ class KentekenCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return (
-            "Zoekt een kenteken op via RDW open data: merk+model, bouwjaar, kleur, "
-            "brandstof, cilinderinhoud/vermogen, topsnelheid, APK-vervaldatum. "
-            "Geen persoonsgegevens."
-        )
+        return self.translate("commands.kenteken.help")
 
     @staticmethod
     def _normalize_plate(raw: str) -> str:

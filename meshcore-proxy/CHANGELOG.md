@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0
+
+- Priority port (`priority_port`, default 5011, 0 = off): clients connected there go before clients on the normal port when
+  both want the radio. Put the MeshCore Bot on it (its `tcp_port` 5011) so its replies do not wait behind meshcore-ha's polling.
+  A running turn is always finished first.
+
 ## 1.0.0
 
 First public release.

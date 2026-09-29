@@ -176,5 +176,57 @@ after = {c["label"]: c["month"] for c in R.summary(make_bot(db4, {"extra_names":
 check(before == {"#limburg": 1} and after == {"#limburg": 1, "#zeldzaam-kanaal-q": 1},
       f"naam op de kaart erbij: het pakketlogboek wordt opnieuw geteld, niets dubbel ({before} -> {after})")
 
+# channels on the radio: recognised with their own keys (private ones too), picked up while running, counted from the log
+db5 = DB(f"{tmp}/bot5.db")
+k_private = os.urandom(16)                      # a private channel: its key only lives on the radio
+k_pub_tag = R.key_for_name("public")            # "#public" is on no list, like the user's channel 9
+add_packet(db5, now - 900, group_payload(k_private, os.urandom(20)), "RRR1")
+add_packet(db5, now - 800, group_payload(k_pub_tag, os.urandom(20)), "RRR2")
+add_packet(db5, now - 700, group_payload(R.PUBLIC_KEY, os.urandom(20)), "RRR3")
+svc7 = ChannelRadarService(make_bot(db5))
+svc7.scan(now)
+labels0 = {c["label"] for c in R.summary(make_bot(db5), now)["channels"]}
+check("#public" not in labels0 and "Club Kanaal" not in labels0, f"zonder kanaallijst van de radio: #public en het privékanaal onbekend ({labels0})")
+with db5.connection() as c:
+    c.execute("CREATE TABLE channels (channel_idx INTEGER PRIMARY KEY, channel_name TEXT NOT NULL, channel_type TEXT, channel_key_hex TEXT)")
+    c.executemany("INSERT INTO channels VALUES (?,?,?,?)", [(0, "Publiek", "custom", R.PUBLIC_KEY.hex()), (1, "Club Kanaal", "custom", k_private.hex()),
+                                                           (9, "#Public", "hashtag", ""), (10, "Leeg", "custom", "zz")])
+    c.commit()
+check(R.radio_channels(db5) == [("Club Kanaal", k_private), ("#public", k_pub_tag)],
+      f"kanalen van de radio: privé met eigen sleutel, hashtag uit de naam, publiek en kapotte sleutel overgeslagen ({R.radio_channels(db5)})")
+svc7.scan(now + 60)                             # the same running service: picks up the new radio channels itself
+chans = {c["label"]: c for c in R.summary(make_bot(db5), now + 60)["channels"]}
+check(chans.get("#public", {}).get("month") == 1 and chans.get("Club Kanaal", {}).get("month") == 1 and chans[R.PUBLIC_LABEL]["month"] == 1,
+      f"nieuwe kanalen op de radio: binnen een minuut herkend en vanaf het begin van het logboek geteld, niets dubbel ({chans})")
+check(chans["#public"]["found"] is False and chans["Club Kanaal"]["found"] is False, "kanalen van de radio tellen als vaste namen (vanaf 1 bericht, geen 'gevonden')")
+check(not [c for c in R.summary(make_bot(db5), now + 60)["unknown"] if c["month"]], "het privékanaal staat niet meer bij de onbekende")
+before_sig = db5.get_metadata("radar.names")
+svc7.scan(now + 120)
+check(db5.get_metadata("radar.names") == before_sig, "zonder wijziging op de radio wordt er niet opnieuw geteld")
+check(any("channels on your radio" in f["help"] for f in ChannelRadarService.settings_schema), "kaart legt uit dat radiokanalen vanzelf meedoen")
+
+# a log that starts halfway yesterday: yesterday keeps the counts from before the log, only whole days are counted again
+from modules.mesh_community import day_start_ts, local_day
+from datetime import timedelta
+db6 = DB(f"{tmp}/bot6.db")
+b6 = make_bot(db6)
+today = local_day(b6, now)
+yday = today - timedelta(days=1)
+noon_y = day_start_ts(b6, yday) + 12 * 3600
+R.ensure_tables(db6)
+with db6.connection() as c:
+    c.execute("INSERT INTO channel_radar (day, label, messages, last_ts) VALUES (?, '#limburg', 5, ?)", (yday.isoformat(), noon_y + 60))
+    c.execute("INSERT INTO channel_radar (day, label, messages, last_ts) VALUES (?, '#limburg', 2, ?)", (today.isoformat(), int(now) - 30))
+    c.commit()
+add_packet(db6, noon_y + 60, group_payload(k_limburg, os.urandom(20)), "PPP1")        # already in yesterday's 5
+add_packet(db6, day_start_ts(b6, today) + 10, group_payload(k_limburg, os.urandom(20)), "PPP2")
+add_packet(db6, int(now) - 30, group_payload(k_limburg, os.urandom(20)), "PPP3")
+svc8 = ChannelRadarService(b6)
+svc8.scan(now)
+with db6.connection() as c:
+    counts = dict(c.execute("SELECT day, messages FROM channel_radar WHERE label='#limburg'").fetchall())
+check(counts == {yday.isoformat(): 5, today.isoformat(): 2},
+      f"opnieuw tellen: de eerste, halve dag van het logboek houdt zijn telling, hele dagen worden opnieuw geteld ({counts})")
+
 print(f"\n{len(fails)} fouten")
 sys.exit(1 if fails else 0)

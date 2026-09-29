@@ -8,6 +8,9 @@ configuration:
   listen_port:
     name: Luisterpoort
     description: TCP-poort waarmee clients verbinden (meshcore-ha, MeshCore Bot). Standaard 5010.
+  priority_port:
+    name: Voorrangspoort
+    description: "Clients op deze poort gaan voor als meerdere tegelijk de radio willen gebruiken (een lopende beurt wordt afgemaakt). Zet de MeshCore Bot hierop (tcp_port 5011), dan gaan zijn antwoorden voor meshcore-ha. 0 = uit."
   turn_quiet_seconds:
     name: Beurt eindigt na stilte (seconden)
     description: "Terwijl één client met de radio praat, krijgt die de antwoorden direct en houdt de proxy ze voor de anderen even vast. De beurt eindigt na zoveel seconden zonder radioverkeer."

@@ -26,11 +26,11 @@ class OvCommand(BaseCommand):
 
     name = "ov"
     keywords = ["ov"]
-    description = "Eerstvolgende OV-vertrektijden bij een halte (usage: ov <plaats/halte>)"
+    description = "Next public transport departures at a stop (usage: ov <town/stop>, NL)"
     category = "general"
     requires_internet = True
 
-    short_description = "OV-vertrektijden bij een halte"
+    short_description = "Public transport departures at a stop"
     usage = "ov <plaats/halte>"
     examples = ["ov Utrecht", "ov Heerlen Station"]
 
@@ -48,7 +48,7 @@ class OvCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "Eerstvolgende OV-vertrektijden bij een halte, op naam van plaats en/of halte (OVapi.nl)."
+        return self.translate("commands.ov.help")
 
     async def _get_stop_list(self, session: aiohttp.ClientSession) -> dict:
         now = time.time()

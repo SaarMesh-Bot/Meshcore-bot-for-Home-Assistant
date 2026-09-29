@@ -21,6 +21,10 @@ Regels:
   OK/ERROR-antwoord" per ongeluk het antwoord van een andere client kunnen
   opvangen (het protocol heeft geen request-ID) - dat gaf random
   ERR_CODE_ILLEGAL_ARG-fouten bij de bot terwijl meshcore-ha tegelijk actief was.
+- Voorrang: clients op de voorrangspoort (standaard 5011, bedoeld voor de bot)
+  gaan voor wie op de gewone poort wacht. Een lopende beurt wordt nooit
+  onderbroken (dan zou een antwoord kapot gaan); de voorrangsclient hoeft
+  alleen niet achteraan de rij aan te sluiten.
 - Buiten een spreekbeurt om (het meeste van de tijd - spontane mesh-events zoals
   inkomende berichten/adverts) wordt gewoon meteen naar iedereen gebroadcast,
   zoals voorheen.
@@ -41,17 +45,22 @@ log = logging.getLogger("meshcore-proxy")
 
 class Proxy:
     def __init__(self, port, baudrate, listen_host, listen_port,
-                 quiet_release=0.75, max_hold=8.0):
+                 quiet_release=0.75, max_hold=8.0, priority_port=0):
         self.port = port
         self.baudrate = baudrate
         self.listen_host = listen_host
         self.listen_port = listen_port
         self.quiet_release = quiet_release
         self.max_hold = max_hold
+        self.priority_port = priority_port
 
         self.clients: set[asyncio.StreamWriter] = set()
         self.clients_lock = asyncio.Lock()
-        self.write_lock = asyncio.Lock()
+        # Wie de radio mag gebruiken: één tegelijk, voorrangsclients eerst.
+        self.turn_cond = asyncio.Condition()
+        self.turn_busy = False
+        self.priority_waiting = 0
+        self.priority_clients: set[asyncio.StreamWriter] = set()
         self.last_activity = 0.0
 
         # Tijdens een spreekbeurt: wie spreekt, en wat de anderen ondertussen
@@ -128,9 +137,17 @@ class Proxy:
 
     # ---------- per-client TCP handler ----------
 
-    async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    async def handle_priority_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        self.priority_clients.add(writer)
+        try:
+            await self.handle_client(reader, writer, priority=True)
+        finally:
+            self.priority_clients.discard(writer)
+
+    async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
+                            priority: bool = False):
         peer = writer.get_extra_info("peername")
-        log.info(f"Client connected: {peer}")
+        log.info(f"Client connected: {peer}" + (" (voorrang)" if priority else ""))
         async with self.clients_lock:
             self.clients.add(writer)
         try:
@@ -152,8 +169,30 @@ class Proxy:
 
     # ---------- serialized write client -> device ----------
 
+    async def _take_turn(self, priority: bool):
+        """Wacht tot de radio vrij is; een gewone client wacht ook zolang er een voorrangsclient wacht."""
+        async with self.turn_cond:
+            if priority:
+                self.priority_waiting += 1
+            try:
+                await self.turn_cond.wait_for(
+                    lambda: not self.turn_busy and (priority or self.priority_waiting == 0))
+            finally:
+                if priority:
+                    self.priority_waiting -= 1
+            self.turn_busy = True
+
+    async def _end_turn(self):
+        async with self.turn_cond:
+            self.turn_busy = False
+            self.turn_cond.notify_all()
+
     async def forward_to_device(self, data: bytes, writer: asyncio.StreamWriter):
-        async with self.write_lock:
+        priority = writer in self.priority_clients
+        if priority and self.turn_busy:
+            log.debug("voorrangsclient wacht op het einde van de lopende beurt")
+        await self._take_turn(priority)
+        try:
             if self.ser is None or not self.ser.is_open:
                 log.warning("Serial not open, dropping write")
                 return
@@ -181,17 +220,23 @@ class Proxy:
             finally:
                 self.turn_holder = None
                 await self._flush_pending()
+        finally:
+            await self._end_turn()
 
     async def run(self):
         self.loop = asyncio.get_running_loop()
         threading.Thread(target=self.serial_reader_thread, daemon=True).start()
         server = await asyncio.start_server(self.handle_client, self.listen_host, self.listen_port)
+        servers = [server]
+        if self.priority_port:
+            servers.append(await asyncio.start_server(
+                self.handle_priority_client, self.listen_host, self.priority_port))
         log.info(
-            f"Luistert op {self.listen_host}:{self.listen_port}, brug naar {self.port} "
-            "(turn-aware broadcast v2)"
+            f"Luistert op {self.listen_host}:{self.listen_port}"
+            + (f" en voorrangspoort {self.priority_port}" if self.priority_port else "")
+            + f", brug naar {self.port} (turn-aware broadcast v2)"
         )
-        async with server:
-            await server.serve_forever()
+        await asyncio.gather(*(s.serve_forever() for s in servers))
 
 
 def main():
@@ -204,13 +249,16 @@ def main():
                    help="seconds of radio silence after which a client's turn ends")
     p.add_argument("--max-hold", type=float, default=8.0,
                    help="hard maximum in seconds that one client may hold the turn")
+    p.add_argument("--priority-port", type=int, default=0,
+                   help="clients on this port go before clients on the normal port (0 = off)")
     p.add_argument("--log-level", default="INFO",
                    choices=["DEBUG", "INFO", "WARNING", "ERROR"])
     args = p.parse_args()
 
     logging.getLogger().setLevel(args.log_level)
     proxy = Proxy(args.serial_port, args.baudrate, args.listen_host, args.listen_port,
-                  quiet_release=args.quiet_release, max_hold=args.max_hold)
+                  quiet_release=args.quiet_release, max_hold=args.max_hold,
+                  priority_port=args.priority_port)
     asyncio.run(proxy.run())
 
 

@@ -25,11 +25,11 @@ class TankenCommand(BaseCommand):
 
     name = "tanken"
     keywords = ["tanken"]
-    description = "Landelijk gemiddelde brandstofprijzen vandaag (CBS)"
+    description = "National average fuel prices today (CBS, NL)"
     category = "general"
     requires_internet = True
 
-    short_description = "Landelijke brandstofprijzen (CBS)"
+    short_description = "National fuel prices (CBS)"
     usage = "tanken"
     examples = ["tanken"]
 
@@ -45,7 +45,7 @@ class TankenCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return "Landelijk gemiddelde pompprijzen van vandaag/gisteren (CBS, geen 'dichtstbijzijnde pomp')."
+        return self.translate("commands.tanken.help")
 
     async def execute(self, message: MeshMessage) -> bool:
         try:

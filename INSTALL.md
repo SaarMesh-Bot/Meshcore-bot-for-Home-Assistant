@@ -52,7 +52,9 @@ bot and, if you use it, meshcore-ha.
    | Bot name | The name on the mesh, for example your town. Do not add an emoji: `|🤖` is added automatically. |
    | Channels to listen on | One channel per line, exactly as named on the radio, for example `#bot` and `#test`. |
    | Admin public keys | Your own 64-character public key (step 1). |
-   | Language of the replies | `nl` or `en`. |
+   | Language of the replies | `en` (default), `nl`, `de` or `fr`. |
+   | Latitude / Longitude | Optional: where the bot is, for `airplanes`, weather and distances. |
+   | Command prefix | Optional, for example `/` so that `/test` works (plain `test` keeps working). |
    | Time zone | For example `Europe/Amsterdam`; empty = the system time zone. |
 
    The rest can stay as it is. Click **Save**.
@@ -86,6 +88,7 @@ Click **MeshCore Bot** in the Home Assistant sidebar. The most important pages:
 | Bots | Which names count as bots (for games, rankings and "never answer another bot"). |
 | Games | Standings of all games, without bots. |
 | Radar | Which channels are active in your area (counted without decrypting anything). |
+| Repeater | History of your repeater: battery, noise floor, airtime, neighbours (needs HARepeater). |
 | Schedule | Messages the bot posts at a fixed time. |
 
 On **Plugins**, cards of **commands** take effect at once. Cards of **services** need a restart of the add-on; the card says so.
@@ -101,6 +104,10 @@ A new installation starts quiet: everything that needs your own setup is off. Wo
 | **RoomServer Login** | Logs the bot into your room server, so commands work there too and notifications can go there. |
 | **Notifications** | Messages about the bot itself (started, radio lost, ...) to a room, channel or DM. |
 | **Webhook** | Lets Home Assistant post messages on the mesh. **Set a secret token first.** |
+| **BotNetwork** | Shares what your radio hears with other bots of this add-on, over the internet (no airtime). Off by default: switch it on if you want to take part (the README says what is shared). |
+| **InstallCount** | **On by default**: once a day an anonymous message (random number, version, date) so the maintainer knows how many installations run. Switch it off to send nothing (see the README). |
+| **GamesChannel** | Keeps the games (quiz, hangman, stem, ...) in one channel, for example `#games`. |
+| **NightMode** | Keeps scheduled messages and feeds quiet at night (default 23:00-07:00). Answers to people always go out. |
 | Community, Reminders, ChannelRadar | Games, `herinner` (reminders) and the radar. On by default. |
 
 With **meshcore-ha**: **HARepeater** (status of your repeater, `rptr`) and **HomeAssistantBridge** (the bot's replies in the
