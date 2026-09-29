@@ -1,5 +1,0 @@
-blank_issues_enabled: true
-contact_links:
-  - name: Question about the bot itself (not this add-on)
-    url: https://github.com/agessaman/meshcore-bot/issues
-    about: Questions about agessaman/meshcore-bot, the bot this add-on is built on.
