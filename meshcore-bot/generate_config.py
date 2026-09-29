@@ -253,7 +253,7 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
     cfg["ChannelRadar"] = {"enabled": "true"}
     # Night mode: keeps scheduled messages and feeds quiet at night (webhook only when chosen). Off until switched on.
     # Games channel: game commands only in one channel. Off (and empty) until chosen on the card.
-    cfg["GamesChannel"] = {"enabled": "false", "channel": "", "commands": "quiz,hangman,poll,peiling,checkin,karma,voorspel", "pointer": "false"}
+    cfg["GamesChannel"] = {"enabled": "false", "channel": "", "commands": "quiz,hangman,poll,peiling,checkin,karma,voorspel,farm", "pointer": "false"}
     # Bot network over the internet (MQTT): off until the owner chooses to join (it shares data with other bots).
     cfg["BotNetwork"] = {"enabled": "false", "region": "", "trusted": "",
                          "share_status": "true", "share_channels": "true", "share_bots": "true",
@@ -262,14 +262,19 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
     # Install count: once a day a random id + the version to the maintainer's server (anonymous; README says so). On,
     # one switch on the card to turn it off.
     cfg["InstallCount"] = {"enabled": "true"}
+    # AutoChannels: hashtag channels the bot is set to use (#test, #games, #f1) are made on the radio when missing.
+    cfg["AutoChannels"] = {"enabled": "true"}
     cfg["NightMode"] = {"enabled": "false", "start": "23:00", "end": "07:00", "scheduled": "true", "feeds": "true", "webhook": "false"}
 
     for name in DEFAULT_OFF:
         set_option(cfg, command_section(name), "enabled", "false")
+    forced = set()
     for name in g("commands", "enable", []):
         set_option(cfg, command_section(name), "enabled", "true")
+        forced.add((command_section(name), "enabled"))
     for name in g("commands", "disable", []):
         set_option(cfg, command_section(name), "enabled", "false")
+        forced.add((command_section(name), "enabled"))
 
     # Free-form overrides last, so they win over everything above.
     # Format: "Section.key = value"
@@ -281,7 +286,9 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
             continue
         section, _, key = target[0].partition(".")
         set_option(cfg, section.strip(), key.strip(), target[1])
+        forced.add((section.strip(), key.strip()))
 
+    cfg.forced_keys = forced   # options that switch a seed key (read by merge_with_existing)
     return cfg
 
 
@@ -337,10 +344,15 @@ STATE_FILE = "generated_keys.json"
 # it was rewritten on every start until 2.6.1.
 MOVED_SECTIONS = {"Notifications", "ContactCleanup", "RoomServer_Login", "HomeAssistantBridge",
                   "Webhook", "ChannelHint", "Greeter_Command", "HARepeater", "F1", "F1_Command", "Heartbeat",
-                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount"}
+                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels"}
 # Never removed by the "generated last time but not now" cleanup: the moved sections, and the scheduled
 # messages (the dashboard's Schedule page owns them since 2.8.0; the old announcement option is gone).
 KEEP_SECTIONS = MOVED_SECTIONS | {"Scheduled_Messages"}
+
+# Keys that are only a starting value: written when missing, never over a value that is there (set on a card).
+# airplanes/worldcup start off, but switching them on on their card must survive a restart (GitHub issue #1: the
+# generator used to switch airplanes off again at every start).
+SEED_KEYS = {(command_section(name), "enabled") for name in DEFAULT_OFF}
 
 
 # Keys an earlier version put on a card and that no longer exist: removed at the start, so the card does not show them
@@ -379,6 +391,7 @@ def merge_with_existing(generated: configparser.ConfigParser, config_path: str, 
             merged[section]["trusted"] = ""
 
     now_keys = [[s, k] for s in generated.sections() for k in generated[s]]
+    forced = getattr(generated, "forced_keys", set())
     try:
         with open(state_path, encoding="utf-8") as fh:
             previous = json.load(fh)
@@ -394,8 +407,70 @@ def merge_with_existing(generated: configparser.ConfigParser, config_path: str, 
         for key, value in generated[section].items():
             if section in MOVED_SECTIONS and merged.has_option(section, key):
                 continue   # set on the dashboard (or by an earlier run): keep it
+            if (section, key) in SEED_KEYS and merged.has_option(section, key) and (section, key) not in forced:
+                continue   # a starting value only (for example airplanes off): the card's choice stays
             merged[section][key] = value
     return merged, now_keys
+
+
+OVERRIDE_TEMPLATE = """# override.ini - your own config.ini lines, read at every start of the add-on (after a restart).
+# What you put here wins over the Configuration tab and the dashboard cards. Same format as config.ini:
+#
+# [Bot]
+# bot_latitude = 50.89
+# bot_longitude = 5.98
+#
+# [Path_Command]
+# max_hops_shown = 7
+#
+# Remove a line again to go back to the normal setting. config-current.ini next to this file shows the full config
+# the bot used at its last start (a copy: changes there are not used).
+"""
+
+USER_README = """This folder belongs to the MeshCore Bot add-on (the File Editor shows it under /addon_configs).
+
+config-current.ini  A copy of the bot's config.ini, written at every start of the add-on. Read-only for you:
+                    changes in this file are not used, and it is overwritten at the next start. Changes made on
+                    the dashboard's Plugins page are in it after the next restart.
+override.ini        Your own config.ini lines. Read at every start and they win over everything else.
+                    Restart the add-on after a change.
+
+The real config.ini lives inside the add-on (/data/config.ini) and is rebuilt from the Configuration tab, the
+dashboard cards and override.ini at every start.
+"""
+
+
+def apply_override(merged: configparser.ConfigParser, user_dir: str) -> None:
+    """override.ini in the add-on's own config folder (/addon_configs/..._meshcore_bot): every key in it wins.
+    Made (all comments) on the first start. A broken file is reported and ignored, never stops the start."""
+    path = os.path.join(user_dir, "override.ini")
+    try:
+        if not os.path.exists(path):
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(OVERRIDE_TEMPLATE)
+            return
+        own = configparser.ConfigParser(interpolation=None, strict=False)
+        own.optionxform = str
+        own.read(path, encoding="utf-8")
+        for section in own.sections():
+            for key, value in own[section].items():
+                set_option(merged, section, key, value)
+    except (configparser.Error, OSError) as exc:
+        print(f"generate_config: override.ini not used: {exc}", file=sys.stderr)
+
+
+def write_user_copy(config_path: str, user_dir: str) -> None:
+    """config-current.ini (a read-only copy for comparing) and README.txt in the add-on's own config folder."""
+    try:
+        with open(config_path, encoding="utf-8") as src:
+            body = src.read()
+        with open(os.path.join(user_dir, "config-current.ini"), "w", encoding="utf-8") as fh:
+            fh.write("# COPY of the bot's config.ini at the last start of the add-on. Changes here are NOT used;\n"
+                     "# put your own lines in override.ini (see README.txt).\n\n" + body)
+        with open(os.path.join(user_dir, "README.txt"), "w", encoding="utf-8") as fh:
+            fh.write(USER_README)
+    except OSError as exc:
+        print(f"generate_config: could not write config-current.ini: {exc}", file=sys.stderr)
 
 
 def main() -> int:
@@ -404,13 +479,18 @@ def main() -> int:
         return 2
     options_path, config_path = sys.argv[1], sys.argv[2]
     data_dir = sys.argv[3] if len(sys.argv) > 3 else "/data"
+    user_dir = sys.argv[4] if len(sys.argv) > 4 and os.path.isdir(sys.argv[4]) else None   # /config = /addon_configs/...
     with open(options_path, encoding="utf-8") as fh:
         opts = json.load(fh)
     generated = build(opts, data_dir)
     state_path = os.path.join(data_dir, STATE_FILE)
     merged, keys = merge_with_existing(generated, config_path, state_path)
+    if user_dir:
+        apply_override(merged, user_dir)
     with open(config_path, "w", encoding="utf-8") as fh:
         merged.write(fh)
+    if user_dir:
+        write_user_copy(config_path, user_dir)
     try:
         with open(state_path, "w", encoding="utf-8") as fh:
             json.dump(keys, fh)

@@ -45,6 +45,16 @@ patch(
                 self.logger.error(f"Error in /api/radar: {e}", exc_info=True)
                 return jsonify({'error': 'Internal error - see server logs'}), 500
 
+        @self.app.route('/api/radar/repeaters')
+        def api_radar_repeaters():
+            \"\"\"Repeater radar: the repeaters heard in the last 1, 7 or 30 days (see modules/repeater_radar.py).\"\"\"
+            from modules import repeater_radar
+            try:
+                return jsonify(repeater_radar.summary(self.db_manager, self.config, request.args.get('days', '1')))
+            except Exception as e:
+                self.logger.error(f"Error in /api/radar/repeaters: {e}", exc_info=True)
+                return jsonify({'error': 'Internal error - see server logs'}), 500
+
         @self.app.route('/region-warnings')
         def region_warnings_page():""",
 )

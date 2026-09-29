@@ -49,6 +49,10 @@ ENUMS = {
     "commands.meshkaart.role": ["companion", "repeater", "room", "sensor", "other"],
     "commands.xp.title": [str(i) for i in range(7)],
     "commands.badge.name": ["msg100", "msg1000", "days30", "days100", "hops3", "hops6", "streak7", "streak30", "karma10", "level5", "level10"],
+    "commands.farm.crop": ["tomaat", "aardbei", "pompoen", "wiet", "druif", "zonnebloem", "appel", "hop", "koffie", "cacao"],
+    "commands.farm.product": ["soep", "pasta", "jam", "lantaarn", "joint", "wijn", "olie", "taart", "bier", "espresso", "chocolade"],
+    "commands.farm.up": ["veld", "kas", "grond", "werkplaats"],
+    "commands.farm.up_name": ["veld", "kas", "grond", "werkplaats"],
     "commands.file.type": ["AbnormalTraffic", "Accident", "GeneralObstruction", "VehicleObstruction"],
 }
 

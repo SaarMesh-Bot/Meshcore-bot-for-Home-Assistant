@@ -131,11 +131,40 @@ class ChannelRadarService(BaseServicePlugin):
         self._seen = {k: t for k, t in self._seen.items() if t >= cutoff}
         return counted
 
+    def _count_new_on_first_day(self, conn: Any, day0: Any, until_ts: float) -> None:
+        """The first, partial day keeps its counts, but a channel that is newly recognised (a name added on the card,
+        a channel added on the radio) has none there yet: count only those channels on that day, so nothing is lost and
+        nothing is counted twice (found 2026-09-30: messages just before midnight of a new channel were skipped)."""
+        known = {r[0] for r in conn.execute("SELECT label FROM channel_radar WHERE day = ?", (day0.isoformat(),))}
+        seen = set()
+        for ts, data in conn.execute("SELECT timestamp, data FROM packet_stream WHERE timestamp < ? AND type IN ('packet', 'routing') "
+                                     "ORDER BY id", (until_ts,)).fetchall():
+            if '"GRP_TXT"' not in data:
+                continue
+            try:
+                packet = json.loads(data)
+            except ValueError:
+                continue
+            if packet.get("payload_type_name") != "GRP_TXT" or not packet.get("payload_hex"):
+                continue
+            key = packet.get("packet_hash") or packet["payload_hex"][:40]
+            if key in seen:
+                continue
+            seen.add(key)
+            label, ch = identify(packet["payload_hex"], self.table)
+            if label and label not in known:
+                record(conn, day0.isoformat(), label, ch, int(ts))
+                # it was counted as an unknown channel byte before: move it, do not count it twice
+                conn.execute("UPDATE channel_radar_other SET messages = messages - 1 WHERE day = ? AND hash = ? AND messages > 0",
+                             (day0.isoformat(), ch))
+        conn.execute("DELETE FROM channel_radar_other WHERE day = ? AND messages <= 0", (day0.isoformat(),))
+
     def _recount_from_log(self, db: Any) -> None:
         """New list of names: forget the counts of the whole days still in the packet log and count those days again.
 
         The log starts somewhere in a day; that first day keeps its counts (recounting it would lose what happened before
-        the log starts), unless it has no counts yet (a new installation, or a log that starts just before midnight)."""
+        the log starts), unless it has no counts yet (a new installation, or a log that starts just before midnight); on
+        that day only newly recognised channels are counted (_count_new_on_first_day)."""
         last_id = 0
         with db.connection() as conn:
             first = conn.execute("SELECT MIN(timestamp) FROM packet_stream").fetchone() if table_exists(conn, "packet_stream") else None
@@ -149,6 +178,8 @@ class ChannelRadarService(BaseServicePlugin):
                 conn.execute("DELETE FROM channel_radar_other WHERE day >= ?", (start.isoformat(),))
                 row = conn.execute("SELECT MAX(id) FROM packet_stream WHERE timestamp < ?", (start_ts,)).fetchone()
                 last_id = int(row[0] or 0) if start_ts else 0
+                if start > day0:
+                    self._count_new_on_first_day(conn, day0, start_ts)
                 conn.commit()
         db.set_metadata(LAST_ID_KEY, str(last_id))
         db.set_metadata(NAMES_KEY, self.signature)

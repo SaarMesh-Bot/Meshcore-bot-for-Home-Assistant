@@ -15,6 +15,7 @@ Tekens: **DM** = alleen via een DM · **#f1** = in het kanaal #f1 of via DM · �
 - [Basis en hulp](#basis-en-hulp)
 - [Mesh en radio](#mesh-en-radio)
 - [Spellen en community](#spellen-en-community)
+- [Kwekerij](#kwekerij)
 - [Formule 1](#formule-1)
 - [Handig (Nederland en België)](#handig-nederland-en-belgië)
 - [Weer, zon en ruimte](#weer-zon-en-ruimte)
@@ -42,7 +43,7 @@ Tekens: **DM** = alleen via een DM · **#f1** = in het kanaal #f1 of via DM · �
 |---|---|---|
 | `pad` | `pad` | De route van je bericht in één regel: hops, km en repeaters (? = gok). |
 | `sig`<br><sub>ook: signaal</sub> | `sig` | SNR, RSSI en hops van je bericht met een oordeel (goed/redelijk/zwak). Handig bij antenne-tuning. |
-| `path`<br><sub>ook: decode, route</sub> | `path  /  path 4a,c2,8c` | Lange versie van de route: elke repeater op een eigen regel. |
+| `path`<br><sub>ook: decode, route</sub> | `path  /  path 4a,c2,8c` | Lange versie van de route: elke repeater op een eigen regel. Lange antwoorden krijgen (1/2), (2/2); op de kaart *path* kan *Max hops shown* het korter maken. |
 | `trace`<br><sub>ook: tracer</sub> | `trace [pad]` | Trace langs een pad (heen en terug), met signaal per stap. |
 | `multitest`<br><sub>ook: mt</sub> | `multitest` | Luistert 6 seconden en toont alle routes waarlangs je bericht binnenkwam. |
 | `prefix`<br><sub>ook: lookup</sub> | `prefix 4a` | Welke repeaters een bepaalde prefix hebben, met locatie. 🌐 |
@@ -73,6 +74,48 @@ Tekens: **DM** = alleen via een DM · **#f1** = in het kanaal #f1 of via DM · �
 | `dice` | `dice 2d6` | Dobbelstenen gooien. |
 | `roll` | `roll 100` | Willekeurig getal van 1 tot en met het getal. |
 | `magic8` | `magic8 Wordt het droog?` | De Magic 8-Ball beantwoordt een ja/nee-vraag. |
+
+## Kwekerij
+
+Een boerderijspel dat je **via een DM** met de bot speelt (dan weet de bot dat jij het bent). Zaai gewassen, oogst ze,
+verwerk ze in je werkplaats tot iets wat meer oplevert, verkoop, spaar in de bank en groei van level 1 naar 10.
+
+| Commando | Voorbeeld | Wat het doet |
+|---|---|---|
+| `farm` | `farm` | Je stand: level, munten, bank, wat er rijp is en wanneer de rest rijp is. **DM** |
+| `farm start` | `farm start` | Begin je kwekerij: 4 velden en 200 munten. **DM** |
+| `farm winkel`<br><sub>ook: shop</sub> | `farm winkel` | Het zaad dat je op jouw level kunt kopen, met prijs en groeitijd. **DM** |
+| `farm zaai`<br><sub>ook: plant, sow</sub> | `farm zaai tomaat 4` | Zaai op je lege velden. Eigen zaad gaat eerst, de rest koop je. **DM** |
+| `farm oogst`<br><sub>ook: harvest</sub> | `farm oogst` | Oogst alles wat rijp is; het gaat naar je schuur. **DM** |
+| `farm schuur` | `farm schuur` | Wat er in je schuur ligt: oogst, producten en zaad. **DM** |
+| `farm verkoop` | `farm verkoop`  /  `farm verkoop jam` | Verkoop alles, of één soort. **DM** |
+| `farm verwerk`<br><sub>ook: maak, make</sub> | `farm verwerk soep 2` | Maak in je werkplaats een product van je oogst (zie de tabel). **DM** |
+| `farm bank` | `farm bank`  /  `farm stort 500`  /  `farm haal alles` | Je spaargeld: 1% rente per dag (max 500 per dag), veilig voor de zakkenroller. **DM** |
+| `farm upgrade` | `farm upgrade`  /  `farm upgrade kas` | Extra veld, betere kas (sneller groeien), betere grond (meer oogst) of een grotere werkplaats. **DM** |
+| `farm geef` | `farm geef Alex 100` | Geef munten aan een andere boer. **DM** |
+| `farm top` | `farm top` | De rijkste boeren (munten + bank). Werkt ook in `#games`. |
+
+**Gewassen en producten**
+
+| Level | Gewas | Zaad | Groeit | Opbrengst per oogst | Oogsten | Verwerken tot |
+|---|---|---|---|---|---|---|
+| 1 | tomaat | 20 | 1 u | 2–4 × 3 | 10× | tomatensoep (4 tomaat, 1 u), pasta (8 tomaat, 3 u) |
+| 2 | aardbei | 60 | 2 u | 3–5 × 6 | 8× | jam (5 aardbei, 2 u) |
+| 3 | pompoen | 150 | 4 u | 1–2 × 40 | 6× | lantaarn (1 pompoen, 1 u) |
+| 4 | wiet | 300 | 6 u | 2–3 × 50 | 5× | joint (2 wiet, 1 u) |
+| 5 | druif | 500 | 8 u | 4–6 × 45 | 8× | wijn (6 druif, 12 u) |
+| 6 | zonnebloem | 800 | 10 u | 3–5 × 95 | 6× | olie (3 zonnebloem, 4 u) |
+| 7 | appel | 1200 | 12 u | 5–7 × 100 | 10× | appeltaart (4 appel, 3 u) |
+| 8 | hop | 2000 | 16 u | 4–6 × 210 | 8× | bier (3 hop, 8 u) |
+| 9 | koffie | 3500 | 20 u | 3–5 × 430 | 8× | espresso (2 koffie, 2 u) |
+| 10 | cacao | 6000 | 24 u | 3–5 × 700 | 8× | chocolade (2 cacao, 6 u) |
+
+- Opbrengst: aantal stuks × verkoopprijs per stuk. Na het laatste aantal oogsten is de plant op en is het veld weer leeg.
+- Bij elke geoogste vrucht is er 1% kans op een **zaadje**: gratis zaad voor de volgende keer.
+- Je level stijgt met XP uit oogsten en verwerken; elk level brengt een nieuw gewas.
+- Soms gebeurt er iets bij het oogsten: een **topoogst** (dubbel), **storm** (een veld kapot), een **zakkenroller** (10% van
+  je munten, niet van de bank) of een **controle** als je wiet oogst.
+- Een bot-eigenaar kan gewassen uitzetten (kaart *farm*), bijvoorbeeld wiet.
 
 ## Formule 1
 
@@ -143,6 +186,7 @@ volgende sessie begint, bijvoorbeeld "Over 2:15 uur begint de kwalificatie".
 | `hfcond` | `hfcond` | HF-bandcondities voor zendamateurs. 🌐 |
 | `solarforecast`<br><sub>ook: sf</sub> | `sf Heerlen 4000` | Verwachte opbrengst van zonnepanelen. 🌐 |
 | `satpass` | `satpass iss` | Wanneer een satelliet overkomt. 🌐 |
+| `airplanes`<br><sub>ook: planes, aircraft</sub> | `airplanes`  /  `airplanes here`  /  `airplanes 50.9,5.9` | Vliegtuigen boven de bot (of boven een plek), met hoogte en type. Staat standaard uit (kaart *airplanes*). 🌐 |
 | `alert`<br><sub>ook: incident</sub> | `alert <plaats>` | Actieve noodmeldingen (PulsePoint, vooral VS). 🌐 |
 
 ## Leuk

@@ -1,11 +1,25 @@
 {% extends "base.html" %}
 
-{% block title %}Channel radar - MeshCore Bot Data Viewer{% endblock %}
+{% block title %}Radar - MeshCore Bot Data Viewer{% endblock %}
 
 {% block content %}
+<style>
+    .rr-tile, .rr-row { cursor: pointer; }
+    .rr-tile:hover { border-color: var(--bs-primary); }
+</style>
+<h1 class="mb-3"><i class="fas fa-satellite-dish"></i> Radar</h1>
+<ul class="nav nav-tabs mb-3" id="radar-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-channels-btn" data-bs-toggle="tab" data-bs-target="#tab-channels" type="button" role="tab" aria-controls="tab-channels" aria-selected="true"><i class="fas fa-hashtag"></i> Channel radar</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-repeaters-btn" data-bs-toggle="tab" data-bs-target="#tab-repeaters" type="button" role="tab" aria-controls="tab-repeaters" aria-selected="false"><i class="fas fa-tower-broadcast"></i> Repeater radar</button>
+    </li>
+</ul>
+<div class="tab-content">
+<div class="tab-pane fade show active" id="tab-channels" role="tabpanel" aria-labelledby="tab-channels-btn">
 <div class="row">
     <div class="col-12">
-        <h1 class="mb-3"><i class="fas fa-satellite-dish"></i> Channel radar</h1>
         <p class="text-muted mb-1">
             Which hashtag channels are in use around the bot. Every group message the radio hears starts with a channel byte
             and a short check code; the radar compares those with the keys of the channels on your radio (private ones too, added
@@ -55,6 +69,63 @@
             </div>
         </div>
     </div>
+</div>
+</div>
+
+<div class="tab-pane fade" id="tab-repeaters" role="tabpanel" aria-labelledby="tab-repeaters-btn">
+    <p class="text-muted mb-1">
+        Every repeater the bot heard, from its own records (nothing is sent). <em>Direct</em> = the bot's radio hears it without
+        a hop in between (neighbour discovery on the BotNetwork card). <em>Bots</em> = how many bots of the bot network hear it
+        directly. <em>Same prefix</em> = other repeaters whose key starts with the same byte and that are also within 50 km of the bot
+        (a path with 1-byte hops cannot tell those apart). Click a tile to filter, click a repeater for all details.
+        Refreshes every 5 minutes.
+    </p>
+    <p class="text-muted small" id="rr-updated">Loading...</p>
+    <div id="rr-message" role="status" aria-live="polite"></div>
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Period" id="rr-period">
+            <button type="button" class="btn btn-outline-primary active" data-days="1">24 hours</button>
+            <button type="button" class="btn btn-outline-primary" data-days="7">7 days</button>
+            <button type="button" class="btn btn-outline-primary" data-days="30">30 days</button>
+        </div>
+        <div class="form-check form-switch mb-0 ms-md-2">
+            <input class="form-check-input" type="checkbox" id="rr-direct">
+            <label class="form-check-label small" for="rr-direct">Direct only</label>
+        </div>
+        <input type="search" class="form-control form-control-sm w-auto ms-md-auto" id="rr-search" placeholder="Name, place or prefix" autocomplete="off" aria-label="Search repeaters">
+    </div>
+    <div class="row g-3 mb-3" id="rr-tiles"></div>
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead><tr>
+                        <th scope="col">Repeater</th><th scope="col">Prefix</th><th scope="col">Place</th>
+                        <th scope="col" class="text-end">km</th><th scope="col" class="text-end">Last heard</th>
+                        <th scope="col" class="text-end" title="SNR of its last advert (dB)">SNR</th>
+                        <th scope="col" class="text-end" title="Hops of its last advert">Hops</th>
+                        <th scope="col" class="text-end" title="Adverts in this period">Adverts</th>
+                        <th scope="col" class="text-end" title="The bot's radio hears it directly (last SNR)">Direct</th>
+                        <th scope="col" class="text-end" title="Bots of the bot network that hear it directly">Bots</th>
+                        <th scope="col" class="text-end" title="Other repeaters with the same first key byte, both within 50 km of the bot">Same prefix</th>
+                    </tr></thead>
+                    <tbody id="rr-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="rr-modal" tabindex="-1" aria-labelledby="rr-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="rr-modal-title">Repeater</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="rr-modal-body"></div>
+            </div>
+        </div>
+    </div>
+</div>
 </div>
 {% endblock %}
 
@@ -154,6 +225,223 @@
 
     load();
     setInterval(load, 60000);
+})();
+
+(function () {
+    'use strict';
+    // Repeater radar. Names and places come from the mesh: built with textContent, never as HTML.
+    const state = { days: '1', data: null, loaded: false, filter: '', limit: 50 };
+    const PAGE = 50;   // rows at a time: a long table is heavy over RDP or a slow link
+
+    // The bot leaves empty fields out of its answer; fill them in so the page never shows "undefined".
+    function normalize(r) {
+        ['place', 'lat', 'lon', 'snr', 'hops', 'direct_snr', 'direct_best', 'direct_seen', 'direct_count', 'first_heard']
+            .forEach(function (f) { if (r[f] === undefined) r[f] = (f === 'place' ? '' : null); });
+        ['adverts', 'bots', 'same_prefix'].forEach(function (f) { if (r[f] === undefined) r[f] = 0; });
+        if (r.bot_list === undefined) r.bot_list = [];
+        if (r.new === undefined) r.new = false;
+        return r;
+    }
+
+    function el(tag, text, cls) {
+        const n = document.createElement(tag);
+        if (text !== undefined && text !== null) n.textContent = String(text);
+        if (cls) n.className = cls;
+        return n;
+    }
+
+    function ago(ts, now) {
+        if (!ts) return '-';
+        const s = Math.max(0, (now || Math.floor(Date.now() / 1000)) - ts);
+        if (s < 90) return 'just now';
+        if (s < 5400) return Math.round(s / 60) + ' min ago';
+        if (s < 129600) return Math.round(s / 3600) + ' h ago';
+        return Math.round(s / 86400) + ' days ago';
+    }
+
+    function tile(label, value, sub, filter) {
+        const col = el('div', null, 'col-6 col-md-4 col-xl-2');
+        const card = el('div', null, 'card h-100' + (filter ? ' rr-tile' : '') + (filter && state.filter === filter ? ' border-primary' : ''));
+        if (filter) {
+            // a tile with a filter: click shows only those repeaters, click again shows all
+            card.setAttribute('role', 'button');
+            card.tabIndex = 0;
+            card.title = state.filter === filter ? 'Click to show all repeaters' : 'Click to show only these repeaters';
+            const toggle = function () { state.filter = state.filter === filter ? '' : filter; state.limit = PAGE; render(); };
+            card.addEventListener('click', toggle);
+            card.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+        }
+        const body = el('div', null, 'card-body py-2');
+        body.appendChild(el('div', label, 'text-muted small'));
+        body.appendChild(el('div', value, 'fs-4 fw-semibold'));
+        if (sub) body.appendChild(el('div', sub, 'small text-muted'));
+        card.appendChild(body); col.appendChild(card);
+        return col;
+    }
+
+    function render() {
+        const d = state.data;
+        if (!d) return;
+        const t = d.totals || {};
+        const tiles = document.getElementById('rr-tiles');
+        tiles.replaceChildren(
+            tile('Repeaters heard', t.heard || 0, d.days === 1 ? 'last 24 hours' : 'last ' + d.days + ' days', 'all'),
+            tile('Direct', t.direct || 0, 'heard without a hop', 'direct'),
+            tile('New', t.new || 0, 'first heard this week', 'new'),
+            tile('Shared prefix', t.shared_prefix || 0, 'same first byte, both within ' + (t.near_km || 50) + ' km', 'shared'),
+            tile('Farthest direct', t.farthest_km === null || t.farthest_km === undefined ? '-' : t.farthest_km + ' km',
+                 d.has_position ? 'heard directly (neighbours)' : 'bot position unknown'));
+        const q = document.getElementById('rr-search').value.trim().toLowerCase();
+        const directOnly = document.getElementById('rr-direct').checked;
+        const rows = d.repeaters.filter(function (r) {
+            if (directOnly && !r.direct) return false;
+            if (state.filter === 'direct' && !r.direct) return false;
+            if (state.filter === 'new' && !r.new) return false;
+            if (state.filter === 'shared' && !r.same_prefix) return false;
+            return !q || [r.name, r.place, r.key].join(' ').toLowerCase().indexOf(q) !== -1;
+        });
+        const body = document.getElementById('rr-body');
+        body.replaceChildren();
+        const total = rows.length;
+        const shown = rows.slice(0, state.limit);
+        if (!rows.length) {
+            const tr = el('tr'); const td = el('td', 'No repeaters in this period.', 'text-center text-muted py-3');
+            td.colSpan = 11; tr.appendChild(td); body.appendChild(tr);
+        }
+        if (state.filter === 'shared') rows.sort(function (a, b) { return a.prefix < b.prefix ? -1 : (a.prefix > b.prefix ? 1 : 0); });
+        shown.forEach(function (r) {
+            const tr = el('tr', null, 'rr-row');
+            tr.tabIndex = 0;
+            tr.title = 'Click for everything about this repeater';
+            tr.addEventListener('click', function () { details(r); });
+            tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') details(r); });
+            const name = el('td', r.name);
+            if (r.new) name.appendChild(el('span', 'new', 'badge bg-info text-dark ms-2'));
+            tr.appendChild(name);
+            tr.appendChild(el('td', r.key.slice(0, 6), 'font-monospace'));
+            tr.appendChild(el('td', r.place || '-', r.place ? '' : 'text-muted'));
+            tr.appendChild(el('td', r.km === null ? '-' : r.km, 'text-end'));
+            tr.appendChild(el('td', ago(r.last_heard, d.generated_at), 'text-end text-muted'));
+            tr.appendChild(el('td', r.snr === null || r.snr === undefined ? '-' : r.snr, 'text-end'));
+            tr.appendChild(el('td', r.hops === null || r.hops === undefined ? '-' : r.hops, 'text-end'));
+            tr.appendChild(el('td', r.adverts || 0, 'text-end'));
+            const direct = el('td', null, 'text-end');
+            direct.appendChild(r.direct ? el('span', r.direct_snr === null || r.direct_snr === undefined ? 'yes' : r.direct_snr + ' dB', 'badge bg-success')
+                                        : el('span', '-', 'text-muted'));
+            tr.appendChild(direct);
+            tr.appendChild(el('td', r.bots || '-', 'text-end'));
+            const same = el('td', r.same_prefix || '-', 'text-end');
+            if (r.same_prefix) same.appendChild(el('span', '!', 'badge bg-warning text-dark ms-1'));
+            tr.appendChild(same);
+            body.appendChild(tr);
+        });
+        if (total > shown.length) {
+            const tr = el('tr'); const td = el('td', null, 'text-center py-2'); td.colSpan = 11;
+            const more = el('button', 'Show more (' + (total - shown.length) + ' left)', 'btn btn-sm btn-outline-primary');
+            more.type = 'button';
+            more.addEventListener('click', function (e) { e.stopPropagation(); state.limit += PAGE; render(); });
+            td.appendChild(more); tr.appendChild(td); body.appendChild(tr);
+        }
+        const labels = { direct: 'direct only', new: 'new only', shared: 'shared prefix only, grouped by prefix' };
+        document.getElementById('rr-updated').textContent = 'Updated ' + new Date(d.generated_at * 1000).toLocaleTimeString() +
+            ' · ' + Math.min(total, shown.length) + ' of ' + total + ' shown' + (labels[state.filter] ? ' (' + labels[state.filter] + ' - click the tile again for all)' : '');
+    }
+
+    function when(ts) {
+        return ts ? new Date(ts * 1000).toLocaleString() + ' (' + ago(ts, state.data.generated_at) + ')' : '-';
+    }
+
+    // Everything the bot knows about one repeater, in a window; the repeaters that share its prefix are clickable.
+    function details(r) {
+        const body = document.getElementById('rr-modal-body');
+        body.replaceChildren();
+        document.getElementById('rr-modal-title').textContent = r.name;
+        const dl = el('dl', null, 'row mb-3');
+        function item(label, value, mono) {
+            dl.appendChild(el('dt', label, 'col-sm-4 text-muted fw-normal'));
+            const dd = el('dd', null, 'col-sm-8' + (mono ? ' font-monospace' : ''));
+            if (value instanceof Node) dd.appendChild(value); else dd.textContent = (value === null || value === undefined || value === '') ? '-' : String(value);
+            dl.appendChild(dd);
+        }
+        item('Key (start)', r.key, true);
+        item('Prefix byte', r.prefix, true);
+        item('Place', r.place);
+        if (r.lat !== null && r.lon !== null) {
+            const a = el('a', r.lat.toFixed(4) + ', ' + r.lon.toFixed(4) + ' (open map)');
+            a.href = 'https://www.openstreetmap.org/?mlat=' + encodeURIComponent(r.lat) + '&mlon=' + encodeURIComponent(r.lon) + '#map=13/' + r.lat + '/' + r.lon;
+            a.target = '_blank'; a.rel = 'noopener';
+            item('Position', a);
+        } else {
+            item('Position', 'not advertised');
+        }
+        item('Distance to the bot', r.km === null ? '-' : r.km + ' km');
+        item('First heard', when(r.first_heard));
+        item('Last heard', when(r.last_heard));
+        item('Last advert', (r.snr === null ? '?' : r.snr + ' dB SNR') + ', ' + (r.hops === null ? '?' : r.hops + ' hops'));
+        item('Adverts in this period', r.adverts || 0);
+        item('Heard directly by this bot', r.direct
+            ? 'yes: last ' + (r.direct_snr === null ? '?' : r.direct_snr + ' dB') + ', best ' + (r.direct_best === null ? '?' : r.direct_best + ' dB') +
+              (r.direct_count ? ', ' + r.direct_count + ' times' : '') + (r.direct_seen ? ', ' + ago(r.direct_seen, state.data.generated_at) : '')
+            : 'no (or no neighbour discovery yet)');
+        item('Heard directly by other bots', r.bot_list && r.bot_list.length
+            ? r.bot_list.map(function (b) { return b.bot + (b.snr === null || b.snr === undefined ? '' : ' (' + b.snr + ' dB)'); }).join(', ')
+            : 'none known');
+        body.appendChild(dl);
+        const km = state.data.totals.near_km || 50;
+        const same = state.data.repeaters.filter(function (x) { return x.prefix === r.prefix && x.key !== r.key; });
+        const nearSame = same.filter(function (x) { return x.near; });
+        body.appendChild(el('h3', 'Same prefix byte ' + r.prefix + ': ' + same.length + ' other repeater(s) heard, ' + nearSame.length + ' within ' + km + ' km', 'h6'));
+        if (!same.length) {
+            body.appendChild(el('p', 'None in this period: a path hop "' + r.prefix + '" can only be this repeater.', 'small text-muted'));
+        } else {
+            body.appendChild(el('p', 'A path with 1-byte hops cannot tell these apart; path and pad then guess (marked with ?). ' +
+                'That really matters only when both are within ' + km + ' km of the bot (or heard within 2 hops without a position): ' +
+                'those count under "Same prefix" and are marked here.', 'small text-muted'));
+            const ul = el('ul', null, 'list-group list-group-flush');
+            same.forEach(function (x) {
+                const li = el('li', null, 'list-group-item list-group-item-action px-0');
+                li.setAttribute('role', 'button'); li.tabIndex = 0;
+                li.appendChild(el('span', x.name, 'fw-semibold me-2'));
+                if (x.near && r.near) li.appendChild(el('span', 'nearby', 'badge bg-warning text-dark me-2'));
+                li.appendChild(el('span', x.key.slice(0, 6) + ' · ' + (x.place || '?') + (x.km === null ? '' : ' · ' + x.km + ' km') +
+                                  ' · ' + (x.hops === null ? '?' : x.hops + ' hops') + ' · ' + ago(x.last_heard, state.data.generated_at), 'small text-muted'));
+                li.addEventListener('click', function () { details(x); });
+                li.addEventListener('keydown', function (e) { if (e.key === 'Enter') details(x); });
+                ul.appendChild(li);
+            });
+            body.appendChild(ul);
+        }
+        if (window.bootstrap) bootstrap.Modal.getOrCreateInstance(document.getElementById('rr-modal')).show();
+    }
+
+    function load() {
+        fetch('/api/radar/repeaters?days=' + encodeURIComponent(state.days), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (resp) { return resp.json().then(function (b) { if (!resp.ok) throw new Error(b.error || ('HTTP ' + resp.status)); return b; }); })
+            .then(function (d) { d.repeaters.forEach(normalize); state.data = d; state.loaded = true; document.getElementById('rr-message').replaceChildren(); render(); })
+            .catch(function (e) {
+                document.getElementById('rr-message').replaceChildren(el('div', 'Could not load the repeaters: ' + e.message, 'alert alert-danger py-2'));
+            });
+    }
+
+    document.querySelectorAll('#rr-period button').forEach(function (b) {
+        b.addEventListener('click', function () {
+            document.querySelectorAll('#rr-period button').forEach(function (x) { x.classList.toggle('active', x === b); });
+            state.days = b.getAttribute('data-days');
+            load();
+        });
+    });
+    document.getElementById('rr-search').addEventListener('input', function () { state.limit = PAGE; render(); });
+    document.getElementById('rr-direct').addEventListener('change', function () { state.limit = PAGE; render(); });
+    const btn = document.getElementById('tab-repeaters-btn');
+    btn.addEventListener('shown.bs.tab', function () {
+        try { history.replaceState(null, '', '#repeaters'); } catch (e) { /* ignore */ }
+        if (!state.loaded) load();
+    });
+    document.getElementById('tab-channels-btn').addEventListener('shown.bs.tab', function () {
+        try { history.replaceState(null, '', '#channels'); } catch (e) { /* ignore */ }
+    });
+    if (location.hash === '#repeaters' && window.bootstrap) new bootstrap.Tab(btn).show();
+    setInterval(function () { if (state.loaded) load(); }, 300000);
 })();
 </script>
 {% endblock %}

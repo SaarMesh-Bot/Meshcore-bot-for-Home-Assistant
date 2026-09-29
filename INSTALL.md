@@ -105,6 +105,7 @@ A new installation starts quiet: everything that needs your own setup is off. Wo
 | **Notifications** | Messages about the bot itself (started, radio lost, ...) to a room, channel or DM. |
 | **Webhook** | Lets Home Assistant post messages on the mesh. **Set a secret token first.** |
 | **BotNetwork** | Shares what your radio hears with other bots of this add-on, over the internet (no airtime). Off by default: switch it on if you want to take part (the README says what is shared). |
+| **AutoChannels** | **On by default**: makes the hashtag channels the bot uses (#test, #games, #f1, ...) on the radio when they are missing. |
 | **InstallCount** | **On by default**: once a day an anonymous message (random number, version, date) so the maintainer knows how many installations run. Switch it off to send nothing (see the README). |
 | **GamesChannel** | Keeps the games (quiz, hangman, stem, ...) in one channel, for example `#games`. |
 | **NightMode** | Keeps scheduled messages and feeds quiet at night (default 23:00-07:00). Answers to people always go out. |

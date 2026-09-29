@@ -107,6 +107,7 @@ Een nieuwe installatie begint rustig: alles wat een eigen opstelling vraagt, sta
 | **Notifications** | Berichten over de bot zelf (gestart, radio weg, ...) naar een room, kanaal of DM. |
 | **Webhook** | Laat Home Assistant berichten op de mesh zetten. **Zet eerst een geheime token.** |
 | **BotNetwork** | Deelt wat je radio hoort met andere bots van deze add-on, via internet (geen zendtijd). Staat standaard uit: zet hem aan als je mee wilt doen (in de README staat wat er gedeeld wordt). |
+| **AutoChannels** | **Staat standaard aan**: zet de hashtag-kanalen die de bot gebruikt (#test, #games, #f1, ...) op de radio als ze ontbreken. |
 | **InstallCount** | **Staat standaard aan**: één keer per dag een anoniem bericht (willekeurig nummer, versie, datum), zodat de maker weet hoeveel installaties er draaien. Zet hem uit en er gaat niets (zie de README). |
 | **GamesChannel** | Houdt de spellen (quiz, hangman, stem, ...) in één kanaal, bijvoorbeeld `#games`. |
 | **NightMode** | Houdt geplande berichten en feeds 's nachts stil (standaard 23:00-07:00). Antwoorden aan mensen gaan altijd door. |

@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.2.0
+
+- Dashboard: the **Radar** page has two tabs. *Channel radar* is the old page; the new **Repeater radar** lists every
+  repeater the bot heard in 24 hours, 7 or 30 days: place and distance, last heard, SNR, hops, adverts, whether the
+  bot's radio hears it directly, how many bots of the bot network hear it, and repeaters that share a key byte. Click a tile to show only
+  those repeaters (direct, new, shared prefix); click a repeater for everything the bot knows about it (position with a
+  map link, first and last heard, best SNR, which bots hear it, and the repeaters that share its prefix).
+  "Same prefix" only counts repeaters that are both within 50 km of the bot (a shared byte with a repeater far away
+  does not confuse paths). The table shows 50 rows at a time ("Show more"), light enough for RDP or a slow link.
+- New card **AutoChannels** (on): hashtag channels the bot is set to use (#test, #games, #f1, ...) that are missing on
+  the radio are made there automatically. Never private channels, never removed or overwritten.
+- New game: **Kwekerij** (`farm`), played by DM. Sow ten crops (tomato to cocoa, each with its own price, growing
+  time and yield), harvest, process them in the workshop (tomato soup, pasta, jam, jack-o'-lantern, joint, wine, oil,
+  apple pie, beer, espresso, chocolate), sell, save in the bank (1% interest a day), buy upgrades, give coins, find
+  seeds, and level up from 1 to 10; now and then a bumper crop, a storm or a pickpocket. `farm top` also in `#games`,
+  standings on the dashboard's Games page. The card *farm* can switch crops off (for example weed).
+
+**Fixes from GitHub issue #1 (second report)**
+- config.ini is now visible: at every start the add-on writes `config-current.ini` (a copy to read and compare) and
+  `README.txt` in its own folder (`/addon_configs/..._meshcore_bot/` in the File Editor), and reads your own lines from
+  `override.ini` there (they win over everything else).
+- Plugins page: the on/off switch of a card saves at once (before, the change was lost without pressing Save). When a
+  change only works after a restart (a service switched on or off), a banner at the top says so, with a **Restart now**
+  button that restarts the add-on; the page reloads itself when the bot is back. The banner stays in sight while
+  scrolling.
+- airplanes: switched on on its card, it stays on after a restart (the add-on switched it off again at every start).
+  Without the Latitude/Longitude options, airplanes (and `airplanes here`) use the position the radio advertises.
+- path: long replies are numbered (1/2, 2/2) so the order is clear when the mesh mixes them up, and the path card has
+  *Max hops shown* (for example 7; the rest is shown as "+N more hops").
+- Documentation: the service DARC MoWaS makes its own channels on the radio (`#mowas`, `#mowas-en`) when it starts.
+- Command list: `airplanes` added, `path` explains the numbered parts.
+- Channel radar: a channel that is newly recognised (a name added on its card, a channel added on the radio) now also
+  counts its messages from the first day in the packet log, without counting anything twice.
+
 ## 1.1.1
 
 - More `f1`: `f1 weekend` (all session times), `f1 sprint`, `f1 coureur VER` (a driver's place, points, wins, number),

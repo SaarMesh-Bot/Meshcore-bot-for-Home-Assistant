@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""
+'farm' command for the MeshCore Bot: the Kwekerij game (see modules/farm_game.py). Played by direct message, because a
+DM carries the sender's key (nobody can play in your name); 'farm top' also works in a channel.
+
+  farm                     your farm: level, coins, what is ripe or when
+  farm start               open your farm (4 fields, 200 coins)
+  farm winkel              the seeds you can buy at your level
+  farm zaai tomaat 2       sow (own seeds first, then bought)        farm oogst      harvest everything that is ripe
+  farm schuur              what is in your barn                      farm verkoop [x] sell (everything, or one item)
+  farm verwerk jam 2       process in the workshop (soup, jam, wine, ...)
+  farm bank / stort 100 / haal 100    the bank: 1% interest a day, safe from the pickpocket
+  farm upgrade [veld|kas|grond|werkplaats]   farm geef <name> 100   farm top
+"""
+
+from typing import Any
+
+from ..farm_game import FarmGame
+from ..mesh_community import is_bot_name, without_bots
+from ..models import MeshMessage
+from .base_command import BaseCommand
+
+START = {"start", "begin", "beginnen", "starten", "commencer"}
+SOW = {"zaai", "zaaien", "plant", "planten", "sow", "säen", "saen", "säe", "sème", "seme", "semer", "planter"}
+HARVEST = {"oogst", "oogsten", "harvest", "ernte", "ernten", "récolte", "recolte", "récolter", "recolter"}
+BARN = {"schuur", "voorraad", "barn", "inventory", "scheune", "lager", "grange", "stock"}
+SELL = {"verkoop", "verkopen", "sell", "verkaufe", "verkaufen", "vendre", "vends"}
+PROCESS = {"verwerk", "verwerken", "maak", "make", "process", "mach", "koche", "fabrique", "préparer", "preparer"}
+SHOP = {"winkel", "shop", "laden", "boutique", "zaad", "seeds"}
+BANK = {"bank", "banque"}
+DEPOSIT = {"stort", "storten", "deposit", "einzahlen", "déposer", "deposer"}
+WITHDRAW = {"haal", "opnemen", "withdraw", "abheben", "retirer"}
+UPGRADE = {"upgrade", "upgrades", "verbeter", "ausbau", "amélioration", "amelioration"}
+GIVE = {"geef", "give", "gib", "donne", "donner"}
+TOP = {"top", "ranking", "rangliste", "classement"}
+
+
+class FarmCommand(BaseCommand):
+    """Kwekerij: grow, harvest, process and sell crops; levels 1-10."""
+
+    name = "farm"
+    keywords = ["farm"]
+    description = "Kwekerij: a farming game by DM - grow crops, harvest, process them (soup, jam, wine, ...), sell, bank, level 1-10"
+    category = "games"
+
+    short_description = "Farming game (by DM)"
+    usage = "farm [start|winkel|zaai <gewas> [n]|oogst|schuur|verkoop [x]|verwerk <product> [n]|bank|stort|haal|upgrade|geef|top]"
+    examples = ["farm start", "farm zaai tomaat 4", "farm oogst", "farm verwerk soep", "farm top"]
+
+    settings_schema = [
+        {"key": "crops_off", "label": "Crops that are off", "type": "list", "default": [],
+         "help": ("Crops players cannot buy on this bot (and their products), for example wiet. Choose from: tomaat, "
+                  "aardbei, pompoen, wiet, druif, zonnebloem, appel, hop, koffie, cacao. Fields already sown keep growing.")},
+    ]
+
+    def __init__(self, bot: Any):
+        super().__init__(bot)
+        self.farm_enabled = self.get_config_value("Farm_Command", "enabled", fallback=True, value_type="bool")
+        raw = self.get_config_value("Farm_Command", "crops_off", fallback="") or ""
+        self.crops_off = {c.strip().lower() for c in str(raw).strip("[]").replace("'", "").split(",") if c.strip()}
+        self._game = None
+
+    @property
+    def game(self) -> FarmGame:
+        if self._game is None:
+            self._game = FarmGame(self.bot.db_manager, self.crops_off)
+        return self._game
+
+    def can_execute(self, message: MeshMessage, skip_channel_check: bool = False) -> bool:
+        if not self.farm_enabled:
+            return False
+        return super().can_execute(message, skip_channel_check=skip_channel_check)
+
+    def get_help_text(self) -> str:
+        return self.translate("commands.farm.help")
+
+    def _arguments(self, message: MeshMessage) -> list:
+        tokens = (message.content or "").split()
+        for i, token in enumerate(tokens):
+            if token.lstrip("!/").lower() in self.keywords:
+                return tokens[i + 1:]
+        return []
+
+    async def _reply(self, message: MeshMessage, texts: list) -> bool:
+        texts = [t for t in texts if t]
+        if len(texts) == 1:
+            return await self.send_response(message, texts[0])
+        return await self.send_response_chunked(message, texts[:3])
+
+    async def execute(self, message: MeshMessage) -> bool:
+        try:
+            args = self._arguments(message)
+            sub = args[0].lower() if args else ""
+            rest = args[1:]
+            if sub in TOP:
+                return await self._top(message)
+            if not message.is_dm or not message.sender_pubkey:
+                return await self.send_response(message, self.translate("commands.farm.dm_only"))
+            name = (message.sender_id or "").strip()
+            if is_bot_name(self.bot, name):
+                return await self.send_response(message, self.translate("commands.games.no_bots", name=name))
+            key, t, g = message.sender_pubkey.lower(), self.translate, self.game
+
+            def count(words):
+                nums = [w for w in words if w.isdigit()]
+                return int(nums[-1]) if nums else None
+
+            def word(words):
+                return next((w for w in words if not w.isdigit()), "")
+
+            if sub == "":
+                out = g.status(key, name, t)
+            elif sub in START:
+                out = g.start(key, name, t)
+            elif sub in SHOP:
+                out = g.shop(key, t)
+            elif sub in SOW:
+                out = g.sow(key, name, word(rest), count(rest), t) if word(rest) else [t("commands.farm.sow_usage")]
+            elif sub in HARVEST:
+                out = g.harvest(key, name, t)
+            elif sub in BARN:
+                out = g.barn(key, t)
+            elif sub in SELL:
+                out = g.sell(key, name, word(rest), count(rest), t)
+            elif sub in PROCESS:
+                out = g.process(key, name, word(rest), count(rest), t)
+            elif sub in BANK:
+                action = "in" if rest and rest[0].lower() in DEPOSIT else ("out" if rest and rest[0].lower() in WITHDRAW else "")
+                out = g.bank(key, name, action, rest[1] if len(rest) > 1 else "", t)
+            elif sub in DEPOSIT or sub in WITHDRAW:
+                out = g.bank(key, name, "in" if sub in DEPOSIT else "out", rest[0] if rest else "", t)
+            elif sub in UPGRADE:
+                out = g.upgrade(key, name, word(rest), t)
+            elif sub in GIVE:
+                if len(rest) < 2 or not rest[-1].isdigit():
+                    out = [t("commands.farm.give_usage")]
+                else:
+                    out = g.give(key, name, " ".join(rest[:-1]), rest[-1], t)
+            else:
+                out = [t("commands.farm.usage")]
+            return await self._reply(message, out)
+        except Exception as e:
+            self.logger.error(f"Error executing farm command: {e}", exc_info=True)
+            return await self.send_response(message, self.translate("commands.farm.error"))
+
+    async def _top(self, message: MeshMessage) -> bool:
+        rows = without_bots(self.bot, self.game.top(15), 5)
+        if not rows:
+            return await self.send_response(message, self.translate("commands.farm.top_empty"))
+        return await self.send_response(message, self.translate("commands.farm.top_head") + " | ".join(
+            f"{i} {n} L{lvl} {worth}" for i, (n, lvl, worth) in enumerate(rows, 1)))

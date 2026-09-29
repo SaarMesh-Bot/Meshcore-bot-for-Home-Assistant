@@ -141,6 +141,15 @@ def _f1(bot: Any, conn: Any) -> dict:
             "open": open_round}
 
 
+def _farm(bot: Any, conn: Any) -> list:
+    """Kwekerij (farm game): the richest farmers (coins + bank), with their level. Empty until someone plays."""
+    if not conn.execute("SELECT 1 FROM sqlite_master WHERE name='farm_players'").fetchone():
+        return []
+    from .farm_game import level_of
+    rows = conn.execute("SELECT name, xp, coins + bank FROM farm_players ORDER BY coins + bank DESC, xp DESC LIMIT 60").fetchall()
+    return [{"name": n or "?", "level": level_of(xp), "worth": w} for n, xp, w in without_bots(bot, rows, TOP)]
+
+
 def standings(db_manager: Any, config: Any, logger: Optional[logging.Logger] = None) -> dict:
     """Everything the Games page shows, bots left out."""
     bot = _bot(db_manager, config, logger)
@@ -149,6 +158,7 @@ def standings(db_manager: Any, config: Any, logger: Optional[logging.Logger] = N
     with db_manager.connection() as conn:
         karma, checkin = _karma(bot, conn), _checkin(bot, conn)
         voorspel, f1 = _voorspel(bot, conn), _f1(bot, conn)
+        farm = _farm(bot, conn)
         last_day = conn.execute("SELECT MAX(day) FROM community_activity").fetchone()[0]
     return {
         "generated_at": int(time.time()),
@@ -160,4 +170,5 @@ def standings(db_manager: Any, config: Any, logger: Optional[logging.Logger] = N
         "checkin": checkin,
         "voorspel": voorspel,
         "f1": f1,
+        "farm": farm,
     }

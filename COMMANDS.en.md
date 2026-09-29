@@ -17,6 +17,7 @@ Signs: **DM** = direct message only · **#f1** = in the #f1 channel or by DM · 
 - [Basics and help](#basics-and-help)
 - [Mesh and radio](#mesh-and-radio)
 - [Games and community](#games-and-community)
+- [Farm](#farm)
 - [Formula 1](#formula-1)
 - [Useful (Netherlands and Belgium)](#useful-netherlands-and-belgium)
 - [Weather, sun and space](#weather-sun-and-space)
@@ -44,7 +45,7 @@ Signs: **DM** = direct message only · **#f1** = in the #f1 channel or by DM · 
 |---|---|---|
 | `pad` | `pad` | The route of your message in one line: hops, km and repeaters (? = guess). |
 | `sig`<br><sub>also: signaal</sub> | `sig` | SNR, RSSI and hops of your message with a verdict (good/fair/weak). Handy when tuning an antenna. |
-| `path`<br><sub>also: decode, route</sub> | `path  /  path 4a,c2,8c` | Long version of the route: every repeater on its own line. |
+| `path`<br><sub>also: decode, route</sub> | `path  /  path 4a,c2,8c` | Long version of the route: every repeater on its own line. Long replies get (1/2), (2/2); *Max hops shown* on the *path* card makes it shorter. |
 | `trace`<br><sub>also: tracer</sub> | `trace [path]` | Trace along a path (there and back), with the signal per step. |
 | `multitest`<br><sub>also: mt</sub> | `multitest` | Listens for 6 seconds and shows every route your message came in by. |
 | `prefix`<br><sub>also: lookup</sub> | `prefix 4a` | Which repeaters have a given prefix, with their location. 🌐 |
@@ -75,6 +76,48 @@ Signs: **DM** = direct message only · **#f1** = in the #f1 channel or by DM · 
 | `dice` | `dice 2d6` | Roll dice. |
 | `roll` | `roll 100` | Random number from 1 up to the number. |
 | `magic8` | `magic8 Will it stay dry?` | The Magic 8-Ball answers a yes/no question. |
+
+## Farm
+
+A farming game you play **by DM** with the bot (so the bot knows it is you). Sow crops, harvest them, process them in
+your workshop into something worth more, sell, save in the bank and grow from level 1 to 10.
+
+| Command | Example | What it does |
+|---|---|---|
+| `farm` | `farm` | Your status: level, coins, bank, what is ripe and when the rest is. **DM** |
+| `farm start` | `farm start` | Start your farm: 4 fields and 200 coins. **DM** |
+| `farm shop`<br><sub>also: winkel</sub> | `farm shop` | The seeds you can buy at your level, with price and growing time. **DM** |
+| `farm sow`<br><sub>also: plant, zaai</sub> | `farm sow tomato 4` | Sow on your empty fields. Your own seeds go first, you buy the rest. **DM** |
+| `farm harvest`<br><sub>also: oogst</sub> | `farm harvest` | Harvest everything that is ripe; it goes to your barn. **DM** |
+| `farm barn` | `farm barn` | What is in your barn: crops, products and seeds. **DM** |
+| `farm sell` | `farm sell`  /  `farm sell jam` | Sell everything, or one kind. **DM** |
+| `farm make`<br><sub>also: verwerk</sub> | `farm make soup 2` | Make a product from your crops in the workshop (see the table). **DM** |
+| `farm bank` | `farm bank`  /  `farm deposit 500`  /  `farm withdraw all` | Your savings: 1% interest a day (max 500 a day), safe from the pickpocket. **DM** |
+| `farm upgrade` | `farm upgrade`  /  `farm upgrade greenhouse` | An extra field, a better greenhouse (faster), better soil (bigger crops) or a bigger workshop. **DM** |
+| `farm give` | `farm give Alex 100` | Give coins to another farmer. **DM** |
+| `farm top` | `farm top` | The richest farmers (coins + bank). Also works in `#games`. |
+
+**Crops and products**
+
+| Level | Crop | Seed | Grows | Yield per harvest | Harvests | Made into |
+|---|---|---|---|---|---|---|
+| 1 | tomato | 20 | 1 h | 2–4 × 3 | 10× | tomato soup (4 tomato, 1 h), pasta (8 tomato, 3 h) |
+| 2 | strawberry | 60 | 2 h | 3–5 × 6 | 8× | jam (5 strawberry, 2 h) |
+| 3 | pumpkin | 150 | 4 h | 1–2 × 40 | 6× | jack-o'-lantern (1 pumpkin, 1 h) |
+| 4 | weed | 300 | 6 h | 2–3 × 50 | 5× | joint (2 weed, 1 h) |
+| 5 | grape | 500 | 8 h | 4–6 × 45 | 8× | wine (6 grape, 12 h) |
+| 6 | sunflower | 800 | 10 h | 3–5 × 95 | 6× | oil (3 sunflower, 4 h) |
+| 7 | apple | 1200 | 12 h | 5–7 × 100 | 10× | apple pie (4 apple, 3 h) |
+| 8 | hops | 2000 | 16 h | 4–6 × 210 | 8× | beer (3 hops, 8 h) |
+| 9 | coffee | 3500 | 20 h | 3–5 × 430 | 8× | espresso (2 coffee, 2 h) |
+| 10 | cocoa | 6000 | 24 h | 3–5 × 700 | 8× | chocolate (2 cocoa, 6 h) |
+
+- Yield: number of pieces × selling price per piece. After the last harvest the plant is used up and the field is empty.
+- Every harvested piece has a 1% chance of a **seed**: a free seed for next time.
+- Your level rises with XP from harvesting and processing; every level brings a new crop.
+- Sometimes something happens at harvest time: a **bumper crop** (double), a **storm** (one field lost), a **pickpocket**
+  (10% of your coins, not of the bank) or an **inspection** when you harvest weed.
+- A bot owner can switch crops off (card *farm*), for example weed.
 
 ## Formula 1
 
@@ -145,6 +188,7 @@ session starts, for example "The qualifying starts in 2:15 h".
 | `hfcond` | `hfcond` | HF band conditions for radio amateurs. 🌐 |
 | `solarforecast`<br><sub>also: sf</sub> | `sf Heerlen 4000` | Expected yield of solar panels. 🌐 |
 | `satpass` | `satpass iss` | When a satellite passes over. 🌐 |
+| `airplanes`<br><sub>also: planes, aircraft</sub> | `airplanes`  /  `airplanes here`  /  `airplanes 50.9,5.9` | Aircraft above the bot (or a place), with altitude and type. Off by default (card *airplanes*). 🌐 |
 | `alert`<br><sub>also: incident</sub> | `alert <place>` | Active emergency incidents (PulsePoint, mainly US). 🌐 |
 
 ## Fun

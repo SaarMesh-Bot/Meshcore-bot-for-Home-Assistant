@@ -114,6 +114,19 @@
             </div>
         </div>
     </div>
+
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card h-100">
+            <div class="card-header"><i class="fas fa-seedling"></i> Kwekerij (farm)</div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead><tr><th scope="col">#</th><th scope="col">Name</th><th scope="col" class="text-end">Level</th><th scope="col" class="text-end">Coins</th></tr></thead>
+                    <tbody id="farm-body"></tbody>
+                </table>
+                <div class="small text-muted px-2 py-2">Coins = wallet + bank. Played by DM: <code>farm start</code>.</div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -273,6 +286,7 @@
         renderXp();
         renderDx();
         fill('karma-body', data.karma, 3, function (r) { return [el('td', r.name), el('td', r.points, 'text-end')]; });
+        fill('farm-body', data.farm || [], 4, function (r) { return [el('td', r.name), el('td', r.level, 'text-end'), el('td', r.worth, 'text-end')]; });
         fill('checkin-body', data.checkin, 4, function (r) { return [el('td', r.name), el('td', r.streak, 'text-end'), el('td', r.best, 'text-end text-muted')]; });
         renderVoorspel();
         document.getElementById('f1-season').textContent = data.f1.season ? '(' + data.f1.season + ')' : '';

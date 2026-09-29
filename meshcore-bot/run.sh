@@ -14,7 +14,9 @@ python3 /opt/data_transfer.py /data /share/meshcore-bot || true
 
 # All option handling lives in generate_config.py (tested separately, copes
 # with lists and nested groups, and falls back to defaults for anything missing).
-python3 /opt/generate_config.py /data/options.json /data/config.ini /data
+# /config is the add-on's own folder (/addon_configs/..._meshcore_bot in the File Editor): a copy of config.ini to
+# look at (config-current.ini) and override.ini for your own lines.
+python3 /opt/generate_config.py /data/options.json /data/config.ini /data /config
 
 BOT_NAME=$(jq -r '.bot.name // "MeshCoreBot"' /data/options.json)
 CONNECTION_TYPE=$(jq -r '.connection.type // "tcp"' /data/options.json)

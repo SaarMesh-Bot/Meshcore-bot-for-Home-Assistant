@@ -488,6 +488,26 @@ Commands for everyone on the mesh. Each has a card on the Plugins page with an o
   the menu while the card is on) shows every bot with its numbers (this bot in bold), the network totals, charts of noise
   floor, receive airtime, messages and people over 24 hours, 7 or 30 days (every hourly status is kept 30 days), which
   repeaters each bot hears directly, and the shared channel and bot names.
+- **Kwekerij** (command `farm`, card **farm**): a farming game played by DM (the key proves who plays). Ten crops
+  with their own price, growing time (1 to 24 hours) and yield, processing in the workshop, a bank with 1% interest a
+  day, upgrades, random events and levels 1 to 10. On the card, *Crops that are off* removes crops (and their products)
+  from the shop, for example `wiet`; fields already sown keep growing. `farm top` works in a channel too (with the
+  GamesChannel card on, only in the games channel). The full rules are in COMMANDS.md.
+- **Radar page:** two tabs. *Channel radar* shows which hashtag channels are in use around the bot. **Repeater radar**
+  lists every repeater the bot heard in the last 24 hours, 7 or 30 days, from its own records (nothing is sent): place and
+  distance to the bot, last heard, SNR and hops of its last advert, adverts in the period, *Direct* (the bot's radio
+  hears it without a hop, from neighbour discovery), *Bots* (bots of the bot network that hear it directly) and *Same
+  prefix* (other repeaters whose key starts with the same byte, which a 1-byte path cannot tell apart). The distance
+  uses the bot's Latitude/Longitude, or else the position its radio advertises.
+- **AutoChannels** (card **AutoChannels**, on by default): hashtag channels the bot is set to use but that are missing
+  on the radio are made there, in the first free slot: the hashtag names in *Bot > Channels to listen on*, the games
+  channel (GamesChannel card) and the F1 channel (F1 card). Checked 2 minutes after the start and then every hour.
+  Private channels (without #) are never made (they need their own key), nothing is ever removed or overwritten, and
+  when the radio does not answer about a slot nothing is made (the next check tries again).
+- **Services that make channels on the radio:** the upstream service **DARC MoWaS Service** (German MoWaS warnings, off
+  by default) creates the hashtag channels it posts to (`#mowas` and `#mowas-en` unless set otherwise on its card) on
+  the first free channel slots of the radio when it starts. Switching the card off again does not remove them:
+  delete them in the MeshCore app if you do not want them.
 - **Install count** (card **InstallCount**, **on by default**): once a day the bot sends one retained MQTT message to
   the network's server (`mqtt.vipje.nl`) under `meshcore-bot-ha/count/v1/<random id>`: `{"v": <add-on version>, "d":
   <date>}`. The id is a random number made at the first start and kept in the bot's database; it does not come from the
@@ -535,6 +555,11 @@ Inside the add-on, in its own data folder (`/data/config.ini` in the container),
 - Everything else is on the dashboard's **Plugins** page: one card per command and service. Those settings are kept across
   restarts and updates (a timestamped backup is made at every save).
 - Anything that has no field: **Extra config lines** above (`Section.key = value`).
+- **To look at it or change it yourself:** the add-on's own folder, which the File Editor shows as
+  `/addon_configs/<something>_meshcore_bot/`. At every start the add-on writes `config-current.ini` there: a copy of the
+  config it uses, to read and compare (changes in the copy are not used). Your own lines go in **`override.ini`** in the
+  same folder, in config.ini format (`[Section]` and `key = value`); they are read at every start and win over
+  everything else. Restart the add-on after a change. `README.txt` there says the same.
 - To copy the file (and the database) out, or to move the bot to another Home Assistant: see *Moving the bot* below.
 
 **Translations** are built into the add-on (English, Dutch, German and French for everything this add-on adds). Pick the

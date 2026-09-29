@@ -56,7 +56,7 @@ check(sections(B, MOVED_SECTIONS) == moved_a, "verhuisde secties zijn na de upda
 others = [s for s in A.sections() if s not in MOVED_SECTIONS]
 def _strip(sec): return {k: v for k, v in sec.items() if not (k == "rate_limit_seconds")}
 check({s: _strip(dict(A[s])) for s in others} == {s: _strip(dict(B[s])) for s in others}, "alle andere secties zijn ook identiek (alleen de nieuwe zendgrens-sleutel in [Bot] komt erbij)")
-check(set(B.sections()) - set(A.sections()) == {"HARepeater", "F1", "F1_Command", "Heartbeat", "Localization", "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount"} and set(A.sections()) <= set(B.sections()), "alleen de nieuwe secties HARepeater, F1, F1_Command, Heartbeat, Localization, AutoLanguage, Reminders, Community, ChannelRadar, NightMode, GamesChannel, BotNetwork en InstallCount komen erbij, geen enkele sectie is weg")
+check(set(B.sections()) - set(A.sections()) == {"HARepeater", "F1", "F1_Command", "Heartbeat", "Localization", "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels"} and set(A.sections()) <= set(B.sections()), "alleen de nieuwe secties HARepeater, F1, F1_Command, Heartbeat, Localization, AutoLanguage, Reminders, Community, ChannelRadar, NightMode, GamesChannel, BotNetwork, InstallCount en AutoChannels komen erbij, geen enkele sectie is weg")
 check(B["Reminders"]["enabled"] == "true" and B["Reminders"]["language"] == B["Localization"]["language"] and B["Community"]["enabled"] == "true", "Reminders en Community staan na de update aan (anders werken herinner en dx/xp maar half)")
 check(B["F1"]["enabled"] == "false" and B["F1"]["channel"] == "#f1" and B["F1_Command"]["channels"] == "#f1", "F1 staat na de update UIT; het f1-commando krijgt alleen #f1 als kanaal")
 check("f1" not in B["Channels"]["monitor_channels"].lower(), "#f1 staat NIET bij de kanalen van de bot (zo werken ping, wx en de rest daar niet)")
@@ -185,5 +185,37 @@ c9 = read(d9); c9["InstallCount"]["enabled"] = "false"
 with open(f"{d9}/config.ini", "w") as fh: c9.write(fh)
 run(GEN, NEW, d9)
 check(read(d9)["InstallCount"].get("enabled") == "false", "telling op de kaart uitgezet: blijft uit")
+
+# ---- K. airplanes: off at the start, but switched on on its card it stays on after a restart (GitHub issue #1)
+d10 = tempfile.mkdtemp(); run(GEN, NEW, d10)
+check(read(d10)["Airplanes_Command"].get("enabled") == "false", "airplanes: standaard uit bij een nieuwe installatie")
+c10 = read(d10); c10["Airplanes_Command"]["enabled"] = "true"
+with open(f"{d10}/config.ini", "w") as fh: c10.write(fh)
+run(GEN, NEW, d10)
+check(read(d10)["Airplanes_Command"].get("enabled") == "true", "airplanes op de kaart aangezet: blijft aan na een herstart (was: weer uit)")
+off = copy.deepcopy(NEW); off.setdefault("commands", {})["disable"] = ["airplanes"]
+run(GEN, off, d10)
+check(read(d10)["Airplanes_Command"].get("enabled") == "false", "optie Commands to disable wint nog steeds")
+
+# ---- L. the add-on's own folder: a copy of config.ini, README and override.ini (GitHub issue #1)
+d11 = tempfile.mkdtemp(); u11 = tempfile.mkdtemp()
+with open(f"{d11}/options.json", "w") as f: json.dump(NEW, f)
+def run_user():
+    r = subprocess.run([sys.executable, GEN, f"{d11}/options.json", f"{d11}/config.ini", d11, u11], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+run_user()
+files = sorted(os.listdir(u11))
+check(files == ["README.txt", "config-current.ini", "override.ini"], f"eigen map: kopie, uitleg en override.ini ({files})")
+copy_text = open(f"{u11}/config-current.ini").read()
+check(copy_text.startswith("# COPY of the bot's config.ini") and "[Bot]" in copy_text, "config-current.ini is de config met een waarschuwing erboven")
+check(all(l.startswith("#") or not l.strip() for l in open(f"{u11}/override.ini")), "override.ini begint als alleen uitleg (verandert niets)")
+with open(f"{u11}/override.ini", "a") as fh: fh.write("\n[Path_Command]\nmax_hops_shown = 7\n[Bot]\nbot_latitude = 50.9\n")
+run_user()
+c11 = read(d11)
+check(c11["Path_Command"].get("max_hops_shown") == "7" and c11["Bot"].get("bot_latitude") == "50.9", "override.ini wint bij de start")
+check("max_hops_shown = 7" in open(f"{u11}/config-current.ini").read(), "en staat daarna in de kopie")
+with open(f"{u11}/override.ini", "w") as fh: fh.write("[kapot\nzonder sectie\n")
+r = subprocess.run([sys.executable, GEN, f"{d11}/options.json", f"{d11}/config.ini", d11, u11], capture_output=True, text=True)
+check(r.returncode == 0 and "override.ini not used" in r.stderr, "een kapotte override.ini stopt de start niet")
 
 print(f"\n{len(fails)} fouten"); sys.exit(1 if fails else 0)

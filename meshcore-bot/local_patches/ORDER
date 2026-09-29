@@ -171,3 +171,15 @@ patch_night_mode.py
 
 # test: bytes per hop (1, 2 or 3) in {connection_info} and a new {bytes_per_hop} placeholder (GitHub issue #1).
 patch_test_bytes_per_hop.py
+
+# Plugins page: the on/off switch of a card saves at once (GitHub issue #1).
+patch_plugins_autosave.py
+
+# airplanes: the radio's advertised position when the add-on has no fixed position (GitHub issue #1).
+patch_airplanes_radio_position.py
+
+# path: numbered parts (1/2, 2/2) and "Max hops shown" on its card (GitHub issue #1).
+patch_path_parts.py
+
+# Plugins page: a banner with "Restart now" when a change needs a restart (service on/off); POST /api/addon/restart.
+patch_webviewer_restart.py

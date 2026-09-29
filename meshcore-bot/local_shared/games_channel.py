@@ -23,7 +23,7 @@ import time
 from typing import Any, Optional
 
 SECTION = "GamesChannel"
-DEFAULT_COMMANDS = ["quiz", "hangman", "poll", "peiling", "checkin", "karma", "voorspel"]
+DEFAULT_COMMANDS = ["quiz", "hangman", "poll", "peiling", "checkin", "karma", "voorspel", "farm"]
 POINTER_EVERY_S = 1800
 _last_pointer: dict = {}   # channel -> when the last pointer went out
 
