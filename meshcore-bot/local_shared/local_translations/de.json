@@ -1079,8 +1079,8 @@
       "error": "dm fehlgeschlagen: {error}"
     },
     "farm": {
-      "help": "farm = Farmspiel per DM: start, laden, säen tomate 2, ernte, scheune, verkaufe, mach suppe, bank, einzahlen, abheben, upgrade, gib, top",
-      "usage": "Farm: farm, start, laden, säen <Pflanze> [n], ernte, scheune, verkaufe [x], mach <Produkt>, bank, upgrade, gib, top",
+      "help": "farm = Farmspiel per DM: start, säen tomate 2, ernte, verkaufe, mach suppe, aufgabe, markt, biete, kaufe, bank, top",
+      "usage": "Farm: farm, start, laden, säen, ernte, scheune, verkaufe, mach, aufgabe, markt, biete, kaufe, bank, upgrade, top",
       "dm_only": "Die Farm spielst du per DM (dann weiß ich, dass du es bist). Schick mir: farm start",
       "error": "Auf der Farm ging etwas schief, versuch es gleich noch einmal.",
       "no_farm": "Du hast noch keine Farm. Schick: farm start",
@@ -1175,7 +1175,34 @@
         "werkplaats": "eine größere Werkstatt"
       },
       "left_days": "{d} Tage",
-      "growing_piece": "{n} {crop} {left}"
+      "growing_piece": "{n} {crop} {left}",
+      "quest_done_today": "Deine Aufgabe für heute ist erledigt. Morgen gibt es eine neue.",
+      "quest_completed": " Aufgabe erledigt: +{coins} Münzen, +{xp} XP!",
+      "market_head": "Markt: ",
+      "market_item": "#{id} {qty} {item} zu {price} ({name})",
+      "market_empty": "Der Markt ist leer. Biete etwas an: farm biete jam 3 60",
+      "offer_usage": "Anbieten: farm biete <Pflanze oder Produkt> <Anzahl> <Preis pro Stück>, z. B. farm biete jam 3 60",
+      "offered": "Angeboten: #{id} {qty} {item} zu {price} Münzen, {days} Tage gültig.",
+      "offer_limit": "Du hast schon {n} Angebote. Nimm eins zurück: farm zurück <Nr>",
+      "not_in_barn": "Du hast nur {have} {item} in der Scheune.",
+      "buy_usage": "Kaufen: farm kaufe <Nr> (siehe farm markt). Zurücknehmen: farm zurück <Nr>",
+      "no_offer": "Angebot #{id} gibt es nicht (mehr).",
+      "own_offer": "Das ist dein eigenes Angebot. Zurücknehmen: farm zurück {id}",
+      "bought": "Gekauft: {qty} {item} von {name} für {coins} Münzen. Noch {left}.",
+      "withdrawn": "Zurückgenommen: {qty} {item} wieder in der Scheune.",
+      "market_sale": "{qty} {item} an {name} (+{coins})",
+      "market_sold": "Auf dem Markt verkauft: {items}",
+      "quest": {
+        "harvest": "Aufgabe heute (für alle): ernte {need} Stück, egal welche Pflanze ({progress}/{need}). Belohnung {coins} Münzen, +{xp} XP.",
+        "process": "Aufgabe heute (für alle): mach {need} Produkte in der Werkstatt ({progress}/{need}). Belohnung {coins} Münzen, +{xp} XP.",
+        "sell": "Aufgabe heute (für alle): verkaufe für {need} Münzen ({progress}/{need}). Belohnung {coins} Münzen, +{xp} XP."
+      },
+      "daily_post": {
+        "harvest": "🌱 Farm, Aufgabe heute: ernten, jede Pflanze zählt. Dein Ziel: DM an mich farm aufgabe",
+        "process": "🌱 Farm, Aufgabe heute: Produkte in der Werkstatt machen. Dein Ziel: DM an mich farm aufgabe",
+        "sell": "🌱 Farm, Aufgabe heute: deine Ernte verkaufen. Dein Ziel: DM an mich farm aufgabe"
+      },
+      "daily_invite": "🌱 Farm: starte heute deine eigene Farm! Säen, ernten, Marmelade oder Wein machen und handeln. DM an mich: farm start"
     },
     "path": {
       "more_hops": "+{n} weitere Hops"

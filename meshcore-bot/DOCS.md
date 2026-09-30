@@ -493,6 +493,24 @@ Commands for everyone on the mesh. Each has a card on the Plugins page with an o
   day, upgrades, random events and levels 1 to 10. On the card, *Crops that are off* removes crops (and their products)
   from the shop, for example `wiet`; fields already sown keep growing. `farm top` works in a channel too (with the
   GamesChannel card on, only in the games channel). The full rules are in COMMANDS.md.
+- **Setup wizard** (dashboard: *Settings -> Setup*): one page for the first choices. *Channels*: tick the radio's
+  channels where the bot answers (this changes the option *Bot > Channels*, through the Supervisor), pick a busy public
+  channel that only gets a pointer (ChannelHint) and optionally a welcome (greeter). *Commands*: switch groups on or
+  off at once (the basics stay on). *Extras*: a games channel (added to the bot's channels and made on the radio by
+  AutoChannels), night mode, bot network, repeater watch, Home Assistant sensors. *Save the setup*, then *Restart now*.
+  On a new installation the dashboard opens on the setup, and every other page shows a banner, until the setup is saved;
+  an update of an existing installation does not. Everything is also on the cards, and the wizard can be run again.
+- **HASensors** (card **HASensors**, on by default): every 5 minutes (adjustable) the bot writes its numbers as Home
+  Assistant sensors, all starting with `sensor.meshcore_bot_`: `people_heard`, `repeaters_heard`, `rooms_heard`,
+  `people_wrote`, `channel_messages`, `commands_answered` (last 24 hours), `new_nodes_today`, `most_hops_today`,
+  `direct_neighbours` (7 days), `noise_floor`, `airtime_tx`, `airtime_rx` (from the radio, no airtime), `map_uploads_today`,
+  `farm_players` and `farm_richest`. Sensors without data are left out. Written through Home Assistant's API like the
+  heartbeat: after a Home Assistant restart they are back within minutes.
+- **RepeaterWatch** (card **RepeaterWatch**, on by default): watches the repeaters the radio hears directly (neighbour
+  discovery, last 7 days) and any names or key prefixes under *Also watch*. When one has not been heard (advert or
+  neighbour reply) for *Silent after* hours (default 24), the bot logs "RepeaterWatch: stil: ...", which the
+  **Notifications** card sends to your room, channel or DM like the other repeater warnings, and puts a notification in
+  Home Assistant (can be switched off). Once per silence, and "weer gehoord" when it is back. Checked every hour.
 - **Radar page:** two tabs. *Channel radar* shows which hashtag channels are in use around the bot. **Repeater radar**
   lists every repeater the bot heard in the last 24 hours, 7 or 30 days, from its own records (nothing is sent): place and
   distance to the bot, last heard, SNR and hops of its last advert, adverts in the period, *Direct* (the bot's radio
@@ -508,6 +526,13 @@ Commands for everyone on the mesh. Each has a card on the Plugins page with an o
   by default) creates the hashtag channels it posts to (`#mowas` and `#mowas-en` unless set otherwise on its card) on
   the first free channel slots of the radio when it starts. Switching the card off again does not remove them:
   delete them in the MeshCore app if you do not want them.
+- **Kwekerij extras:** a daily task, the same for everyone (harvest, make or sell; the amount grows with the level),
+  rewarded with coins, farm XP and 5 Mesh RPG XP (`farm opdracht`); card **FarmDaily** (on) posts the task every morning
+  at *Time* (06:00) in its *Channel* or else the GamesChannel card's channel, after night mode; while nobody plays, that
+  post is an invitation to start. At *Invitation at* (14:00, empty = off) an invitation to join goes out every day, also
+  when people play (not on a day whose morning post was already an invitation). A market between players
+  (`farm markt`, `farm bied <item> <number> <price>`, `farm koop <nr>`, `farm intrekken <nr>`), at most 5 offers per
+  player, 3 days each; unsold goods go back to the barn.
 - **Install count** (card **InstallCount**, **on by default**): once a day the bot sends one retained MQTT message to
   the network's server (`mqtt.vipje.nl`) under `meshcore-bot-ha/count/v1/<random id>`: `{"v": <add-on version>, "d":
   <date>}`. The id is a random number made at the first start and kept in the bot's database; it does not come from the

@@ -623,10 +623,10 @@ async def main():
     for period in ("ever", "week"):
         rows = g["xp"][period]
         check(rows and all(sum(p["xp"] for p in r["parts"]) == r["xp"] for r in rows)
-              and all([p["key"] for p in r["parts"]] == ["messages", "commands", "checkins", "karma", "dx"] for r in rows),
+              and all([p["key"] for p in r["parts"]] == ["messages", "commands", "checkins", "karma", "dx", "farm"] for r in rows),
               f"games ({period}): de XP-opbouw per persoon telt precies op tot de totale XP")
     piet = g["xp"]["ever"][0]
-    check({p["key"]: (p["count"], p["xp"]) for p in piet["parts"]} == {"messages": (28, 28), "commands": (14, 28), "checkins": (3, 15), "karma": (1, 10), "dx": (5, 25)},
+    check({p["key"]: (p["count"], p["xp"]) for p in piet["parts"]} == {"messages": (28, 28), "commands": (14, 28), "checkins": (3, 15), "karma": (1, 10), "dx": (5, 25), "farm": (0, 0)},
           f"games: opbouw van Piet klopt (28 berichten, 14 commando's x2, 3 check-ins x5, 1 karma x10, 5 hops x5) {piet['parts']}")
     check([r["name"] for r in g["xp"]["ever"]][:1] == ["Piet"] and g["xp"]["ever"][0]["level"] == 1 and g["xp"]["ever"][0]["title"] == 1, f"games: XP-stand met level en titel ({g['xp']['ever'][:2]})")
     check(g["dx"]["ever"][0] == {"name": "Oude Jan", "hops": 8, "date": "05-01-2025"} and g["dx"]["week"][0]["name"] == "Piet", "games: DX week/ooit")

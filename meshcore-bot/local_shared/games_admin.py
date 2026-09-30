@@ -19,7 +19,7 @@ from datetime import timedelta
 from types import SimpleNamespace
 from typing import Any, Optional
 
-from modules.mesh_archive import (BADGES, CMD_CAP, DX_HOP_CAP, MSG_CAP, XP_CHECKIN, XP_CMD, XP_HOP, XP_KARMA, XP_MSG, badges_of, dx_best,
+from modules.mesh_archive import (BADGES, CMD_CAP, DX_HOP_CAP, MSG_CAP, XP_CHECKIN, XP_CMD, XP_FARM_TASK, XP_HOP, XP_KARMA, XP_MSG, badges_of, dx_best,
                                   ensure_archive, known_names, month_start_day, week_start_day, xp_of)
 from modules.mesh_community import is_bot_name, local_day, local_now, streaks, table_exists, without_bots
 
@@ -43,6 +43,7 @@ def xp_parts(info: dict) -> list:
         {"key": "checkins", "count": info["checkins"], "per": XP_CHECKIN, "xp": info["checkins"] * XP_CHECKIN},
         {"key": "karma", "count": info["karma"], "per": XP_KARMA, "xp": info["karma"] * XP_KARMA},
         {"key": "dx", "count": info["best_hops"], "per": XP_HOP, "xp": min(info["best_hops"], DX_HOP_CAP) * XP_HOP, "cap": DX_HOP_CAP},
+        {"key": "farm", "count": info.get("farm_tasks", 0), "per": XP_FARM_TASK, "xp": info.get("farm_tasks", 0) * XP_FARM_TASK},
     ]
 
 

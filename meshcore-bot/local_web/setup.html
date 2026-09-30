@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Setup - MeshCore Bot Data Viewer{% endblock %}
+
+{% block content %}
+<style>
+    .sw-step { counter-increment: step; }
+    .sw-step .card-header::before { content: counter(step) ". "; }
+    .sw-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .25rem 1rem; }
+</style>
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-9" style="counter-reset: step;">
+        <h1 class="mb-2"><i class="fas fa-wand-magic-sparkles"></i> Setup</h1>
+        <p class="text-muted">
+            The few choices that make the bot yours. Everything here is also on the Plugins page and in the add-on's
+            Configuration tab, and you can run this setup again at any time.
+        </p>
+        <div id="sw-message" role="status" aria-live="polite"></div>
+
+        <div class="card mb-3 sw-step">
+            <div class="card-header fw-semibold">Channels</div>
+            <div class="card-body">
+                <p class="small text-muted mb-2">Tick the channels on your radio where the bot answers commands. Use channels made for
+                    bots (for example <code>#bot</code>, <code>#test</code>) and ask around which channels already have a bot.</p>
+                <div class="sw-list mb-3" id="sw-channels"></div>
+                <label class="form-label mb-1" for="sw-public">Busy public channel: no commands there, only a short pointer to your bot channels</label>
+                <select class="form-select form-select-sm w-auto mb-2" id="sw-public"></select>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="sw-greeter">
+                    <label class="form-check-label" for="sw-greeter">Welcome new people in that public channel (greeter)</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 sw-step">
+            <div class="card-header fw-semibold">Commands</div>
+            <div class="card-body">
+                <p class="small text-muted mb-2">The basics (help, test, pad, path, sig, stats, ...) are always on. Switch groups on or off:</p>
+                <div id="sw-groups"></div>
+            </div>
+        </div>
+
+        <div class="card mb-3 sw-step">
+            <div class="card-header fw-semibold">Extras</div>
+            <div class="card-body">
+                <label class="form-label mb-1" for="sw-games">Keep the games in one channel (optional)</label>
+                <select class="form-select form-select-sm w-auto mb-3" id="sw-games"></select>
+                <div id="sw-features"></div>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-5">
+            <button type="button" class="btn btn-primary" id="sw-apply"><i class="fas fa-check"></i> Save the setup</button>
+            <button type="button" class="btn btn-warning d-none" id="sw-restart"><i class="fas fa-power-off"></i> Restart now</button>
+            <span class="small text-muted" id="sw-result"></span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+    // Channel names come from the radio: everything is built with textContent, never as HTML.
+    const GROUPS = {
+        games: ['Games', 'Mesh RPG (xp, badge), DX hunt, karma, check-in, quiz, hangman, polls, the Kwekerij farm game, dice'],
+        nlbe: ['Netherlands and Belgium', 'Emergency numbers, AEDs, rain radar, traffic, public transport, fuel, charging, licence plates'],
+        weather: ['Weather and space', 'Weather, rain, air quality, sun and moon, aurora, HF conditions, satellites, airplanes'],
+        fun: ['Fun', 'Jokes, quotes, facts, morse, sports scores'],
+        f1: ['Formula 1', 'The f1 command and the F1 channel (needs the f1_sensor integration in Home Assistant)']
+    };
+    const FEATURES = {
+        night: ['Night mode', 'Scheduled messages and feeds stay quiet at night (23:00-07:00).'],
+        botnet: ['Bot network', 'Share what your radio hears with other bots of this add-on, over the internet. Nothing personal is shared.'],
+        repeaterwatch: ['Repeater watch', 'A message when a repeater your radio hears directly goes silent.'],
+        hasensors: ['Home Assistant sensors', 'The bot\'s numbers as sensors in Home Assistant (sensor.meshcore_bot_...).']
+    };
+    let st = null;
+
+    function el(tag, text, cls) {
+        const n = document.createElement(tag);
+        if (text !== undefined && text !== null) n.textContent = String(text);
+        if (cls) n.className = cls;
+        return n;
+    }
+
+    function check(id, label, help, checked) {
+        const wrap = el('div', null, 'form-check mb-2');
+        const input = el('input', null, 'form-check-input');
+        input.type = 'checkbox'; input.id = id; input.checked = !!checked;
+        const lab = el('label', null, 'form-check-label'); lab.htmlFor = id;
+        lab.appendChild(el('span', label, 'fw-semibold'));
+        if (help) { lab.appendChild(document.createElement('br')); lab.appendChild(el('span', help, 'small text-muted')); }
+        wrap.append(input, lab);
+        return wrap;
+    }
+
+    function options(select, names, current, none) {
+        select.replaceChildren(el('option', none, ''));
+        select.firstChild.value = '';
+        names.forEach(function (n) {
+            const o = el('option', n); o.value = n;
+            if (n.toLowerCase() === (current || '').toLowerCase()) o.selected = true;
+            select.appendChild(o);
+        });
+    }
+
+    function render() {
+        const lower = st.bot_channels.map(function (c) { return c.toLowerCase(); });
+        const box = document.getElementById('sw-channels');
+        box.replaceChildren();
+        if (!st.radio_channels.length) box.appendChild(el('p', 'The radio has not reported its channels yet; try again in a minute.', 'small text-muted'));
+        st.radio_channels.forEach(function (name, i) {
+            const c = check('sw-ch-' + i, name, null, lower.indexOf(name.toLowerCase()) !== -1);
+            c.querySelector('input').dataset.channel = name;
+            box.appendChild(c);
+        });
+        options(document.getElementById('sw-public'), st.radio_channels, st.public, '(none)');
+        document.getElementById('sw-greeter').checked = !!st.greeter;
+        const groups = document.getElementById('sw-groups');
+        groups.replaceChildren();
+        Object.keys(GROUPS).forEach(function (g) {
+            if (!st.groups[g] || !st.groups[g].commands.length) return;
+            groups.appendChild(check('sw-g-' + g, GROUPS[g][0], GROUPS[g][1], st.groups[g].on));
+        });
+        const hashtags = st.radio_channels.filter(function (n) { return n.charAt(0) === '#'; });
+        if (hashtags.indexOf('#games') === -1) hashtags.push('#games');
+        options(document.getElementById('sw-games'), hashtags, st.games_channel, '(no games channel: games work in every bot channel)');
+        const feats = document.getElementById('sw-features');
+        feats.replaceChildren();
+        Object.keys(FEATURES).forEach(function (f) { feats.appendChild(check('sw-f-' + f, FEATURES[f][0], FEATURES[f][1], st.features[f])); });
+    }
+
+    function say(text, cls) {
+        const box = document.getElementById('sw-message');
+        box.replaceChildren();
+        if (text) box.appendChild(el('div', text, 'alert ' + (cls || 'alert-danger') + ' py-2'));
+    }
+
+    function answers() {
+        const channels = [];
+        document.querySelectorAll('#sw-channels input').forEach(function (i) { if (i.checked) channels.push(i.dataset.channel); });
+        const groups = {}, features = {};
+        Object.keys(GROUPS).forEach(function (g) { const i = document.getElementById('sw-g-' + g); if (i) groups[g] = i.checked; });
+        Object.keys(FEATURES).forEach(function (f) { features[f] = document.getElementById('sw-f-' + f).checked; });
+        return {
+            bot_channels: channels,
+            public: document.getElementById('sw-public').value,
+            greeter: document.getElementById('sw-greeter').checked,
+            groups: groups,
+            games_channel: document.getElementById('sw-games').value,
+            features: features
+        };
+    }
+
+    function post(path, body) {
+        return fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                             body: body ? JSON.stringify(body) : undefined })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status)); return b; }); });
+    }
+
+    document.getElementById('sw-apply').addEventListener('click', function () {
+        const a = answers();
+        if (!a.bot_channels.length && !confirm('No channel ticked: the bot will only answer direct messages. Continue?')) return;
+        const btn = this; btn.disabled = true;
+        post('/api/setup/apply', a).then(function (r) {
+            say('');
+            let text = 'Saved.';
+            if (r.channels_saved === false) text += ' The channels could not be saved from here: set them under the add-on\'s Configuration tab (Bot > Channels).';
+            if (r.restart_required) {
+                text += ' Restart the bot to finish (channels and services start at a restart).';
+                document.getElementById('sw-restart').classList.remove('d-none');
+            }
+            document.getElementById('sw-result').textContent = text;
+        }).catch(function (e) { say('Could not save the setup: ' + e.message); })
+          .then(function () { btn.disabled = false; });
+    });
+
+    document.getElementById('sw-restart').addEventListener('click', function () {
+        if (!confirm('Restart the MeshCore Bot add-on now? It is back in about half a minute.')) return;
+        const btn = this; btn.disabled = true;
+        document.getElementById('sw-result').textContent = 'Restarting... this page reloads when the bot is back.';
+        post('/api/addon/restart').then(function () {
+            const started = Date.now(); let down = false;
+            const poll = function () {
+                fetch('/api/setup', { cache: 'no-store' }).then(function (r) {
+                    if (r.ok && (down || Date.now() - started > 90000)) { window.location.href = '/'; return; }
+                    if (!r.ok) down = true;
+                    setTimeout(poll, 3000);
+                }).catch(function () { down = true; setTimeout(poll, 3000); });
+            };
+            setTimeout(poll, 3000);
+        }).catch(function (e) { document.getElementById('sw-result').textContent = 'Restart failed: ' + e.message + '. Restart the add-on in Home Assistant instead.'; btn.disabled = false; });
+    });
+
+    fetch('/api/setup', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d.error) throw new Error(d.error); st = d; render(); })
+        .catch(function (e) { say('Could not load the setup: ' + e.message); });
+})();
+</script>
+{% endblock %}

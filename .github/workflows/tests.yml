@@ -1,0 +1,27 @@
+# Runs every test of both add-ons (tests/run_all.sh) on each push and pull request. The tests apply the add-on's patches
+# to the pinned upstream meshcore-bot release and check the commands, services and dashboard pages. Nothing here is part
+# of what Home Assistant installs: it only builds the meshcore-bot and meshcore-proxy folders.
+name: tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TZ: Europe/Amsterdam
+      WORK: /tmp/meshcore-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run all tests
+        run: bash tests/run_all.sh

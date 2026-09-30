@@ -95,6 +95,10 @@ your workshop into something worth more, sell, save in the bank and grow from le
 | `farm bank` | `farm bank`  /  `farm deposit 500`  /  `farm withdraw all` | Your savings: 1% interest a day (max 500 a day), safe from the pickpocket. **DM** |
 | `farm upgrade` | `farm upgrade`  /  `farm upgrade greenhouse` | An extra field, a better greenhouse (faster), better soil (bigger crops) or a bigger workshop. **DM** |
 | `farm give` | `farm give Alex 100` | Give coins to another farmer. **DM** |
+| `farm task` | `farm task` | Today's task (the same for everyone: harvest, make or sell; how much depends on your level) and your progress. Reward: coins, farm XP and 5 Mesh RPG XP. **DM** |
+| `farm market` | `farm market` | What other farmers offer for sale. Also works in `#games`. |
+| `farm offer` | `farm offer jam 3 60` | Offer crops or products on the market (number, price each), valid 3 days. **DM** |
+| `farm buy`<br><sub>also: cancel</sub> | `farm buy 2`  /  `farm cancel 2` | Buy offer 2 from the market, or take your own offer back. **DM** |
 | `farm top` | `farm top` | The richest farmers (coins + bank). Also works in `#games`. |
 
 **Crops and products**
@@ -117,6 +121,7 @@ your workshop into something worth more, sell, save in the bank and grow from le
 - Your level rises with XP from harvesting and processing; every level brings a new crop.
 - Sometimes something happens at harvest time: a **bumper crop** (double), a **storm** (one field lost), a **pickpocket**
   (10% of your coins, not of the bank) or an **inspection** when you harvest weed.
+- Every morning at 06:00 the bot posts the task of the day in `#games`, and at 14:00 an invitation to join (card *FarmDaily*).
 - A bot owner can switch crops off (card *farm*), for example weed.
 
 ## Formula 1

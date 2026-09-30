@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.3.0
+
+- **Fix:** `ping` did not answer at all since 1.1.0 (new installations have no ping keyword, and the translated
+  "Pong! More info: type test" was never used). It answers again; a ping keyword of your own still wins.
+- Kwekerij: a **daily task**, the same for everyone (harvest, make or sell; the amount grows with your level), with
+  coins, farm XP and 5 Mesh RPG XP as reward (`farm opdracht`); every morning at 06:00 the task goes to the games channel
+  (card *FarmDaily*, waits for the end of night mode); while nobody plays it is an invitation to start, and every day at
+  14:00 an invitation to join goes out to get more players. A **market** between players: `farm markt`, `farm bied jam 3 60`,
+  `farm koop 2`, `farm intrekken 2`; offers last 3 days, the seller sees the sale in `farm`. Farm tasks show in the
+  Mesh RPG breakdown on the Games page.
+- GitHub: the tests run automatically on every push (badge in the README). Nothing of it is installed in Home
+  Assistant.
+- The bot's position: with Latitude/Longitude empty, Home Assistant's own home location is used (before the radio's).
+- **First-start wizard** (dashboard: Settings -> Setup): the channels the bot answers in, a busy public channel that
+  only gets a pointer and a welcome, command groups on or off (games, Netherlands/Belgium, weather and space, fun, F1),
+  a games channel and extras (night mode, bot network, repeater watch, Home Assistant sensors), on one page, with a
+  restart button. On a new installation the dashboard opens on the wizard (and other pages show a banner) until it is
+  saved; it can be run again at any time.
+- New card **HASensors** (on): the bot's numbers as Home Assistant sensors (`sensor.meshcore_bot_...`), updated every 5
+  minutes: people and repeaters heard, people who wrote, channel messages, commands answered, new nodes, most hops
+  today, direct neighbours, the radio's noise floor and airtime, map uploads and the Kwekerij's players. Put them on a
+  dashboard or use them in automations.
+- New card **RepeaterWatch** (on): when a repeater your radio hears directly has not been heard for 24 hours (adjustable),
+  you get a message through the Notifications card (room, channel or DM) and a notification in Home Assistant; and a
+  message when it is back. Extra repeaters to watch can be named on the card.
+- MapUploader: instead of two log lines for every repeater it sends to map.meshcore.dev, it counts per day (sent, new
+  on the map, already known, failed) and logs one summary line an hour; failures keep their own warning. The Repeater
+  radar shows a tile *Map uploads today* (hover for the last 7 days).
+
 ## 1.2.0
 
 - Dashboard: the **Radar** page has two tabs. *Channel radar* is the old page; the new **Repeater radar** lists every

@@ -51,7 +51,7 @@ configuration:
         description: Time zone name such as Europe/Amsterdam, used for scheduled messages such as the weekly announcement. Empty = the system time zone.
       latitude:
         name: Latitude of the bot
-        description: "Where the bot is, for example 50.89 (two decimals are enough). Used by airplanes, wx, rain, sun, the distances in test and the dashboard map. Leave empty (together with longitude) to not use a fixed position. Only sent to the weather and flight services those commands ask."
+        description: "Where the bot is, for example 50.89 (two decimals are enough). Used by airplanes, wx, rain, sun, the distances in test and the dashboard map. Leave empty (together with longitude) to use Home Assistant's own home location (Settings > System > General). Only sent to the weather and flight services those commands ask."
       longitude:
         name: Longitude of the bot
         description: For example 5.98. Only used together with the latitude above.

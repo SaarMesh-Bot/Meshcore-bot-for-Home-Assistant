@@ -50,7 +50,7 @@ bot and, if you use it, meshcore-ha.
    | Option | What to fill in |
    |---|---|
    | Bot name | The name on the mesh, for example your town. Do not add an emoji: `|🤖` is added automatically. |
-   | Channels to listen on | One channel per line, exactly as named on the radio, for example `#bot` and `#test`. |
+   | Channels to listen on | One channel per line, exactly as named on the radio, for example `#bot` and `#test`. You can also leave this and pick them in the setup wizard (step 7). |
    | Admin public keys | Your own 64-character public key (step 1). |
    | Language of the replies | `en` (default), `nl`, `de` or `fr`. |
    | Latitude / Longitude | Optional: where the bot is, for `airplanes`, weather and distances. |
@@ -61,9 +61,9 @@ bot and, if you use it, meshcore-ha.
 3. Tab **Info**: switch on **Start on boot**, **Watchdog** and **Show in sidebar**, then click **Start**.
 4. The **Log** tab shows the bot connecting to the proxy and loading its commands.
 
-**The channels must also exist on the radio.** The bot can only hear channels the radio knows. Add them on the
-dashboard (next step), page **Radio**, section channels. A hashtag channel such as `#bot` only needs its name. After adding a
-channel, restart the bot add-on once so it picks it up.
+**The channels must also exist on the radio.** The bot can only hear channels the radio knows. A hashtag channel such as
+`#bot` is added to the radio automatically when it is missing (card *AutoChannels*, on by default). A private channel
+needs its key: add it in the MeshCore app or on the dashboard, page **Radio**.
 
 ## 5. First test
 
@@ -95,6 +95,8 @@ On **Plugins**, cards of **commands** take effect at once. Cards of **services**
 
 ## 7. What to switch on
 
+The quickest way: open the dashboard and follow the **setup** banner (or *Settings -> Setup*). It sets the channels, the command groups and the extras on one page. The cards below are the same settings one by one.
+
 A new installation starts quiet: everything that needs your own setup is off. Worth a look:
 
 | Card | What it does |
@@ -106,6 +108,8 @@ A new installation starts quiet: everything that needs your own setup is off. Wo
 | **Webhook** | Lets Home Assistant post messages on the mesh. **Set a secret token first.** |
 | **BotNetwork** | Shares what your radio hears with other bots of this add-on, over the internet (no airtime). Off by default: switch it on if you want to take part (the README says what is shared). |
 | **AutoChannels** | **On by default**: makes the hashtag channels the bot uses (#test, #games, #f1, ...) on the radio when they are missing. |
+| **HASensors** | **On by default**: the bot's numbers as Home Assistant sensors (`sensor.meshcore_bot_...`). |
+| **RepeaterWatch** | **On by default**: a message when a repeater your radio hears directly goes silent. |
 | **InstallCount** | **On by default**: once a day an anonymous message (random number, version, date) so the maintainer knows how many installations run. Switch it off to send nothing (see the README). |
 | **GamesChannel** | Keeps the games (quiz, hangman, stem, ...) in one channel, for example `#games`. |
 | **NightMode** | Keeps scheduled messages and feeds quiet at night (default 23:00-07:00). Answers to people always go out. |

@@ -51,7 +51,7 @@ configuration:
         description: Tijdzonenaam zoals Europe/Amsterdam, gebruikt voor geplande berichten zoals de wekelijkse aankondiging. Leeg = de systeemtijdzone.
       latitude:
         name: Breedtegraad van de bot
-        description: "Waar de bot staat, bijvoorbeeld 50.89 (twee decimalen is genoeg). Gebruikt door airplanes, wx, rain, sun, de afstanden in test en de kaart op het dashboard. Leeg laten (samen met de lengtegraad) = geen vaste plek. Gaat alleen naar de weer- en vluchtdiensten die die commando's vragen."
+        description: "Waar de bot staat, bijvoorbeeld 50.89 (twee decimalen is genoeg). Gebruikt door airplanes, wx, rain, sun, de afstanden in test en de kaart op het dashboard. Leeg laten (samen met de lengtegraad) = de thuislocatie van Home Assistant zelf (Instellingen > Systeem > Algemeen). Gaat alleen naar de weer- en vluchtdiensten die die commando's vragen."
       longitude:
         name: Lengtegraad van de bot
         description: Bijvoorbeeld 5.98. Alleen samen met de breedtegraad hierboven.

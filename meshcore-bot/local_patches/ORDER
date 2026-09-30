@@ -183,3 +183,12 @@ patch_path_parts.py
 
 # Plugins page: a banner with "Restart now" when a change needs a restart (service on/off); POST /api/addon/restart.
 patch_webviewer_restart.py
+
+# MapUploader: counts its uploads per day (sent/new/duplicate/failed) and logs one line an hour instead of two per node.
+patch_map_uploader_counts.py
+
+# ping: without a ping keyword it answers with the translated standard text (it used to send nothing).
+patch_ping_default.py
+
+# First-start wizard: /setup, /api/setup(/apply), a Setup menu item and a banner on a new installation.
+patch_webviewer_setup.py

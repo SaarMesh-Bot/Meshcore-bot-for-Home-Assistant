@@ -56,7 +56,7 @@ check(sections(B, MOVED_SECTIONS) == moved_a, "verhuisde secties zijn na de upda
 others = [s for s in A.sections() if s not in MOVED_SECTIONS]
 def _strip(sec): return {k: v for k, v in sec.items() if not (k == "rate_limit_seconds")}
 check({s: _strip(dict(A[s])) for s in others} == {s: _strip(dict(B[s])) for s in others}, "alle andere secties zijn ook identiek (alleen de nieuwe zendgrens-sleutel in [Bot] komt erbij)")
-check(set(B.sections()) - set(A.sections()) == {"HARepeater", "F1", "F1_Command", "Heartbeat", "Localization", "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels"} and set(A.sections()) <= set(B.sections()), "alleen de nieuwe secties HARepeater, F1, F1_Command, Heartbeat, Localization, AutoLanguage, Reminders, Community, ChannelRadar, NightMode, GamesChannel, BotNetwork, InstallCount en AutoChannels komen erbij, geen enkele sectie is weg")
+check(set(B.sections()) - set(A.sections()) == {"HARepeater", "F1", "F1_Command", "Heartbeat", "Localization", "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily"} and set(A.sections()) <= set(B.sections()), "alleen de nieuwe secties HARepeater, F1, F1_Command, Heartbeat, Localization, AutoLanguage, Reminders, Community, ChannelRadar, NightMode, GamesChannel, BotNetwork, InstallCount, AutoChannels, HASensors, RepeaterWatch, Setup en FarmDaily komen erbij, geen enkele sectie is weg")
 check(B["Reminders"]["enabled"] == "true" and B["Reminders"]["language"] == B["Localization"]["language"] and B["Community"]["enabled"] == "true", "Reminders en Community staan na de update aan (anders werken herinner en dx/xp maar half)")
 check(B["F1"]["enabled"] == "false" and B["F1"]["channel"] == "#f1" and B["F1_Command"]["channels"] == "#f1", "F1 staat na de update UIT; het f1-commando krijgt alleen #f1 als kanaal")
 check("f1" not in B["Channels"]["monitor_channels"].lower(), "#f1 staat NIET bij de kanalen van de bot (zo werken ping, wx en de rest daar niet)")
@@ -217,5 +217,34 @@ check("max_hops_shown = 7" in open(f"{u11}/config-current.ini").read(), "en staa
 with open(f"{u11}/override.ini", "w") as fh: fh.write("[kapot\nzonder sectie\n")
 r = subprocess.run([sys.executable, GEN, f"{d11}/options.json", f"{d11}/config.ini", d11, u11], capture_output=True, text=True)
 check(r.returncode == 0 and "override.ini not used" in r.stderr, "een kapotte override.ini stopt de start niet")
+
+# ---- M. first-start wizard: banner only on a new installation
+d12 = tempfile.mkdtemp(); run(GEN, NEW, d12)
+check(read(d12)["Setup"].get("done") == "false", "nieuwe installatie: wizard nog te doen")
+check(read(d)["Setup"].get("done") == "true", "update van een bestaande installatie: geen wizard-melding")
+c12 = read(d12); c12["Setup"]["done"] = "true"
+with open(f"{d12}/config.ini", "w") as fh: c12.write(fh)
+run(GEN, NEW, d12)
+check(read(d12)["Setup"].get("done") == "true", "wizard afgerond: blijft afgerond")
+
+# ---- N. no position in the options: Home Assistant's own home location
+import importlib.util, io, urllib.request
+spec = importlib.util.spec_from_file_location("gen_mod", GEN); gen_mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(gen_mod)
+os.environ.pop("SUPERVISOR_TOKEN", None)
+check(gen_mod.ha_home() == {}, "buiten Home Assistant: geen locatie (niets gevraagd)")
+real_urlopen = urllib.request.urlopen
+urllib.request.urlopen = lambda req, timeout=None: io.BytesIO(b'{"latitude": 50.93623, "longitude": 5.95638, "location_name": "Thuis"}')
+os.environ["SUPERVISOR_TOKEN"] = "tok"
+check(gen_mod.ha_home() == {"bot_latitude": "50.9362", "bot_longitude": "5.9564"}, f"thuislocatie van Home Assistant ({gen_mod.ha_home()})")
+cfg_home = gen_mod.build(NEW, tempfile.mkdtemp())
+check(cfg_home["Bot"].get("bot_latitude") == "50.9362", "lege opties: de bot krijgt de locatie van Home Assistant")
+with_pos = copy.deepcopy(NEW); with_pos.setdefault("bot", {}).update({"latitude": 51.1, "longitude": 4.2})
+check(gen_mod.build(with_pos, tempfile.mkdtemp())["Bot"].get("bot_latitude") == "51.1", "ingevulde opties gaan voor")
+def boom(req, timeout=None):
+    raise OSError("geen verbinding")
+urllib.request.urlopen = boom
+check(gen_mod.ha_home() == {}, "Home Assistant antwoordt niet: geen locatie, geen fout")
+urllib.request.urlopen = real_urlopen
+os.environ.pop("SUPERVISOR_TOKEN", None)
 
 print(f"\n{len(fails)} fouten"); sys.exit(1 if fails else 0)

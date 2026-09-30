@@ -27,6 +27,9 @@ BANK_RATE = 0.01     # per day
 BANK_MAX_INTEREST = 500   # per day
 EVENT_CHANCE = 0.08  # per harvest round
 MAX_JOB_QTY = 5
+MARKET_DAYS = 3      # an offer on the market lasts this long, then the goods go back to the seller's barn
+MAX_OFFERS = 5       # per player
+MAX_PRICE = 100000
 
 # id: level, seed price, growing hours, units per harvest (min, max), harvests before the plant is spent, sell price, xp
 CROPS = {
@@ -100,6 +103,15 @@ SCHEMA = [
         PRIMARY KEY (pubkey, slot))""",
     """CREATE TABLE IF NOT EXISTS farm_items (
         pubkey TEXT NOT NULL, item TEXT NOT NULL, qty INTEGER NOT NULL, PRIMARY KEY (pubkey, item))""",
+    """CREATE TABLE IF NOT EXISTS farm_quests (
+        pubkey TEXT NOT NULL, day TEXT NOT NULL, name TEXT, kind TEXT NOT NULL, item TEXT, need INTEGER NOT NULL,
+        progress INTEGER NOT NULL DEFAULT 0, done INTEGER NOT NULL DEFAULT 0, reward_coins INTEGER NOT NULL,
+        reward_xp INTEGER NOT NULL, PRIMARY KEY (pubkey, day))""",
+    """CREATE TABLE IF NOT EXISTS farm_market (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, seller TEXT NOT NULL, seller_name TEXT, item TEXT NOT NULL,
+        qty INTEGER NOT NULL, price INTEGER NOT NULL, created INTEGER NOT NULL)""",
+    """CREATE TABLE IF NOT EXISTS farm_market_sales (
+        seller TEXT NOT NULL, text TEXT NOT NULL, ts INTEGER NOT NULL)""",
     """CREATE TABLE IF NOT EXISTS farm_jobs (
         id INTEGER PRIMARY KEY AUTOINCREMENT, pubkey TEXT NOT NULL, product TEXT NOT NULL, qty INTEGER NOT NULL,
         ready INTEGER NOT NULL)""",
@@ -155,6 +167,10 @@ def find_product(word: str) -> Optional[str]:
 
 def find_upgrade(word: str) -> Optional[str]:
     return _match(word, UPGRADE_WORDS)
+
+
+def _day(now: float) -> str:
+    return time.strftime("%Y-%m-%d", time.localtime(now))
 
 
 def left_text(seconds: float, translate: Callable) -> str:
@@ -226,6 +242,169 @@ class FarmGame:
         p["xp"] += xp
         return done, xp
 
+    # ------------------------------------------------------------------ daily task
+    @staticmethod
+    def task_of_day(now: float) -> str:
+        """Today's task, the same for everyone: harvest, process or sell (from the date only)."""
+        return random.Random(f"farm-task:{_day(now)}").choice(["harvest", "harvest", "process", "sell"])
+
+    def _quest(self, conn: Any, p: dict, now: float) -> dict:
+        """This player's goal for today's task: the task is the same for everyone, the amount grows with the level."""
+        day = _day(now)
+        cols = ("kind", "item", "need", "progress", "done", "reward_coins", "reward_xp")
+        row = conn.execute(f"SELECT {', '.join(cols)} FROM farm_quests WHERE pubkey=? AND day=?", (p["pubkey"], day)).fetchone()
+        if row:
+            return dict(zip(cols, row))
+        lvl = level_of(p["xp"])
+        kind = self.task_of_day(now)
+        need = {"harvest": 6 + 4 * lvl, "process": 1 + lvl // 3, "sell": 100 * lvl}[kind]
+        q = {"kind": kind, "item": None, "need": need, "progress": 0, "done": 0, "reward_coins": 40 * lvl + 60, "reward_xp": 8 * lvl}
+        conn.execute("INSERT INTO farm_quests (pubkey, day, name, kind, item, need, progress, done, reward_coins, reward_xp) "
+                     "VALUES (?,?,?,?,NULL,?,0,0,?,?)", (p["pubkey"], day, p["name"], kind, need, q["reward_coins"], q["reward_xp"]))
+        return q
+
+    def _quest_progress(self, conn: Any, p: dict, kind: str, item: Optional[str], amount: int, now: float, translate: Callable) -> str:
+        """Count towards today's task; returns the 'task done' text when it just got done (reward paid), else ''."""
+        q = self._quest(conn, p, now)
+        if q["done"] or q["kind"] != kind or (q["item"] and q["item"] != item) or amount <= 0:
+            return ""
+        progress = min(q["need"], q["progress"] + amount)
+        done = progress >= q["need"]
+        conn.execute("UPDATE farm_quests SET progress=?, done=?, name=? WHERE pubkey=? AND day=?",
+                     (progress, 1 if done else 0, p["name"], p["pubkey"], _day(now)))
+        if not done:
+            return ""
+        p["coins"] += q["reward_coins"]
+        p["xp"] += q["reward_xp"]
+        return translate("commands.farm.quest_completed", coins=q["reward_coins"], xp=q["reward_xp"])
+
+    def quest(self, key: str, name: str, translate: Callable, now: Optional[float] = None) -> list:
+        now = time.time() if now is None else now
+        with self.db.connection() as conn:
+            p = self._player(conn, key)
+            if p is None:
+                return [translate("commands.farm.no_farm")]
+            p["name"] = name[:40] or p["name"]
+            q = self._quest(conn, p, now)
+            conn.commit()
+        if q["done"]:
+            return [translate("commands.farm.quest_done_today")]
+        return [translate(f"commands.farm.quest.{q['kind']}", need=q["need"], progress=q["progress"],
+                          coins=q["reward_coins"], xp=q["reward_xp"])]
+
+    # ------------------------------------------------------------------ market
+    def _expire_offers(self, conn: Any, now: float) -> None:
+        for oid, seller, item, qty in conn.execute("SELECT id, seller, item, qty FROM farm_market WHERE created < ?",
+                                                   (int(now - MARKET_DAYS * 86400),)).fetchall():
+            self._add_item(conn, seller, item, qty)
+            conn.execute("DELETE FROM farm_market WHERE id=?", (oid,))
+
+    def _goods_name(self, item: str, translate: Callable) -> str:
+        if item.startswith("seed:"):
+            return translate("commands.farm.seed_item", n="", crop=translate(f"commands.farm.crop.{item[5:]}")).strip()
+        return translate(f"commands.farm.crop.{item}") if item in CROPS else translate(f"commands.farm.product.{item}")
+
+    def market(self, translate: Callable, now: Optional[float] = None, limit: int = 8) -> list:
+        now = time.time() if now is None else now
+        with self.db.connection() as conn:
+            self._expire_offers(conn, now)
+            rows = conn.execute("SELECT id, seller_name, item, qty, price FROM farm_market ORDER BY item, price LIMIT ?", (limit,)).fetchall()
+            conn.commit()
+        if not rows:
+            return [translate("commands.farm.market_empty")]
+        from .f1_data import pack
+        return pack(translate("commands.farm.market_head"), [
+            translate("commands.farm.market_item", id=i, qty=q, item=self._goods_name(it, translate), price=pr, name=n or "?")
+            for i, n, it, q, pr in rows])
+
+    def offer(self, key: str, name: str, word: str, qty: Optional[int], price: Optional[int], translate: Callable,
+              now: Optional[float] = None) -> list:
+        now = time.time() if now is None else now
+        item = find_crop(word) or find_product(word)
+        if item is None or not qty or not price:
+            return [translate("commands.farm.offer_usage")]
+        qty, price = max(1, int(qty)), max(1, min(MAX_PRICE, int(price)))
+        with self.db.connection() as conn:
+            p = self._player(conn, key)
+            if p is None:
+                return [translate("commands.farm.no_farm")]
+            self._expire_offers(conn, now)
+            mine = conn.execute("SELECT COUNT(*) FROM farm_market WHERE seller=?", (key,)).fetchone()[0]
+            if mine >= MAX_OFFERS:
+                conn.commit()
+                return [translate("commands.farm.offer_limit", n=mine)]
+            have = self._items(conn, key).get(item, 0)
+            if have < qty:
+                conn.commit()
+                return [translate("commands.farm.not_in_barn", have=have, item=self._goods_name(item, translate))]
+            self._add_item(conn, key, item, -qty)
+            cur = conn.execute("INSERT INTO farm_market (seller, seller_name, item, qty, price, created) VALUES (?,?,?,?,?,?)",
+                               (key, name[:40] or p["name"], item, qty, price, int(now)))
+            oid = cur.lastrowid
+            conn.commit()
+        return [translate("commands.farm.offered", id=oid, qty=qty, item=self._goods_name(item, translate), price=price, days=MARKET_DAYS)]
+
+    def buy(self, key: str, name: str, oid_word: str, translate: Callable, now: Optional[float] = None) -> list:
+        now = time.time() if now is None else now
+        oid_word = (oid_word or "").lstrip("#")
+        if not oid_word.isdigit():
+            return [translate("commands.farm.buy_usage")]
+        oid = int(oid_word)
+        with self.db.connection() as conn:
+            p = self._player(conn, key)
+            if p is None:
+                return [translate("commands.farm.no_farm")]
+            self._expire_offers(conn, now)
+            row = conn.execute("SELECT seller, seller_name, item, qty, price FROM farm_market WHERE id=?", (oid,)).fetchone()
+            if not row:
+                conn.commit()
+                return [translate("commands.farm.no_offer", id=oid)]
+            seller, seller_name, item, qty, price = row
+            if seller == key:
+                conn.commit()
+                return [translate("commands.farm.own_offer", id=oid)]
+            self._interest(p, now)
+            total = qty * price
+            if total > p["coins"]:
+                conn.commit()
+                return [translate("commands.farm.no_money", need=total, coins=p["coins"])]
+            p["coins"] -= total
+            p["name"] = name[:40] or p["name"]
+            self._add_item(conn, key, item, qty)
+            conn.execute("UPDATE farm_players SET coins = coins + ? WHERE pubkey=?", (total, seller))
+            conn.execute("DELETE FROM farm_market WHERE id=?", (oid,))
+            conn.execute("INSERT INTO farm_market_sales (seller, text, ts) VALUES (?,?,?)",
+                         (seller, f"{qty}|{item}|{p['name']}|{total}", int(now)))
+            self._save(conn, p)
+            conn.commit()
+        return [translate("commands.farm.bought", qty=qty, item=self._goods_name(item, translate), name=seller_name or "?",
+                          coins=total, left=p["coins"])]
+
+    def withdraw(self, key: str, oid_word: str, translate: Callable) -> list:
+        oid_word = (oid_word or "").lstrip("#")
+        if not oid_word.isdigit():
+            return [translate("commands.farm.buy_usage")]
+        with self.db.connection() as conn:
+            row = conn.execute("SELECT item, qty FROM farm_market WHERE id=? AND seller=?", (int(oid_word), key)).fetchone()
+            if not row:
+                return [translate("commands.farm.no_offer", id=oid_word)]
+            self._add_item(conn, key, row[0], row[1])
+            conn.execute("DELETE FROM farm_market WHERE id=?", (int(oid_word),))
+            conn.commit()
+        return [translate("commands.farm.withdrawn", qty=row[1], item=self._goods_name(row[0], translate))]
+
+    def _market_news(self, conn: Any, key: str, translate: Callable) -> str:
+        """What sold on the market since the seller last looked (shown once in the status)."""
+        rows = conn.execute("SELECT text FROM farm_market_sales WHERE seller=? ORDER BY ts", (key,)).fetchall()
+        if not rows:
+            return ""
+        conn.execute("DELETE FROM farm_market_sales WHERE seller=?", (key,))
+        parts = []
+        for (t,) in rows[:4]:
+            qty, item, buyer, total = t.split("|", 3)
+            parts.append(translate("commands.farm.market_sale", qty=qty, item=self._goods_name(item, translate), name=buyer, coins=total))
+        return translate("commands.farm.market_sold", items=", ".join(parts))
+
     def available(self, level: int) -> list:
         return [c for c, v in CROPS.items() if v["level"] <= level and c not in self.crops_off]
 
@@ -254,6 +433,7 @@ class FarmGame:
             done, _xp = self._collect_jobs(conn, p, now)
             fields = self._fields(conn, key)
             jobs = conn.execute("SELECT product, qty, ready FROM farm_jobs WHERE pubkey=? ORDER BY ready", (key,)).fetchall()
+            news = self._market_news(conn, key, translate)
             self._save(conn, p)
             conn.commit()
         lvl, nxt = level_of(p["xp"]), next_level_xp(p["xp"])
@@ -288,6 +468,8 @@ class FarmGame:
         out = [head + " | ".join(pieces)]
         if done:
             out.append(self._done_text(done, translate))
+        if news:
+            out.append(news)
         return out
 
     def _done_text(self, done: dict, translate: Callable) -> str:
@@ -397,6 +579,7 @@ class FarmGame:
                 self._add_item(conn, key, f"seed:{crop}", n)
             p["xp"] += xp
             p["name"] = name[:40] or p["name"]
+            quest_texts = [self._quest_progress(conn, p, "harvest", c, u, now, translate) for c, u in got.items()]
             self._save(conn, p)
             conn.commit()
         text = translate("commands.farm.harvested", items=", ".join(
@@ -408,6 +591,7 @@ class FarmGame:
             extra.append(translate("commands.farm.spent", n=len(spent)))
         if event:
             extra.append(event)
+        extra += [t for t in quest_texts if t]
         level_after = level_of(p["xp"])
         if level_after > level_before:
             new = [c for c, v in CROPS.items() if v["level"] == level_after and c not in self.crops_off]
@@ -491,10 +675,11 @@ class FarmGame:
                 self._add_item(conn, key, item, -qty)
             p["coins"] += total
             p["name"] = name[:40] or p["name"]
+            quest_text = self._quest_progress(conn, p, "sell", None, total, now, translate)
             self._save(conn, p)
             conn.commit()
         return [translate("commands.farm.sold", items=", ".join(self._item_text(i, q, translate) for i, q in chosen.items()),
-                          coins=total, total=p["coins"])]
+                          coins=total, total=p["coins"]) + quest_text]
 
     def process(self, key: str, name: str, word: str, count: Optional[int], translate: Callable, now: Optional[float] = None) -> list:
         now = time.time() if now is None else now
@@ -533,9 +718,10 @@ class FarmGame:
             ready = int(now + spec["hours"] * 3600)
             conn.execute("INSERT INTO farm_jobs (pubkey, product, qty, ready) VALUES (?,?,?,?)", (key, product, qty, ready))
             p["name"] = name[:40] or p["name"]
+            quest_text = self._quest_progress(conn, p, "process", product, qty, now, translate)
             self._save(conn, p)
             conn.commit()
-        out = [translate("commands.farm.processing", n=qty, product=pname, left=left_text(ready - now, translate))]
+        out = [translate("commands.farm.processing", n=qty, product=pname, left=left_text(ready - now, translate)) + quest_text]
         if done:
             out.append(self._done_text(done, translate))
         return out

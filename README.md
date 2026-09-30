@@ -1,5 +1,7 @@
 # MeshCore bot for Home Assistant
 
+[![tests](https://github.com/vipje/Meshcore-bot-for-Home-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/vipje/Meshcore-bot-for-Home-Assistant/actions/workflows/tests.yml)
+
 *[Nederlands](README.nl.md)*
 
 > **Based on [agessaman/meshcore-bot](https://github.com/agessaman/meshcore-bot)** by Adam Gessaman and others (MIT).
@@ -43,8 +45,10 @@ Click the button to add this repository to your Home Assistant, or follow step 1
 1. In Home Assistant: **Settings → Add-ons → Add-on Store → ⋮ → Repositories**, add
    `https://github.com/vipje/Meshcore-bot-for-Home-Assistant`.
 2. Install **MeshCore Proxy**, choose your radio under *Serial port* and start it.
-3. Install **MeshCore Bot**, fill in at least the bot name, the channels and your own *Admin public key*, and start it.
-4. Open the dashboard in the HA sidebar and switch on what you want on the *Plugins* page.
+3. Install **MeshCore Bot**, fill in at least the bot name and your own *Admin public key*, and start it.
+4. Open the dashboard in the HA sidebar and follow the **setup wizard** (the banner at the top, or *Settings → Setup*):
+   the channels the bot answers in (read from your radio), which command groups are on, and a few extras, on one page.
+   Everything can be fine-tuned later on the *Plugins* page.
 
 **Step by step, with explanations: [INSTALL.md](INSTALL.md).** All options are in the **Documentation** tab of each add-on.
 

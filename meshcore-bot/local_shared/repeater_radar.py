@@ -65,7 +65,14 @@ def _good(v: Any) -> Optional[float]:
 def summary(db: Any, config: Any, days: str = "1", now: Optional[float] = None) -> dict:
     now = time.time() if now is None else now
     d = PERIODS.get(str(days), 1)
-    out: dict = {"generated_at": int(now), "days": d, "repeaters": [], "totals": {}, "has_position": False}
+    out: dict = {"generated_at": int(now), "days": d, "repeaters": [], "totals": {}, "has_position": False, "map": None}
+    try:
+        from .map_upload_stats import totals as map_totals   # MapUploader counts (None when it never ran)
+        today = map_totals(db, 1, now)
+        if today is not None:
+            out["map"] = {"today": today, "week": map_totals(db, 7, now)}
+    except Exception:  # noqa: BLE001 - a tile is never worth an error
+        pass
     here = bot_position(config, db)
     out["has_position"] = here is not None
     with db.connection() as conn:

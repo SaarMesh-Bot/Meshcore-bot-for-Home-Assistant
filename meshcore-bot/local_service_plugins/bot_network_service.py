@@ -214,21 +214,9 @@ class BotNetworkService(BaseServicePlugin):
             return {}
 
     async def radio_stats(self) -> dict:
-        """Noise floor, last RSSI/SNR, airtime (% of the radio's uptime), battery and packet counters."""
-        core, radio, packets = await self._command("get_stats_core"), await self._command("get_stats_radio"), await self._command("get_stats_packets")
-        out: dict = {}
-        up = core.get("uptime_secs") or 0
-        for key, src in (("nf", radio.get("noise_floor")), ("rssi", radio.get("last_rssi")), ("snr", radio.get("last_snr")),
-                         ("bat", core.get("battery_mv")), ("rup", up or None), ("err", core.get("errors")),
-                         ("rcv", packets.get("recv")), ("snt", packets.get("sent")), ("ftx", packets.get("flood_tx")),
-                         ("dtx", packets.get("direct_tx")), ("frx", packets.get("flood_rx")), ("drx", packets.get("direct_rx"))):
-            if src is not None:
-                out[key] = src
-        if up and radio.get("tx_air_secs") is not None:
-            out["txa"] = round(100.0 * radio["tx_air_secs"] / up, 2)
-        if up and radio.get("rx_air_secs") is not None:
-            out["rxa"] = round(100.0 * radio["rx_air_secs"] / up, 2)
-        return out
+        """Noise floor, last RSSI/SNR, airtime (% of the radio's uptime), battery and packet counters (modules/radio_stats.py)."""
+        from ..radio_stats import radio_stats
+        return await radio_stats(self.bot)
 
     async def firmware(self) -> dict:
         if self._firmware is None:

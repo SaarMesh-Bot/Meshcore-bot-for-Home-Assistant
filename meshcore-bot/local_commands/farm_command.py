@@ -11,6 +11,8 @@ DM carries the sender's key (nobody can play in your name); 'farm top' also work
   farm verwerk jam 2       process in the workshop (soup, jam, wine, ...)
   farm bank / stort 100 / haal 100    the bank: 1% interest a day, safe from the pickpocket
   farm upgrade [veld|kas|grond|werkplaats]   farm geef <name> 100   farm top
+  farm opdracht            today's task (reward: coins, farm XP and 5 Mesh RPG XP)
+  farm markt / bied jam 3 60 / koop 2 / intrekken 2   the market between players (markt also in a channel)
 """
 
 from typing import Any
@@ -33,6 +35,11 @@ WITHDRAW = {"haal", "opnemen", "withdraw", "abheben", "retirer"}
 UPGRADE = {"upgrade", "upgrades", "verbeter", "ausbau", "amélioration", "amelioration"}
 GIVE = {"geef", "give", "gib", "donne", "donner"}
 TOP = {"top", "ranking", "rangliste", "classement"}
+QUEST = {"opdracht", "opdrachten", "quest", "task", "aufgabe", "mission", "tache", "tâche"}
+MARKET = {"markt", "marktplaats", "market", "marche", "marché"}
+OFFER = {"bied", "aanbieden", "offer", "biete", "offre", "offrir"}
+BUY = {"koop", "kopen", "buy", "kaufe", "kaufen", "achete", "achète", "acheter"}
+CANCEL = {"intrekken", "annuleer", "cancel", "zurueck", "zurück", "annuler"}
 
 
 class FarmCommand(BaseCommand):
@@ -44,8 +51,8 @@ class FarmCommand(BaseCommand):
     category = "games"
 
     short_description = "Farming game (by DM)"
-    usage = "farm [start|winkel|zaai <gewas> [n]|oogst|schuur|verkoop [x]|verwerk <product> [n]|bank|stort|haal|upgrade|geef|top]"
-    examples = ["farm start", "farm zaai tomaat 4", "farm oogst", "farm verwerk soep", "farm top"]
+    usage = "farm [start|winkel|zaai <gewas> [n]|oogst|schuur|verkoop [x]|verwerk <product> [n]|opdracht|markt|bied|koop|bank|upgrade|geef|top]"
+    examples = ["farm start", "farm zaai tomaat 4", "farm oogst", "farm opdracht", "farm markt", "farm top"]
 
     settings_schema = [
         {"key": "crops_off", "label": "Crops that are off", "type": "list", "default": [],
@@ -94,6 +101,8 @@ class FarmCommand(BaseCommand):
             rest = args[1:]
             if sub in TOP:
                 return await self._top(message)
+            if sub in MARKET:
+                return await self._reply(message, self.game.market(self.translate))
             if not message.is_dm or not message.sender_pubkey:
                 return await self.send_response(message, self.translate("commands.farm.dm_only"))
             name = (message.sender_id or "").strip()
@@ -129,6 +138,15 @@ class FarmCommand(BaseCommand):
                 out = g.bank(key, name, action, rest[1] if len(rest) > 1 else "", t)
             elif sub in DEPOSIT or sub in WITHDRAW:
                 out = g.bank(key, name, "in" if sub in DEPOSIT else "out", rest[0] if rest else "", t)
+            elif sub in QUEST:
+                out = g.quest(key, name, t)
+            elif sub in OFFER:
+                nums = [int(w) for w in rest if w.isdigit()]
+                out = g.offer(key, name, word(rest), nums[0] if nums else None, nums[1] if len(nums) > 1 else None, t)
+            elif sub in BUY:
+                out = g.buy(key, name, rest[0] if rest else "", t)
+            elif sub in CANCEL:
+                out = g.withdraw(key, rest[0] if rest else "", t)
             elif sub in UPGRADE:
                 out = g.upgrade(key, name, word(rest), t)
             elif sub in GIVE:

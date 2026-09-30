@@ -93,6 +93,10 @@ verwerk ze in je werkplaats tot iets wat meer oplevert, verkoop, spaar in de ban
 | `farm bank` | `farm bank`  /  `farm stort 500`  /  `farm haal alles` | Je spaargeld: 1% rente per dag (max 500 per dag), veilig voor de zakkenroller. **DM** |
 | `farm upgrade` | `farm upgrade`  /  `farm upgrade kas` | Extra veld, betere kas (sneller groeien), betere grond (meer oogst) of een grotere werkplaats. **DM** |
 | `farm geef` | `farm geef Alex 100` | Geef munten aan een andere boer. **DM** |
+| `farm opdracht` | `farm opdracht` | De opdracht van vandaag (voor iedereen dezelfde: oogsten, maken of verkopen; hoeveel hangt af van je level) en je voortgang. Beloning: munten, farm-XP en 5 XP voor Mesh RPG. **DM** |
+| `farm markt` | `farm markt` | Wat andere boeren te koop aanbieden. Werkt ook in `#games`. |
+| `farm bied` | `farm bied jam 3 60` | Bied oogst of producten aan op de markt (aantal, prijs per stuk), 3 dagen geldig. **DM** |
+| `farm koop`<br><sub>ook: intrekken</sub> | `farm koop 2`  /  `farm intrekken 2` | Koop aanbieding 2 van de markt, of neem je eigen aanbieding terug. **DM** |
 | `farm top` | `farm top` | De rijkste boeren (munten + bank). Werkt ook in `#games`. |
 
 **Gewassen en producten**
@@ -115,6 +119,7 @@ verwerk ze in je werkplaats tot iets wat meer oplevert, verkoop, spaar in de ban
 - Je level stijgt met XP uit oogsten en verwerken; elk level brengt een nieuw gewas.
 - Soms gebeurt er iets bij het oogsten: een **topoogst** (dubbel), **storm** (een veld kapot), een **zakkenroller** (10% van
   je munten, niet van de bank) of een **controle** als je wiet oogst.
+- Elke ochtend om 06:00 zet de bot de opdracht van de dag in `#games`, en om 14:00 een uitnodiging om mee te doen (kaart *FarmDaily*).
 - Een bot-eigenaar kan gewassen uitzetten (kaart *farm*), bijvoorbeeld wiet.
 
 ## Formule 1

@@ -64,7 +64,8 @@ PATTERNS = [
     ("ha_bridge", re.compile(r"HomeAssistantBridge: webhook (post mislukt|antwoordde)", re.I), None),
     ("command_error", re.compile(r"Error executing (?:queued )?command '([^']+)'", re.I), None),
     # HARepeater warns at most once per repeater per day itself; the cooldown here is the same safety net.
-    ("repeater", re.compile(r"HARepeater: (batterij laag|herstart|offline|ruisvloer hoog|airtime hoog|buur weg)", re.I), 86400),
+    ("repeater", re.compile(r"HARepeater: (batterij laag|herstart|offline|ruisvloer hoog|airtime hoog|buur weg)|"
+                            r"RepeaterWatch: (stil|weer gehoord)", re.I), 86400),
 ]
 ALL_EVENTS = ["startup", "radio", "room_login", "send_failed", "contacts_full",
               "ha_bridge", "command_error", "admin_command", "repeater", "error"]
@@ -290,6 +291,8 @@ class NotifyService(BaseServicePlugin):
             if category == "ha_bridge":
                 return category, "Koppeling met Home Assistant faalt"
             if category == "repeater":
+                if "RepeaterWatch: " in msg:
+                    return category, sanitize("Repeater " + msg.split("RepeaterWatch: ", 1)[-1])
                 return category, sanitize(msg.split("HARepeater: ", 1)[-1])
             return category, sanitize(msg.lstrip("❌ ").strip())
         m = re.match(r"^Processing message: '.*' from (.+) in (\S+)$", msg)
@@ -359,7 +362,8 @@ class NotifyService(BaseServicePlugin):
         if category == "repeater" and not wanted:
             # The service only writes the warnings that are switched on on its own card (Plugins -> HARepeater), so they
             # also work for an events list that was saved before this event existed.
-            wanted = self.bot.config.getboolean("HARepeater", "enabled", fallback=False)
+            wanted = (self.bot.config.getboolean("HARepeater", "enabled", fallback=False)
+                      or self.bot.config.getboolean("RepeaterWatch", "enabled", fallback=False))
         if not wanted or not self.notify_enabled:
             return
         if category in ("radio", "radio_ok"):

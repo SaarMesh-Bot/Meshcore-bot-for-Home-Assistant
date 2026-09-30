@@ -1,5 +1,7 @@
 # MeshCore-bot voor Home Assistant
 
+[![tests](https://github.com/vipje/Meshcore-bot-for-Home-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/vipje/Meshcore-bot-for-Home-Assistant/actions/workflows/tests.yml)
+
 *[English](README.md)*
 
 > **Gebaseerd op [agessaman/meshcore-bot](https://github.com/agessaman/meshcore-bot)** van Adam Gessaman en anderen (MIT).
@@ -43,8 +45,10 @@ Klik op de knop om deze repository aan je Home Assistant toe te voegen, of volg 
 1. In Home Assistant: **Instellingen → Add-ons → Add-on Store → ⋮ → Repositories**, voeg toe:
    `https://github.com/vipje/Meshcore-bot-for-Home-Assistant`.
 2. Installeer **MeshCore Proxy**, kies bij *Seriële poort* je radio en start hem.
-3. Installeer **MeshCore Bot**, vul minstens de botnaam, de kanalen en je eigen *Admin-publieke sleutel* in en start hem.
-4. Open het dashboard via de HA-zijbalk en zet op de pagina *Plugins* aan wat je wilt gebruiken.
+3. Installeer **MeshCore Bot**, vul minstens de botnaam en je eigen *Admin-publieke sleutel* in en start hem.
+4. Open het dashboard via de HA-zijbalk en volg de **setup-wizard** (de melding bovenaan, of *Settings → Setup*): de
+   kanalen waarin de bot antwoordt (gelezen van je radio), welke commandogroepen aan staan en een paar extra's, op één
+   pagina. Alles kun je later verfijnen op de pagina *Plugins*.
 
 **Stap voor stap, met uitleg: [INSTALL.nl.md](INSTALL.nl.md).** Alle opties staan in het tabblad **Documentatie** van elke add-on (Engels).
 

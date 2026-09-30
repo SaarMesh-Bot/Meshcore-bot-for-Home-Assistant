@@ -291,6 +291,13 @@
             tile('Shared prefix', t.shared_prefix || 0, 'same first byte, both within ' + (t.near_km || 50) + ' km', 'shared'),
             tile('Farthest direct', t.farthest_km === null || t.farthest_km === undefined ? '-' : t.farthest_km + ' km',
                  d.has_position ? 'heard directly (neighbours)' : 'bot position unknown'));
+        if (d.map) {
+            // MapUploader: nodes sent to map.meshcore.dev today (new = the map did not have them yet)
+            const m = d.map.today, w = d.map.week;
+            const card = tile('Map uploads today', m.sent, m.new + ' new · ' + m.duplicate + ' known' + (m.failed ? ' · ' + m.failed + ' failed' : ''));
+            card.title = 'map.meshcore.dev, last 7 days: ' + w.sent + ' sent, ' + w.new + ' new, ' + w.duplicate + ' already known, ' + w.failed + ' failed';
+            tiles.appendChild(card);
+        }
         const q = document.getElementById('rr-search').value.trim().toLowerCase();
         const directOnly = document.getElementById('rr-direct').checked;
         const rows = d.repeaters.filter(function (r) {

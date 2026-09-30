@@ -1079,8 +1079,8 @@
       "error": "dm a échoué : {error}"
     },
     "farm": {
-      "help": "farm = jeu de ferme par DM : start, boutique, sème tomate 2, récolte, grange, vendre, fabrique soupe, bank, déposer, retirer, upgrade, donne, top",
-      "usage": "Ferme : farm, start, boutique, sème <plante> [n], récolte, grange, vendre [x], fabrique <produit>, bank, upgrade, donne, top",
+      "help": "farm = ferme par DM : start, sème tomate 2, récolte, vendre, fabrique soupe, tâche, marché, offre, achète, bank, top",
+      "usage": "Ferme : farm, start, boutique, sème, récolte, grange, vendre, fabrique, tâche, marché, offre, achète, bank, top",
       "dm_only": "La ferme se joue par DM (je sais alors que c'est vous). Envoyez-moi : farm start",
       "error": "Un souci à la ferme, réessayez dans un instant.",
       "no_farm": "Vous n'avez pas encore de ferme. Envoyez : farm start",
@@ -1175,7 +1175,34 @@
         "werkplaats": "un plus grand atelier"
       },
       "left_days": "{d} jours",
-      "growing_piece": "{n} {crop} {left}"
+      "growing_piece": "{n} {crop} {left}",
+      "quest_done_today": "La tâche du jour est faite. Une nouvelle demain.",
+      "quest_completed": " Tâche faite : +{coins} pièces, +{xp} xp !",
+      "market_head": "Marché : ",
+      "market_item": "#{id} {qty} {item} à {price} ({name})",
+      "market_empty": "Le marché est vide. Proposez quelque chose : farm offre jam 3 60",
+      "offer_usage": "Proposer : farm offre <plante ou produit> <nombre> <prix pièce>, p. ex. farm offre jam 3 60",
+      "offered": "Proposé : #{id} {qty} {item} à {price} pièces, valable {days} jours.",
+      "offer_limit": "Vous avez déjà {n} offres. Retirez-en une : farm annuler <nr>",
+      "not_in_barn": "Vous n'avez que {have} {item} dans la grange.",
+      "buy_usage": "Acheter : farm achète <nr> (voir farm marché). Retirer : farm annuler <nr>",
+      "no_offer": "L'offre #{id} n'existe pas (plus).",
+      "own_offer": "C'est votre propre offre. Retirer : farm annuler {id}",
+      "bought": "Acheté : {qty} {item} de {name} pour {coins} pièces. Reste {left}.",
+      "withdrawn": "Retiré : {qty} {item} de retour dans la grange.",
+      "market_sale": "{qty} {item} à {name} (+{coins})",
+      "market_sold": "Vendu au marché : {items}",
+      "quest": {
+        "harvest": "Tâche du jour (pour tous) : récoltez {need} pièces, toute plante ({progress}/{need}). Récompense {coins} pièces, +{xp} xp.",
+        "process": "Tâche du jour (pour tous) : fabriquez {need} produits à l'atelier ({progress}/{need}). Récompense {coins} pièces, +{xp} xp.",
+        "sell": "Tâche du jour (pour tous) : vendez pour {need} pièces ({progress}/{need}). Récompense {coins} pièces, +{xp} xp."
+      },
+      "daily_post": {
+        "harvest": "🌱 Ferme, tâche du jour : récoltez, toute plante compte. Votre objectif : DM farm tâche",
+        "process": "🌱 Ferme, tâche du jour : fabriquez des produits à l'atelier. Votre objectif : DM farm tâche",
+        "sell": "🌱 Ferme, tâche du jour : vendez votre récolte. Votre objectif : DM farm tâche"
+      },
+      "daily_invite": "🌱 Ferme : lancez votre propre ferme aujourd'hui ! Semer, récolter, faire confiture ou vin et échanger. DM : farm start"
     },
     "path": {
       "more_hops": "+{n} sauts de plus"

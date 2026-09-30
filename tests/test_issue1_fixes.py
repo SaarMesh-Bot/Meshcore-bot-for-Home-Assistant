@@ -108,5 +108,53 @@ check(len(out) == 1 and out[0].count("Repeater nummer") == 3 and "+6 more hops" 
 out = path_run(hops[:2], max_hops=7)
 check(len(out) == 1 and "(1/" not in out[0], "korte route: één bericht, geen nummer")
 
+# ---------------------------------------------------------------- MapUploader counts
+mu_src = open(os.path.join(TREE, "modules/service_plugins/map_uploader_service.py")).read()
+check('self.logger.debug(f"Uploading {node_info}")' in mu_src and 'self.logger.debug(f"Upload successful: {result}")' in mu_src,
+      "MapUploader: geen twee INFO-regels meer per upload")
+check(mu_src.count('self._addon_count(') == 8 and "def _addon_count" in mu_src, "MapUploader: elke uitkomst geteld (verstuurd, nieuw, bekend, mislukt)")
+MS = imp("modules.map_upload_stats")
+import contextlib, sqlite3, tempfile
+
+
+class DB:
+    def __init__(self):
+        self.path = tempfile.mktemp()
+
+    @contextlib.contextmanager
+    def connection(self):
+        c = sqlite3.connect(self.path)
+        try:
+            yield c
+        finally:
+            c.close()
+
+
+db = DB()
+check(MS.totals(db) is None, "nog nooit geüpload: geen tellingen (geen tegel)")
+T = 1_790_000_000
+for kind in ("sent", "new", "sent", "duplicate", "sent", "failed"):
+    MS.record(db, kind, now=T)
+MS.record(db, "sent", now=T - 3 * 86400)
+check(MS.totals(db, 1, now=T) == {"sent": 3, "new": 1, "duplicate": 1, "failed": 1}, f"tellingen vandaag ({MS.totals(db, 1, now=T)})")
+check(MS.totals(db, 7, now=T)["sent"] == 4, "7 dagen tellen de oudere mee")
+
+
+class Log:
+    def __init__(self):
+        self.lines = []
+
+    def info(self, msg, *args):
+        self.lines.append(msg % args)
+
+
+log, hs = Log(), MS.HourlySummary()
+for kind in ("sent", "new", "sent", "duplicate"):
+    hs.add(kind, log, now=T)
+check(log.lines == [], "binnen hetzelfde uur: geen logregel")
+hs.add("sent", log, now=T + 3600)
+check(log.lines == ["Kaart: afgelopen uur 2 knopen naar map.meshcore.dev gestuurd, 1 nieuw, 1 had de kaart al, 0 mislukt"],
+      f"één samenvattende regel per uur ({log.lines})")
+
 print(f"\n{len(fails)} fouten")
 sys.exit(1 if fails else 0)

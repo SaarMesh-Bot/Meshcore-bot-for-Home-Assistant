@@ -1079,8 +1079,8 @@
       "error": "dm mislukt: {error}"
     },
     "farm": {
-      "help": "farm = kwekerij via DM: start, winkel, zaai tomaat 2, oogst, schuur, verkoop, verwerk soep, bank, stort, haal, upgrade, geef, top",
-      "usage": "Kwekerij: farm, start, winkel, zaai <gewas> [n], oogst, schuur, verkoop [x], verwerk <product>, bank, upgrade, geef, top",
+      "help": "farm = kwekerij via DM: start, zaai tomaat 2, oogst, verkoop, verwerk soep, opdracht, markt, bied, koop, bank, top",
+      "usage": "Kwekerij: farm, start, winkel, zaai, oogst, schuur, verkoop, verwerk, opdracht, markt, bied, koop, bank, upgrade, geef, top",
       "dm_only": "De kwekerij speel je via een DM (dan weet ik dat jij het bent). Stuur me: farm start",
       "error": "Er ging iets mis in de kwekerij, probeer het zo nog eens.",
       "no_farm": "Je hebt nog geen kwekerij. Stuur: farm start",
@@ -1175,7 +1175,34 @@
         "werkplaats": "een grotere werkplaats"
       },
       "left_days": "{d} dagen",
-      "growing_piece": "{n} {crop} {left}"
+      "growing_piece": "{n} {crop} {left}",
+      "quest_done_today": "Je opdracht van vandaag is klaar. Morgen staat er een nieuwe.",
+      "quest_completed": " Opdracht klaar: +{coins} munten, +{xp} xp!",
+      "market_head": "Markt: ",
+      "market_item": "#{id} {qty} {item} à {price} ({name})",
+      "market_empty": "De markt is leeg. Bied iets aan: farm bied jam 3 60",
+      "offer_usage": "Aanbieden: farm bied <gewas of product> <aantal> <prijs per stuk>, bv. farm bied jam 3 60",
+      "offered": "Aangeboden: #{id} {qty} {item} à {price} munten, {days} dagen geldig.",
+      "offer_limit": "Je hebt al {n} aanbiedingen. Trek er een in: farm intrekken <nr>",
+      "not_in_barn": "Je hebt maar {have} {item} in je schuur.",
+      "buy_usage": "Kopen: farm koop <nr> (zie farm markt). Intrekken: farm intrekken <nr>",
+      "no_offer": "Aanbieding #{id} bestaat niet (meer).",
+      "own_offer": "Dat is je eigen aanbieding. Terugnemen: farm intrekken {id}",
+      "bought": "Gekocht: {qty} {item} van {name} voor {coins} munten. Nog {left}.",
+      "withdrawn": "Ingetrokken: {qty} {item} terug in je schuur.",
+      "market_sale": "{qty} {item} aan {name} (+{coins})",
+      "market_sold": "Verkocht op de markt: {items}",
+      "quest": {
+        "harvest": "Opdracht vandaag (voor iedereen): oogst {need} stuks, welk gewas maakt niet uit ({progress}/{need}). Beloning {coins} munten, +{xp} xp.",
+        "process": "Opdracht vandaag (voor iedereen): maak {need} producten in je werkplaats ({progress}/{need}). Beloning {coins} munten, +{xp} xp.",
+        "sell": "Opdracht vandaag (voor iedereen): verkoop voor {need} munten ({progress}/{need}). Beloning {coins} munten, +{xp} xp."
+      },
+      "daily_post": {
+        "harvest": "🌱 Kwekerij, opdracht van vandaag: oogst zoveel mogelijk, elk gewas telt. Jouw doel: DM mij farm opdracht",
+        "process": "🌱 Kwekerij, opdracht van vandaag: maak producten in je werkplaats. Jouw doel: DM mij farm opdracht",
+        "sell": "🌱 Kwekerij, opdracht van vandaag: verkoop je oogst. Jouw doel: DM mij farm opdracht"
+      },
+      "daily_invite": "🌱 Kwekerij: begin vandaag je eigen boerderij! Zaaien, oogsten, jam of wijn maken en handelen. DM mij: farm start"
     },
     "path": {
       "more_hops": "+{n} hops meer"

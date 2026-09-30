@@ -29,6 +29,7 @@ SYNC_DAYS = 8
 MIN_SYNC_GAP_S = 60
 MSG_CAP, CMD_CAP = 20, 10
 XP_MSG, XP_CMD, XP_CHECKIN, XP_KARMA, XP_HOP = 1, 2, 5, 10, 5
+XP_FARM_TASK = 5   # a finished Kwekerij daily task (farm_game.py)
 DX_HOP_CAP = 10   # the best DX counts for at most 10 hops (50 XP): one lucky far message must not outweigh weeks of taking part
 TITLE_LEVELS = [(18, 6), (12, 5), (8, 4), (5, 3), (3, 2), (1, 1), (0, 0)]   # (from level, title number)
 
@@ -152,8 +153,11 @@ def _parts(conn, name: str, since_day: Optional[str]) -> dict:
     checkins = conn.execute(f"SELECT COUNT(*) FROM community_checkin WHERE LOWER(name)=LOWER(?){day_filter}", p).fetchone()[0]
     karma = conn.execute(f"SELECT COUNT(*) FROM community_karma WHERE LOWER(receiver)=LOWER(?){day_filter}", p).fetchone()[0]
     hops = conn.execute(f"SELECT COALESCE(MAX(hops),0) FROM community_dx WHERE LOWER(name)=LOWER(?){day_filter}", p).fetchone()[0]
+    tasks = 0
+    if conn.execute("SELECT 1 FROM sqlite_master WHERE name='farm_quests'").fetchone():
+        tasks = conn.execute(f"SELECT COUNT(*) FROM farm_quests WHERE done=1 AND LOWER(name)=LOWER(?){day_filter}", p).fetchone()[0]
     return {"messages": int(msgs), "commands": int(cmds), "active_days": int(active), "all_messages": int(raw_msgs),
-            "checkins": int(checkins), "karma": int(karma), "best_hops": int(hops)}
+            "checkins": int(checkins), "karma": int(karma), "best_hops": int(hops), "farm_tasks": int(tasks)}
 
 
 def xp_of(bot: Any, name: str, since_day: Optional[str] = None) -> dict:
@@ -162,7 +166,7 @@ def xp_of(bot: Any, name: str, since_day: Optional[str] = None) -> dict:
     with bot.db_manager.connection() as conn:
         parts = _parts(conn, name, since_day)
     xp = (parts["messages"] * XP_MSG + parts["commands"] * XP_CMD + parts["checkins"] * XP_CHECKIN
-          + parts["karma"] * XP_KARMA + min(parts["best_hops"], DX_HOP_CAP) * XP_HOP)
+          + parts["karma"] * XP_KARMA + min(parts["best_hops"], DX_HOP_CAP) * XP_HOP + parts["farm_tasks"] * XP_FARM_TASK)
     level = level_for(xp)
     return {**parts, "xp": xp, "level": level, "next": xp_for_level(level + 1), "title": title_number(level)}
 

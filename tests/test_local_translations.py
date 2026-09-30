@@ -52,6 +52,8 @@ ENUMS = {
     "commands.farm.crop": ["tomaat", "aardbei", "pompoen", "wiet", "druif", "zonnebloem", "appel", "hop", "koffie", "cacao"],
     "commands.farm.product": ["soep", "pasta", "jam", "lantaarn", "joint", "wijn", "olie", "taart", "bier", "espresso", "chocolade"],
     "commands.farm.up": ["veld", "kas", "grond", "werkplaats"],
+    "commands.farm.quest": ["harvest", "process", "sell"],
+    "commands.farm.daily_post": ["harvest", "process", "sell"],
     "commands.farm.up_name": ["veld", "kas", "grond", "werkplaats"],
     "commands.file.type": ["AbnormalTraffic", "Accident", "GeneralObstruction", "VehicleObstruction"],
 }

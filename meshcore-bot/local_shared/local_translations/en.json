@@ -695,8 +695,8 @@
       "error": "dm failed: {error}"
     },
     "farm": {
-      "help": "farm = farming game by DM: start, shop, sow tomato 2, harvest, barn, sell, make soup, bank, deposit, withdraw, upgrade, give, top",
-      "usage": "Farm: farm, start, shop, sow <crop> [n], harvest, barn, sell [x], make <product>, bank, upgrade, give, top",
+      "help": "farm = farming game by DM: start, sow tomato 2, harvest, sell, make soup, task, market, offer, buy, bank, top",
+      "usage": "Farm: farm, start, shop, sow, harvest, barn, sell, make, task, market, offer, buy, cancel, bank, upgrade, give, top",
       "dm_only": "The farm is played by DM (so I know it is you). Send me: farm start",
       "error": "Something went wrong on the farm, try again in a moment.",
       "no_farm": "You have no farm yet. Send: farm start",
@@ -791,7 +791,34 @@
         "werkplaats": "a bigger workshop"
       },
       "left_days": "{d} days",
-      "growing_piece": "{n} {crop} {left}"
+      "growing_piece": "{n} {crop} {left}",
+      "quest_done_today": "Today's task is done. A new one tomorrow.",
+      "quest_completed": " Task done: +{coins} coins, +{xp} xp!",
+      "market_head": "Market: ",
+      "market_item": "#{id} {qty} {item} at {price} ({name})",
+      "market_empty": "The market is empty. Offer something: farm offer jam 3 60",
+      "offer_usage": "Offering: farm offer <crop or product> <number> <price each>, e.g. farm offer jam 3 60",
+      "offered": "Offered: #{id} {qty} {item} at {price} coins, valid {days} days.",
+      "offer_limit": "You already have {n} offers. Take one back: farm cancel <nr>",
+      "not_in_barn": "You only have {have} {item} in your barn.",
+      "buy_usage": "Buying: farm buy <nr> (see farm market). Taking back: farm cancel <nr>",
+      "no_offer": "Offer #{id} does not exist (any more).",
+      "own_offer": "That is your own offer. Take it back: farm cancel {id}",
+      "bought": "Bought: {qty} {item} from {name} for {coins} coins. {left} left.",
+      "withdrawn": "Taken back: {qty} {item} are in your barn again.",
+      "market_sale": "{qty} {item} to {name} (+{coins})",
+      "market_sold": "Sold on the market: {items}",
+      "quest": {
+        "harvest": "Today's task (for everyone): harvest {need} pieces, any crop ({progress}/{need}). Reward {coins} coins, +{xp} xp.",
+        "process": "Today's task (for everyone): make {need} products in your workshop ({progress}/{need}). Reward {coins} coins, +{xp} xp.",
+        "sell": "Today's task (for everyone): sell for {need} coins ({progress}/{need}). Reward {coins} coins, +{xp} xp."
+      },
+      "daily_post": {
+        "harvest": "🌱 Farm, today's task: harvest, any crop counts. Your goal: DM me farm task",
+        "process": "🌱 Farm, today's task: make products in your workshop. Your goal: DM me farm task",
+        "sell": "🌱 Farm, today's task: sell your crops. Your goal: DM me farm task"
+      },
+      "daily_invite": "🌱 Farm: start your own farm today! Sow, harvest, make jam or wine and trade. DM me: farm start"
     },
     "path": {
       "more_hops": "+{n} more hops"

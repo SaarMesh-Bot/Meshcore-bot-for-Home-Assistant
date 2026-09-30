@@ -51,7 +51,7 @@ bot en, als je die gebruikt, meshcore-ha.
    | Optie | Wat vul je in |
    |---|---|
    | Botnaam | De naam op de mesh, bijvoorbeeld je woonplaats. Zet er geen emoji achter: `|🤖` komt er vanzelf achter. |
-   | Kanalen om op te luisteren | Eén kanaal per regel, precies zoals op de radio, bijvoorbeeld `#bot` en `#test`. |
+   | Kanalen om op te luisteren | Eén kanaal per regel, precies zoals op de radio, bijvoorbeeld `#bot` en `#test`. Je kunt dit ook leeg laten en ze kiezen in de setup-wizard (stap 7). |
    | Admin-publieke sleutels | Je eigen publieke sleutel van 64 tekens (stap 1). |
    | Taal van de antwoorden | `en` (standaard), `nl`, `de` of `fr`. |
    | Breedte-/lengtegraad | Optioneel: waar de bot staat, voor `airplanes`, het weer en afstanden. |
@@ -62,9 +62,9 @@ bot en, als je die gebruikt, meshcore-ha.
 3. Tabblad **Info**: zet **Starten bij opstarten**, **Watchdog** en **Weergeven in zijbalk** aan en klik **Starten**.
 4. In het **Logboek** zie je de bot verbinden met de proxy en zijn commando's laden.
 
-**De kanalen moeten ook op de radio staan.** De bot hoort alleen kanalen die de radio kent. Voeg ze toe op het dashboard
-(volgende stap), pagina **Radio**, bij de kanalen. Een hashtag-kanaal zoals `#bot` heeft alleen zijn naam nodig. Herstart na
-het toevoegen de bot-add-on één keer, zodat hij het kanaal oppikt.
+**De kanalen moeten ook op de radio staan.** De bot hoort alleen kanalen die de radio kent. Een hashtag-kanaal zoals
+`#bot` zet de bot vanzelf op de radio als het ontbreekt (kaart *AutoChannels*, staat standaard aan). Een privékanaal
+heeft zijn sleutel nodig: voeg het toe in de MeshCore-app of op het dashboard, pagina **Radio**.
 
 ## 5. Eerste test
 
@@ -97,6 +97,8 @@ staat op de kaart.
 
 ## 7. Wat zet je aan
 
+Het snelst: open het dashboard en volg de melding **setup** (of *Settings -> Setup*). Daar kies je op één pagina de kanalen, de commandogroepen en de extra's. De kaarten hieronder zijn dezelfde instellingen, één voor één.
+
 Een nieuwe installatie begint rustig: alles wat een eigen opstelling vraagt, staat uit. Het bekijken waard:
 
 | Kaart | Wat het doet |
@@ -108,6 +110,8 @@ Een nieuwe installatie begint rustig: alles wat een eigen opstelling vraagt, sta
 | **Webhook** | Laat Home Assistant berichten op de mesh zetten. **Zet eerst een geheime token.** |
 | **BotNetwork** | Deelt wat je radio hoort met andere bots van deze add-on, via internet (geen zendtijd). Staat standaard uit: zet hem aan als je mee wilt doen (in de README staat wat er gedeeld wordt). |
 | **AutoChannels** | **Staat standaard aan**: zet de hashtag-kanalen die de bot gebruikt (#test, #games, #f1, ...) op de radio als ze ontbreken. |
+| **HASensors** | **Staat standaard aan**: de cijfers van de bot als sensoren in Home Assistant (`sensor.meshcore_bot_...`). |
+| **RepeaterWatch** | **Staat standaard aan**: een melding als een repeater die je radio rechtstreeks hoort stil wordt. |
 | **InstallCount** | **Staat standaard aan**: één keer per dag een anoniem bericht (willekeurig nummer, versie, datum), zodat de maker weet hoeveel installaties er draaien. Zet hem uit en er gaat niets (zie de README). |
 | **GamesChannel** | Houdt de spellen (quiz, hangman, stem, ...) in één kanaal, bijvoorbeeld `#games`. |
 | **NightMode** | Houdt geplande berichten en feeds 's nachts stil (standaard 23:00-07:00). Antwoorden aan mensen gaan altijd door. |

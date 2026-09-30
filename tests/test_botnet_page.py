@@ -138,8 +138,58 @@ old_rpt = [r for r in r7["repeaters"] if r["name"] == "Oud RPT"]
 far = [r for r in r7["repeaters"] if r["name"] == "Dal RPT"][0]
 check("place" in far and "bot_list" not in far and "snr" in far, "compact antwoord: lege velden weggelaten")
 check(len(r7["repeaters"]) == 3 and old_rpt and old_rpt[0]["km"] is None, "7 dagen: ook de oudere, zonder plek geen afstand")
+check(rr["map"] is None, "zonder MapUploader: geen kaarttegel")
+from modules import map_upload_stats as _mus
+_mus.record(v.db_manager, "sent"); _mus.record(v.db_manager, "new")
+rm = c.get("/api/radar/repeaters?days=1", headers=H).get_json()["map"]
+check(rm["today"] == {"sent": 1, "new": 1, "duplicate": 0, "failed": 0} and rm["week"]["sent"] == 1, f"kaarttegel: tellingen van vandaag en 7 dagen ({rm})")
 radar_src = open(os.path.join(TREE, "modules", "web_viewer", "templates", "radar.html")).read()
 check("innerHTML" not in radar_src and "insertAdjacentHTML" not in radar_src, "radar: namen alleen als tekst")
+
+# ---------------------------------------------------------------- first-start wizard
+os.environ.pop("SUPERVISOR_TOKEN", None)
+work = tempfile.mkdtemp()
+wcfg = configparser.ConfigParser()
+wcfg["Bot"] = {"db_path": f"{work}/viewer.db", "bot_name": "Mesh|HA|🤖"}
+wcfg["Web_Viewer"] = {"enabled": "true", "web_viewer_password": ""}
+wcfg["Channels"] = {"monitor_channels": "#test"}
+wcfg["Setup"] = {"done": "false"}
+wcfg["Quiz_Command"] = {"enabled": "true"}
+with open(f"{work}/config.ini", "w") as f:
+    wcfg.write(f)
+wv = BotDataViewer(config_path=f"{work}/config.ini")
+wv.app.config["TESTING"] = True
+wc = wv.app.test_client()
+with wv.db_manager.connection() as conn:
+    conn.execute("CREATE TABLE IF NOT EXISTS channels (channel_idx INTEGER, channel_name TEXT, channel_key_hex TEXT)")
+    conn.executemany("INSERT INTO channels (channel_idx, channel_name, channel_key_hex) VALUES (?,?,?)",
+                     [(0, "Public", ""), (1, "#test", ""), (2, "#bot", ""), (3, "#games", "")])
+    conn.commit()
+home = wc.get("/radar").get_data(as_text=True)
+check('href="/setup"' in home and "Start the setup" in home, "nieuwe installatie: melding 'Start the setup' en menu-item Setup")
+check(wc.get("/setup").status_code == 200, "pagina /setup")
+first = wc.get("/")
+check(first.status_code == 302 and first.headers["Location"].endswith("/setup"), f"nieuwe installatie: de startpagina opent de wizard ({first.status_code})")
+st = wc.get("/api/setup", headers=H).get_json()
+check(st["radio_channels"] == ["Public", "#test", "#bot", "#games"] and st["bot_channels"] == ["#test"] and not st["done"],
+      f"wizard leest de kanalen van de radio en de huidige keuzes ({st['radio_channels']}, {st['bot_channels']})")
+check(st["groups"]["games"]["on"] and "quiz" in st["groups"]["games"]["commands"], "commandogroepen met hun huidige stand")
+r = wc.post("/api/setup/apply", headers=H, json={
+    "bot_channels": ["#test", "#bot"], "public": "Public", "greeter": True,
+    "groups": {"games": True, "fun": False}, "games_channel": "#games",
+    "features": {"night": True, "botnet": False, "repeaterwatch": True, "hasensors": True}}).get_json()
+check(r["success"] and r["restart_required"] and r["channels_saved"] is False, f"opslaan; buiten HA: kanalen niet opgeslagen, dat wordt gemeld ({r})")
+after = configparser.ConfigParser(interpolation=None, strict=False); after.read(f"{work}/config.ini")
+check(after["Setup"]["done"] == "true" and after["ChannelHint"]["channels"] == "Public" and after["ChannelHint"]["where"] == "#test,#bot,#games",
+      f"afgerond, verwijskanaal en waar commando's werken ({dict(after['ChannelHint'])})")
+check(after["GamesChannel"]["channel"] == "#games" and after["Greeter_Command"]["channels"] == "Public" and after["NightMode"]["enabled"] == "true",
+      "spellenkanaal, begroeter en nachtstand")
+check(after["Joke_Command"]["enabled"] == "false" and after["Quiz_Command"]["enabled"] == "true", "groep 'fun' uit, 'games' aan")
+home2 = wc.get("/radar").get_data(as_text=True)
+check("Start the setup" not in home2 and 'href="/setup"' in home2, "na de wizard: geen melding meer, menu-item blijft")
+check(wc.get("/").status_code == 200, "na de wizard: de startpagina is weer de gewone startpagina")
+wsrc = open(os.path.join(TREE, "modules", "web_viewer", "templates", "setup.html")).read()
+check("innerHTML" not in wsrc and "insertAdjacentHTML" not in wsrc, "wizard: kanaalnamen alleen als tekst")
 
 print(f"\n{len(fails)} fouten")
 sys.exit(1 if fails else 0)

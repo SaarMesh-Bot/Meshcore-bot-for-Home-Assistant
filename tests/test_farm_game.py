@@ -213,6 +213,69 @@ check("wiet" not in " ".join(say(g3.shop(B, t))), "uitgezet gewas niet in de win
 check("joint" not in " ".join(say(g3.process(B, "Bob", "", None, t, now=T0))), "en zijn product ook niet")
 check("wiet" in " ".join(say(G.FarmGame(db).shop(B, t))), "zonder die keuze: wiet wel in de winkel (level 4)")
 
+# ---------------------------------------------------------------- daily task (the same for everyone, amount by level)
+D = "dd" * 32
+gq = G.FarmGame(db, rng=NoEvents(4))
+gq.start(D, "Dirk", t, now=T0)
+r = say(gq.quest(D, "Dirk", t, now=T0))
+check(r[0].startswith("Opdracht vandaag (voor iedereen): ") and "Beloning 100 munten, +8 xp" in r[0], f"dagopdracht, beloning past bij level 1 ({r})")
+check(say(gq.quest(D, "Dirk", t, now=T0 + 600)) == r, "de hele dag dezelfde opdracht")
+kinds = {G.FarmGame.task_of_day(T0 + i * 86400) for i in range(30)}
+check(kinds == {"harvest", "process", "sell"}, f"opdracht wisselt per dag tussen oogsten, maken en verkopen ({kinds})")
+with db.connection() as c:
+    c.execute("UPDATE farm_quests SET kind='harvest', need=3 WHERE pubkey=?", (D,)); c.commit()
+gq.sow(D, "Dirk", "tomaat", 4, t, now=T0)
+r = say(gq.harvest(D, "Dirk", t, now=T0 + 3600))
+check("Opdracht klaar: +100 munten, +8 xp!" in r[0], f"oogsten (elk gewas telt): opdracht voltooid, beloning uitbetaald ({r})")
+check(say(gq.quest(D, "Dirk", t, now=T0 + 3700))[0].startswith("Je opdracht van vandaag is klaar"), "daarna: klaar voor vandaag")
+r2 = say(gq.quest(D, "Dirk", t, now=T0 + 86400))
+check(r2[0].startswith("Opdracht vandaag (voor iedereen): ") and "(0/" in r2[0], "de volgende dag een nieuwe opdracht")
+with db.connection() as c:
+    c.execute("UPDATE farm_quests SET kind='sell', need=10, progress=0, done=0 WHERE pubkey=? AND done=0", (D,)); c.commit()
+r = say(gq.sell(D, "Dirk", "alles", None, t, now=T0 + 86400 + 60))
+check("Opdracht klaar" in r[0], f"verkoop-opdracht telt de verkochte munten ({r})")
+low, high = {"xp": 0, "pubkey": "x", "name": "x"}, {"xp": 18000, "pubkey": "y", "name": "y"}
+with db.connection() as c:
+    ql = gq._quest(c, low, T0 + 5 * 86400); qh = gq._quest(c, high, T0 + 5 * 86400)
+check(ql["kind"] == qh["kind"] and qh["need"] > ql["need"] and qh["reward_coins"] > ql["reward_coins"], "zelfde opdracht voor iedereen, level 10 moet meer en krijgt meer")
+
+# ---------------------------------------------------------------- Mesh RPG XP from farm tasks
+MA = imp("modules.mesh_archive")
+xb = types.SimpleNamespace(db_manager=db, config=configparser.ConfigParser(), logger=logging.getLogger("x"))
+info = MA.xp_of(xb, "dirk")
+check(info["farm_tasks"] == 2 and info["xp"] >= 10, f"Mesh RPG: 5 XP per voltooide dagopdracht ({info['farm_tasks']}, {info['xp']})")
+
+# ---------------------------------------------------------------- market
+E = "ee" * 32
+gq.start(E, "Eva", t, now=T0)
+with db.connection() as c:
+    c.execute("INSERT OR REPLACE INTO farm_items (pubkey, item, qty) VALUES (?, 'jam', 5)", (D,))
+    c.execute("UPDATE farm_players SET coins = 1000 WHERE pubkey=?", (E,)); c.commit()
+check(say(gq.market(t, now=T0))[0].startswith("De markt is leeg"), "lege markt: hoe je iets aanbiedt")
+r = say(gq.offer(D, "Dirk", "jam", 3, 60, t, now=T0))
+oid = int(r[0].split("#")[1].split()[0])
+check(r[0].startswith(f"Aangeboden: #{oid} 3 jam à 60 munten, 3 dagen geldig."), f"aanbieden ({r})")
+check("jam" in " ".join(say(gq.barn(D, t))) and "2 jam" in " ".join(say(gq.barn(D, t))), "aangeboden goederen gaan uit de schuur (2 over)")
+check(say(gq.offer(D, "Dirk", "jam", 9, 60, t, now=T0))[0].startswith("Je hebt maar 2 jam"), "niet meer aanbieden dan je hebt")
+check(say(gq.market(t, now=T0))[0].startswith(f"Markt: #{oid} 3 jam à 60 (Dirk)"), "de markt toont de aanbieding")
+check(say(gq.buy(D, "Dirk", str(oid), t, now=T0))[0].startswith("Dat is je eigen aanbieding"), "eigen aanbieding kopen kan niet")
+r = say(gq.buy(E, "Eva", f"#{oid}", t, now=T0))
+check(r[0] == "Gekocht: 3 jam van Dirk voor 180 munten. Nog 820.", f"kopen ({r})")
+news = say(gq.status(D, "Dirk", t, now=T0 + 60))
+check(any(x.startswith("Verkocht op de markt: 3 jam aan Eva (+180)") for x in news), f"verkoper ziet de verkoop in zijn stand ({news})")
+check(not any("Verkocht op de markt" in x for x in say(gq.status(D, "Dirk", t, now=T0 + 120))), "die melding maar één keer")
+check(say(gq.buy(E, "Eva", str(oid), t, now=T0))[0].startswith(f"Aanbieding #{oid} bestaat niet"), "verkochte aanbieding is weg")
+r = say(gq.offer(D, "Dirk", "jam", 2, 50, t, now=T0))
+oid2 = int(r[0].split("#")[1].split()[0])
+check(say(gq.withdraw(D, str(oid2), t))[0] == "Ingetrokken: 2 jam terug in je schuur.", "intrekken")
+gq.offer(D, "Dirk", "jam", 1, 50, t, now=T0)
+gq.market(t, now=T0 + 4 * 86400)
+with db.connection() as c:
+    left = c.execute("SELECT COUNT(*) FROM farm_market").fetchone()[0]
+    jam = c.execute("SELECT qty FROM farm_items WHERE pubkey=? AND item='jam'", (D,)).fetchone()[0]
+check(left == 0 and jam == 2, f"na 3 dagen: aanbieding verlopen, goederen terug ({left}, {jam})")
+check(say(gq.offer(D, "Dirk", "jam", None, None, t))[0].startswith("Aanbieden: farm bied"), "aanbieden zonder aantal/prijs: uitleg")
+
 # ---------------------------------------------------------------- the command: DM only, top in a channel, bots
 def make_bot(card=None):
     cfg = configparser.ConfigParser()
@@ -256,13 +319,80 @@ async def commands():
     check(r[0].startswith("Geven: farm geef"), "geven zonder bedrag: uitleg")
     r = await run("farm zaai")
     check(r[0].startswith("Zaaien: farm zaai"), "zaaien zonder gewas: uitleg")
-    r = await run("farm start", pubkey="dd" * 32, name="EchoBot")
+    r = await run("farm markt", is_dm=False, pubkey=None)
+    check(r[0].startswith("De markt is leeg") or r[0].startswith("Markt:"), "farm markt werkt ook in een kanaal")
+    r = await run("farm opdracht")
+    check(r[0].startswith("Opdracht vandaag") or r[0].startswith("Je opdracht"), "farm opdracht via DM")
+    r = await run("farm bied tomaat 2 5")
+    check(r[0].startswith("Aangeboden:") or r[0].startswith("Je hebt maar"), f"farm bied via DM ({r})")
+    r = await run("farm start", pubkey="ff" * 32, name="EchoBot")
     check("bot" in r[0].lower() and "doen niet mee" in r[0], f"bots doen niet mee ({r})")
     r = await run("farm winkel", pubkey=B, name="Bob", card={"crops_off": "wiet"})
     check("wiet" not in " ".join(r), "kaart: wiet uit")
     check(FarmCommand(make_bot()).get_help_text().startswith("farm = kwekerij via DM"), "help farm")
 
 asyncio.run(commands())
+
+# ---------------------------------------------------------------- FarmDaily: the task of the day in the games channel
+FD = imp("modules.service_plugins.farm_daily_service")
+sent = []
+
+
+class CM:
+    async def send_channel_message(self, channel, text, **kw):
+        sent.append((channel, text))
+        return True
+
+
+def daily_bot(card, games=True):
+    cfg = configparser.ConfigParser()
+    cfg["Bot"] = {"bot_name": "Test|🤖", "timezone": "Europe/Amsterdam"}
+    cfg["FarmDaily"] = card
+    if games:
+        cfg["GamesChannel"] = {"enabled": "true", "channel": "#games"}
+    return types.SimpleNamespace(config=cfg, db_manager=db, translator=tr, logger=logging.getLogger("fd"), connected=True,
+                                 command_manager=CM())
+
+
+import datetime as _dt
+from zoneinfo import ZoneInfo
+morning = _dt.datetime(2026, 10, 5, 5, 59, tzinfo=ZoneInfo("Europe/Amsterdam")).timestamp()
+fd = FD.FarmDailyService(daily_bot({"enabled": "true", "time": "06:00", "channel": ""}))
+check(asyncio.run(fd.tick(morning)) is False and not sent, "voor 06:00: nog niets")
+check(asyncio.run(fd.tick(morning + 120)) is True and sent[-1][0] == "#games" and sent[-1][1].startswith("🌱 Kwekerij, opdracht van vandaag"),
+      f"om 06:00 in het spellenkanaal ({sent})")
+check(asyncio.run(fd.tick(morning + 3600)) is False and len(sent) == 1, "één keer per dag")
+check(asyncio.run(fd.tick(morning + 86400 + 120)) is True and len(sent) == 2, "de volgende ochtend weer")
+none = FD.FarmDailyService(daily_bot({"enabled": "true", "time": "06:00", "channel": ""}, games=False))
+db.set_metadata("farm.daily_posted", "")
+check(none.due(morning + 2 * 86400 + 120) is None, "geen spellenkanaal en geen kanaal op de kaart: niets")
+own = FD.FarmDailyService(daily_bot({"enabled": "true", "time": "06:00", "channel": "#boerderij"}))
+check(own.channel() == "#boerderij", "eigen kanaal op de kaart gaat voor")
+nb = daily_bot({"enabled": "true", "time": "06:00", "channel": ""})
+nb.config["NightMode"] = {"enabled": "true", "start": "23:00", "end": "07:00"}
+check(FD.FarmDailyService(nb).due(morning + 3 * 86400 + 120) is None, "nachtstand tot 07:00: wacht tot de nacht voorbij is")
+empty_db = type(db)()
+eb = daily_bot({"enabled": "true", "time": "06:00", "channel": ""}); eb.db_manager = empty_db
+e_fd = FD.FarmDailyService(eb)
+d0 = e_fd.due(morning + 120)
+check(d0 and d0[1].startswith("🌱 Kwekerij: begin vandaag je eigen boerderij!"), f"nog niemand speelt: 's ochtends een uitnodiging ({d0})")
+sent.clear(); e_fd.bot.command_manager = CM()
+asyncio.run(e_fd.tick(morning + 120))
+check(e_fd.due(morning + 8 * 3600 + 120) is None, "dan om 14:00 geen tweede uitnodiging dezelfde dag")
+
+# with players: task at 06:00, invitation at 14:00
+pl = FD.FarmDailyService(daily_bot({"enabled": "true", "time": "06:00", "invite_time": "14:00", "channel": ""}))
+db.set_metadata("farm.daily_posted", ""); db.set_metadata("farm.invite_posted", "")
+sent.clear()
+day5 = morning + 5 * 86400
+asyncio.run(pl.tick(day5 + 120))
+check(len(sent) == 1 and sent[0][1].startswith("🌱 Kwekerij, opdracht van vandaag"), f"06:00: de opdracht ({sent})")
+check(asyncio.run(pl.tick(day5 + 4 * 3600)) is False, "10:00: niets")
+asyncio.run(pl.tick(day5 + 8 * 3600 + 120))
+check(len(sent) == 2 and sent[1][1].startswith("🌱 Kwekerij: begin vandaag je eigen boerderij!"), f"14:00: uitnodiging om mee te doen, ook met spelers ({sent})")
+check(asyncio.run(pl.tick(day5 + 9 * 3600)) is False and len(sent) == 2, "één uitnodiging per dag")
+off = FD.FarmDailyService(daily_bot({"enabled": "true", "time": "06:00", "invite_time": "", "channel": ""}))
+check(off.invite_minute is None, "uitnodiging leeg op de kaart: uit")
 check(not long_texts, f"elk antwoord past in 130 bytes {[(len(x.encode()), x) for x in long_texts[:3]]}")
 
 print(f"\n{len(fails)} fouten")

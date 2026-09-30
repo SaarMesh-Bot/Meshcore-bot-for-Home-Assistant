@@ -64,6 +64,25 @@ def split_keyval(line: str, sep: str = "="):
     return key.strip(), value.strip()
 
 
+def ha_home() -> dict:
+    """Home Assistant's own home location (Settings -> System -> General) when the options leave the bot's position
+    empty: {bot_latitude, bot_longitude}, or {} outside Home Assistant or when it does not answer."""
+    token = os.environ.get("SUPERVISOR_TOKEN", "")
+    if not token:
+        return {}
+    try:
+        import urllib.request
+        req = urllib.request.Request("http://supervisor/core/api/config", headers={"Authorization": f"Bearer {token}"})
+        cfg = json.load(urllib.request.urlopen(req, timeout=5))
+        lat, lon = float(cfg.get("latitude")), float(cfg.get("longitude"))
+        if lat == 0 and lon == 0:
+            return {}
+        return {"bot_latitude": f"{lat:.4f}", "bot_longitude": f"{lon:.4f}"}
+    except Exception as exc:  # never stop the start over this
+        print(f"generate_config: Home Assistant's location not read: {exc}", file=sys.stderr)
+        return {}
+
+
 def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
     cfg = configparser.ConfigParser(interpolation=None)
     cfg.optionxform = str  # keep key case as written
@@ -96,7 +115,7 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
         **({"timezone": str(g("bot", "timezone", "")).strip()} if str(g("bot", "timezone", "")).strip() else {}),
         # Where the bot is: airplanes, wx, rain, sun, distances in test and the map use it. Only when both are set.
         **({"bot_latitude": str(g("bot", "latitude")), "bot_longitude": str(g("bot", "longitude"))}
-           if g("bot", "latitude") not in (None, "") and g("bot", "longitude") not in (None, "") else {}),
+           if g("bot", "latitude") not in (None, "") and g("bot", "longitude") not in (None, "") else ha_home()),
         # Optional prefix before commands ("/" for /test). Not required by default, so "test" keeps working too.
         **({"command_prefix": str(g("bot", "command_prefix", "")).strip(),
             "require_command_prefix": bool_str(g("bot", "require_command_prefix", False))}
@@ -264,6 +283,15 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
     cfg["InstallCount"] = {"enabled": "true"}
     # AutoChannels: hashtag channels the bot is set to use (#test, #games, #f1) are made on the radio when missing.
     cfg["AutoChannels"] = {"enabled": "true"}
+    # HASensors: the bot's numbers as Home Assistant sensors (sensor.meshcore_bot_...). On.
+    cfg["HASensors"] = {"enabled": "true", "interval_minutes": "5"}
+    # RepeaterWatch: a directly heard repeater that goes silent is reported (Notifications + Home Assistant). On.
+    # Setup: the first-start wizard on the dashboard (a banner until it is done). Only a new installation starts at
+    # "false"; an update of an existing installation gets "true" (see merge_with_existing).
+    cfg["Setup"] = {"done": "false"}
+    # FarmDaily: the Kwekerij's task of the day in the games channel at 06:00. On (posts nothing without a games channel).
+    cfg["FarmDaily"] = {"enabled": "true", "time": "06:00", "invite_time": "14:00", "channel": ""}
+    cfg["RepeaterWatch"] = {"enabled": "true", "silent_hours": "24", "extra": "", "ha_notification": "true"}
     cfg["NightMode"] = {"enabled": "false", "start": "23:00", "end": "07:00", "scheduled": "true", "feeds": "true", "webhook": "false"}
 
     for name in DEFAULT_OFF:
@@ -344,7 +372,7 @@ STATE_FILE = "generated_keys.json"
 # it was rewritten on every start until 2.6.1.
 MOVED_SECTIONS = {"Notifications", "ContactCleanup", "RoomServer_Login", "HomeAssistantBridge",
                   "Webhook", "ChannelHint", "Greeter_Command", "HARepeater", "F1", "F1_Command", "Heartbeat",
-                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels"}
+                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily"}
 # Never removed by the "generated last time but not now" cleanup: the moved sections, and the scheduled
 # messages (the dashboard's Schedule page owns them since 2.8.0; the old announcement option is gone).
 KEEP_SECTIONS = MOVED_SECTIONS | {"Scheduled_Messages"}
@@ -381,6 +409,10 @@ def merge_with_existing(generated: configparser.ConfigParser, config_path: str, 
             print(f"generate_config: existing config unreadable, starting fresh: {exc}", file=sys.stderr)
             merged = configparser.ConfigParser(interpolation=None, strict=False)
             merged.optionxform = str
+
+    # An existing installation (config.ini already there) never gets the first-start wizard banner.
+    if merged.sections() and not merged.has_section("Setup") and generated.has_section("Setup"):
+        generated["Setup"]["done"] = "true"
 
     for section, keys in OBSOLETE_KEYS.items():
         if merged.has_section(section):

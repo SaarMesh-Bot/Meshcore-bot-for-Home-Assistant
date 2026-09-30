@@ -110,6 +110,11 @@ ping_mod = import_with_stubs("modules.commands.ping_command")
 for lang, want in (("en", "Pong! More info: type test"), ("nl", "Pong! Meer info: typ test"), ("de", "Pong! Mehr Infos: tippe test"),
                    ("fr", "Pong ! Plus d'infos : tapez test")):
     check(make_bot(lang).translator.translate("commands.ping.response") == want, f"ping ({lang}): {want}")
+# the command itself (found 2026-09-30: without a ping keyword it sent nothing, the text above was never used)
+pc = ping_mod.PingCommand(make_bot("nl"))
+check(pc.get_response_format() == "Pong! Meer info: typ test", f"ping zonder keyword antwoordt echt ({pc.get_response_format()!r})")
+pk = ping_mod.PingCommand(make_bot("nl", {"Keywords": {"ping": '"Pong van mij!"'}}))
+check(pk.get_response_format() == "Pong van mij!", "een eigen ping-keyword gaat voor")
 
 cm_mod = import_with_stubs("modules.command_manager")
 help_mod = import_with_stubs("modules.commands.help_command")

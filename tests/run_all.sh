@@ -66,6 +66,8 @@ run "games channel (game commands in one channel)" "$PY" "$HERE/test_games_chann
 run "Kwekerij (farm game)"              "$PY" "$HERE/test_farm_game.py" "$SIM_TREE"
 run "issue #1: autosave, airplanes, path" "$PY" "$HERE/test_issue1_fixes.py" "$SIM_TREE"
 run "AutoChannels (missing hashtag channels)" "$PY" "$HERE/test_auto_channels.py" "$SIM_TREE"
+run "HA sensors"                       "$PY" "$HERE/test_ha_sensors.py" "$SIM_TREE"
+run "RepeaterWatch (silent repeaters)"  "$PY" "$HERE/test_repeater_watch.py" "$SIM_TREE"
 run "bot network over the internet (signed, trust, schedule)" "$PY" "$HERE/test_bot_network.py" "$SIM_TREE"
 run "night mode (scheduled, feeds, webhook)" "$PY" "$HERE/test_night_mode.py" "$SIM_TREE"
 run "export/import via /share (moving the bot)" "$PY" "$HERE/test_data_transfer.py"
