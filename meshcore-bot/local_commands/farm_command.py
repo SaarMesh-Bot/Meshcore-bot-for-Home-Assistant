@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """
-'farm' command for the MeshCore Bot: the Kwekerij game (see modules/farm_game.py). Played by direct message, because a
+'farm' command for the MeshCore Bot: the Farming Idle game (see modules/farm_game.py). Played by direct message, because a
 DM carries the sender's key (nobody can play in your name); 'farm top' also works in a channel.
 
   farm                     your farm: level, coins, what is ripe or when
   farm start               open your farm (4 fields, 200 coins)
-  farm winkel              the seeds you can buy at your level
+  farm winkel [gewas [n]]  the seed shop: the list, one crop's details, or buy n seeds for the barn (also: farm zaad)
+  farm seizoen             this month's season: top 5, your points (farm XP this month), rewards for the top 3
+  farm ruim <gewas|nr|alles>  clear fields to sow something else (a plant gives several harvests, then the field is empty)
   farm zaai tomaat 2       sow (own seeds first, then bought)        farm oogst      harvest everything that is ripe
   farm schuur              what is in your barn                      farm verkoop [x] sell (everything, or one item)
   farm verwerk jam 2       process in the workshop (soup, jam, wine, ...)
@@ -13,6 +15,7 @@ DM carries the sender's key (nobody can play in your name); 'farm top' also work
   farm upgrade [veld|kas|grond|werkplaats]   farm geef <name> 100   farm top
   farm opdracht            today's task (reward: coins, farm XP and 5 Mesh RPG XP)
   farm markt / bied jam 3 60 / koop 2 / intrekken 2   the market between players (markt also in a channel)
+  farm lever jam [n]       sell to the market's buy order (set on the dashboard: Games -> Farming Idle), paid at once
 """
 
 from typing import Any
@@ -28,7 +31,7 @@ HARVEST = {"oogst", "oogsten", "harvest", "ernte", "ernten", "récolte", "recolt
 BARN = {"schuur", "voorraad", "barn", "inventory", "scheune", "lager", "grange", "stock"}
 SELL = {"verkoop", "verkopen", "sell", "verkaufe", "verkaufen", "vendre", "vends"}
 PROCESS = {"verwerk", "verwerken", "maak", "make", "process", "mach", "koche", "fabrique", "préparer", "preparer"}
-SHOP = {"winkel", "shop", "laden", "boutique", "zaad", "seeds"}
+SHOP = {"winkel", "shop", "laden", "boutique", "zaad", "zaden", "seeds", "samen", "graines"}
 BANK = {"bank", "banque"}
 DEPOSIT = {"stort", "storten", "deposit", "einzahlen", "déposer", "deposer"}
 WITHDRAW = {"haal", "opnemen", "withdraw", "abheben", "retirer"}
@@ -40,18 +43,21 @@ MARKET = {"markt", "marktplaats", "market", "marche", "marché"}
 OFFER = {"bied", "aanbieden", "offer", "biete", "offre", "offrir"}
 BUY = {"koop", "kopen", "buy", "kaufe", "kaufen", "achete", "achète", "acheter"}
 CANCEL = {"intrekken", "annuleer", "cancel", "zurueck", "zurück", "annuler"}
+SEASON = {"seizoen", "season", "saison"}
+CLEAR = {"ruim", "opruimen", "clear", "räume", "raeume", "räumen", "vide", "vider"}
+DELIVER = {"lever", "leveren", "deliver", "liefere", "liefern", "livre", "livrer"}
 
 
 class FarmCommand(BaseCommand):
-    """Kwekerij: grow, harvest, process and sell crops; levels 1-10."""
+    """Farming Idle: grow, harvest, process and sell crops; levels 1-10."""
 
     name = "farm"
     keywords = ["farm"]
-    description = "Kwekerij: a farming game by DM - grow crops, harvest, process them (soup, jam, wine, ...), sell, bank, level 1-10"
+    description = "Farming Idle: a farming game by DM - grow crops, harvest, process them (soup, jam, wine, ...), sell, bank, level 1-10"
     category = "games"
 
     short_description = "Farming game (by DM)"
-    usage = "farm [start|winkel|zaai <gewas> [n]|oogst|schuur|verkoop [x]|verwerk <product> [n]|opdracht|markt|bied|koop|bank|upgrade|geef|top]"
+    usage = "farm [start|winkel|zaai <gewas> [n]|oogst|schuur|verkoop [x]|verwerk <product> [n]|opdracht|markt|bied|koop|lever|bank|upgrade|geef|top]"
     examples = ["farm start", "farm zaai tomaat 4", "farm oogst", "farm opdracht", "farm markt", "farm top"]
 
     settings_schema = [
@@ -104,7 +110,9 @@ class FarmCommand(BaseCommand):
             if sub in MARKET:
                 return await self._reply(message, self.game.market(self.translate))
             if not message.is_dm or not message.sender_pubkey:
-                return await self.send_response(message, self.translate("commands.farm.dm_only"))
+                if not message.is_dm and await self._invite_by_dm(message):
+                    return True
+                return await self.send_response(message, self.translate("commands.farm.dm_only", bot=self._bot_name()))
             name = (message.sender_id or "").strip()
             if is_bot_name(self.bot, name):
                 return await self.send_response(message, self.translate("commands.games.no_bots", name=name))
@@ -122,7 +130,11 @@ class FarmCommand(BaseCommand):
             elif sub in START:
                 out = g.start(key, name, t)
             elif sub in SHOP:
-                out = g.shop(key, t)
+                out = g.shop(key, t, word(rest), count(rest))
+            elif sub in SEASON:
+                out = g.season(key, t)
+            elif sub in CLEAR:
+                out = g.clear(key, word(rest) or (rest[0] if rest else ""), t)
             elif sub in SOW:
                 out = g.sow(key, name, word(rest), count(rest), t) if word(rest) else [t("commands.farm.sow_usage")]
             elif sub in HARVEST:
@@ -147,6 +159,8 @@ class FarmCommand(BaseCommand):
                 out = g.buy(key, name, rest[0] if rest else "", t)
             elif sub in CANCEL:
                 out = g.withdraw(key, rest[0] if rest else "", t)
+            elif sub in DELIVER:
+                out = g.deliver(key, name, word(rest), count(rest), t) if word(rest) else [t("commands.farm.deliver_usage")]
             elif sub in UPGRADE:
                 out = g.upgrade(key, name, word(rest), t)
             elif sub in GIVE:
@@ -160,6 +174,46 @@ class FarmCommand(BaseCommand):
         except Exception as e:
             self.logger.error(f"Error executing farm command: {e}", exc_info=True)
             return await self.send_response(message, self.translate("commands.farm.error"))
+
+    def _contact_key(self, name: str) -> str:
+        """Public key of the one contact on the radio with exactly this name ("" when none or more than one)."""
+        name = (name or "").strip()
+        contacts = getattr(getattr(self.bot, "meshcore", None), "contacts", None) or {}
+        if not name or not isinstance(contacts, dict):
+            return ""
+        keys = [str(c.get("public_key") or k).lower() for k, c in contacts.items()
+                if isinstance(c, dict) and (c.get("adv_name") or c.get("name") or "").strip() == name]
+        return keys[0] if len(keys) == 1 else ""
+
+    async def _invite_by_dm(self, message: MeshMessage) -> bool:
+        """'farm' in a channel: the bot opens a DM with that person, so they can answer there at once. Only when the
+        sender's name matches exactly one contact on the radio, not for bots, and at most once per person per day
+        (a channel message carries only a name, so someone could use another's name)."""
+        name = (message.sender_id or "").strip()
+        if not name or is_bot_name(self.bot, name):
+            return False
+        key = self._contact_key(name)
+        cm = getattr(self.bot, "command_manager", None)
+        if not key or cm is None or not hasattr(cm, "send_dm"):
+            return False
+        import time as _time
+        day = _time.strftime("%Y-%m-%d")
+        meta_key = f"farm.dm_invite.{key[:12]}"
+        db = self.bot.db_manager
+        if db.get_metadata(meta_key) == day:
+            return False
+        has_farm = self.game.has_player(key)
+        text = self.translate("commands.farm.dm_invite_player" if has_farm else "commands.farm.dm_invite", name=name[:30])
+        if not await cm.send_dm(key, text, skip_user_rate_limit=True):
+            return False
+        db.set_metadata(meta_key, day)
+        self.logger.info(f"Farming Idle: DM gestuurd aan {name} (farm in een kanaal)")
+        await self.send_response(message, self.translate("commands.farm.dm_sent", name=name[:30]))
+        return True
+
+    def _bot_name(self) -> str:
+        """The bot's name as people see it in their contacts, for "open a DM with ..." (the text says where to go)."""
+        return (self.bot.config.get("Bot", "bot_name", fallback="") or "de bot").strip()
 
     async def _top(self, message: MeshMessage) -> bool:
         rows = without_bots(self.bot, self.game.top(15), 5)

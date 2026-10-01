@@ -2,7 +2,8 @@
 """Backend of the dashboard's Games page (see local_web/games.html and patch_webviewer_games.py).
 
 One read-only overview of every game on the mesh: Mesh RPG (xp), DX Jacht (dx), karma, check-in streaks, the open
-voorspel question and the F1 prediction game. Everything comes from the tables the commands and the Community
+voorspel question, the F1 prediction game and the Farming Idle (all players, the market). The one thing it writes: the
+Farming Idle's buy orders of the market (what the market buys and for how much), set on the Farming Idle tab. Everything comes from the tables the commands and the Community
 service keep (modules/mesh_archive.py, modules/mesh_community.py, modules/f1_game.py); this module only reads, apart
 from creating those tables when they do not exist yet. Bots (the Bots page rules, and the bot itself) are left out
 of every ranking. Public keys are never sent to the browser.
@@ -20,7 +21,7 @@ from types import SimpleNamespace
 from typing import Any, Optional
 
 from modules.mesh_archive import (BADGES, CMD_CAP, DX_HOP_CAP, MSG_CAP, XP_CHECKIN, XP_CMD, XP_FARM_TASK, XP_HOP, XP_KARMA, XP_MSG, badges_of, dx_best,
-                                  ensure_archive, known_names, month_start_day, week_start_day, xp_of)
+                                  ensure_archive, known_names, month_start_day, xp_all, week_start_day, xp_of)
 from modules.mesh_community import is_bot_name, local_day, local_now, streaks, table_exists, without_bots
 
 TOP = 15
@@ -48,16 +49,10 @@ def xp_parts(info: dict) -> list:
 
 
 def _xp(bot: Any, since_day: Optional[str], with_details: bool) -> list:
-    scores = []
-    for name in known_names(bot, since_day):
-        if is_bot_name(bot, name):
-            continue
-        info = xp_of(bot, name, since_day)
-        if info["xp"] > 0:
-            scores.append((name, info))
-    scores.sort(key=lambda r: (-r[1]["xp"], r[0].lower()))
+    ranked = sorted(((n, i) for n, i in xp_all(bot, since_day) if i["xp"] > 0), key=lambda r: (-r[1]["xp"], r[0].lower()))
+    scores = without_bots(bot, ranked, TOP)   # the bot check only for the names near the top
     out = []
-    for name, info in scores[:TOP]:
+    for name, info in scores:
         row = {"name": name, "xp": info["xp"], "parts": xp_parts(info),
                "active_days": info["active_days"], "all_messages": info["all_messages"]}
         if with_details:
@@ -143,12 +138,57 @@ def _f1(bot: Any, conn: Any) -> dict:
 
 
 def _farm(bot: Any, conn: Any) -> list:
-    """Kwekerij (farm game): the richest farmers (coins + bank), with their level. Empty until someone plays."""
+    """Farming Idle (farm game): the richest farmers (coins + bank), with their level. Empty until someone plays."""
     if not conn.execute("SELECT 1 FROM sqlite_master WHERE name='farm_players'").fetchone():
         return []
     from .farm_game import level_of
     rows = conn.execute("SELECT name, xp, coins + bank FROM farm_players ORDER BY coins + bank DESC, xp DESC LIMIT 60").fetchall()
     return [{"name": n or "?", "level": level_of(xp), "worth": w} for n, xp, w in without_bots(bot, rows, TOP)]
+
+
+def _farm_game(db_manager: Any, config: Any) -> Any:
+    from .farm_game import FarmGame
+    return FarmGame(db_manager)
+
+
+def farm_overview(db_manager: Any, config: Any, logger: Optional[logging.Logger] = None) -> dict:
+    """The Farming Idle tab: every player (fields, workshop, barn, today's task, offers), the market and the market's buy
+    orders. Bots are left out; public keys are not sent to the browser."""
+    bot = _bot(db_manager, config, logger)
+    data = _farm_game(db_manager, config).overview()
+    data["players"] = [p for p in data["players"] if not is_bot_name(bot, p["name"])]
+    for p in data["players"]:
+        p.pop("key", None)
+    data["generated_at"] = int(time.time())
+    return data
+
+
+def farm_order_add(db_manager: Any, config: Any, body: dict) -> int:
+    """A buy order of the market, from the Farming Idle tab: {item, price, qty, days}. ValueError on bad input."""
+    try:
+        item, price, qty, days = str(body.get("item") or ""), int(body.get("price")), int(body.get("qty")), int(body.get("days") or 3)
+    except (TypeError, ValueError):
+        raise ValueError("item, price, qty and days are needed")
+    if price < 1 or qty < 1 or days < 1:
+        raise ValueError("price, qty and days must be at least 1")
+    return _farm_game(db_manager, config).add_order(item, price, qty, days)
+
+
+def farm_season_save(db_manager: Any, config: Any, body: dict) -> dict:
+    """Season settings from the Farming Idle tab: {enabled, length: month|week, rewards: [1st, 2nd, 3rd]}."""
+    try:
+        rewards = [int(x) for x in (body.get("rewards") or [])][:3]
+    except (TypeError, ValueError):
+        raise ValueError("rewards must be numbers")
+    if len(rewards) != 3 or any(r < 0 for r in rewards):
+        raise ValueError("three rewards of 0 or more are needed")
+    return _farm_game(db_manager, config).save_season_settings(
+        bool(body.get("enabled", True)), str(body.get("length") or "month"), rewards,
+        str(body.get("start") or ""), str(body.get("end") or ""))
+
+
+def farm_order_delete(db_manager: Any, config: Any, oid: int) -> bool:
+    return _farm_game(db_manager, config).delete_order(oid)
 
 
 def standings(db_manager: Any, config: Any, logger: Optional[logging.Logger] = None) -> dict:

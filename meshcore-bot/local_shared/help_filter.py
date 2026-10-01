@@ -29,6 +29,7 @@ DM_ONLY = {
 }
 ALWAYS_HIDDEN = {
     "greeter",  # automatic welcome-message feature, not a user-typed command
+    "ha",       # Home Assistant over the mesh: admins only (checked in the command itself)
 }
 
 

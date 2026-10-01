@@ -146,6 +146,9 @@ patch_webviewer_games.py
 # Channel radar page (which hashtag channels are in use around the bot); anchors on the Games menu item.
 patch_webviewer_radar.py
 
+# Mailbox page: messages left with post (after the Radar menu item).
+patch_webviewer_mailbox.py
+
 # Repeater page (history of the repeaters the HARepeater service follows); anchors on the Channel radar route and menu item.
 patch_webviewer_repeater.py
 
@@ -192,3 +195,18 @@ patch_ping_default.py
 
 # First-start wizard: /setup, /api/setup(/apply), a Setup menu item and a banner on a new installation.
 patch_webviewer_setup.py
+
+# Problems page: warnings, errors and unanswered commands (after the Setup menu item).
+patch_webviewer_problems.py
+
+# trace: longer default timeout (1.5 s per hop), "tracert" keyword, a clear timeout text in the sender's language.
+patch_trace.py
+
+# Interval advert: the time of the last one is kept in the database, so a restart does not reset the count.
+patch_advert_interval.py
+
+# Bot network: only the closest bot answers the information commands (after all other command_manager patches).
+patch_answer_arbitration.py
+
+# Web viewer: a stop signal is not a crash; live events only to the pages that subscribed.
+patch_webviewer_quiet.py

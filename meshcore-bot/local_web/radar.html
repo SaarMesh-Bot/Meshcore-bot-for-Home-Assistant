@@ -13,6 +13,9 @@
         <button class="nav-link active" id="tab-channels-btn" data-bs-toggle="tab" data-bs-target="#tab-channels" type="button" role="tab" aria-controls="tab-channels" aria-selected="true"><i class="fas fa-hashtag"></i> Channel radar</button>
     </li>
     <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-watching-btn" data-bs-toggle="tab" data-bs-target="#tab-watching" type="button" role="tab" aria-controls="tab-watching" aria-selected="false"><i class="fas fa-ear-listen"></i> Not heard yet <span class="badge text-bg-secondary" id="watching-count"></span></button>
+    </li>
+    <li class="nav-item" role="presentation">
         <button class="nav-link" id="tab-repeaters-btn" data-bs-toggle="tab" data-bs-target="#tab-repeaters" type="button" role="tab" aria-controls="tab-repeaters" aria-selected="false"><i class="fas fa-tower-broadcast"></i> Repeater radar</button>
     </li>
 </ul>
@@ -29,6 +32,32 @@
         </p>
         <p class="text-muted small" id="radar-updated">Loading...</p>
         <div id="radar-message" role="status" aria-live="polite"></div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><i class="fas fa-plus"></i> Add a channel to the radar</div>
+    <div class="card-body">
+        <form class="row g-2 align-items-end" id="add-channel-form">
+            <div class="col-12 col-md-4">
+                <label class="form-label small mb-1" for="add-channel-name">Name</label>
+                <input type="text" class="form-control form-control-sm" id="add-channel-name" maxlength="40" placeholder="#bemesh  or  Club Kanaal" required>
+            </div>
+            <div class="col-12 col-md-5">
+                <label class="form-label small mb-1" for="add-channel-key">Key (only for a channel without #)</label>
+                <input type="text" class="form-control form-control-sm font-monospace" id="add-channel-key" maxlength="40" placeholder="32 hex characters, the channel's secret" autocomplete="off">
+            </div>
+            <div class="col-12 col-md-3">
+                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-plus"></i> Add</button>
+            </div>
+            <div class="col-12 small text-muted">
+                A hashtag channel needs only its name. A channel with its own key (private, or shared by QR code) needs the key too;
+                it is only counted, never decrypted. Works at once, also back through the packet log; nothing is put on your radio
+                (that is the <em>Add to radio</em> button in the list).
+            </div>
+        </form>
+        <div id="add-channel-message" class="mt-2" role="status" aria-live="polite"></div>
+        <div class="small mt-2" id="added-names"></div>
     </div>
 </div>
 
@@ -50,6 +79,7 @@
                         <tbody id="radar-body"></tbody>
                     </table>
                 </div>
+                <div class="small text-muted px-2 py-2" id="radar-watching"></div>
             </div>
         </div>
     </div>
@@ -59,17 +89,36 @@
             <div class="card-body">
                 <p class="small text-muted">
                     Messages on channels whose name is not in the list: private channels that are not on your radio, or a hashtag
-                    name nobody added yet. Shown by channel byte (several channels can share one). Add a name you suspect on
-                    the ChannelRadar card; from then on it is recognised.
+                    name nobody added yet. Shown by channel byte (several channels can share one). Know or suspect the name? Click
+                    <i class="fas fa-tag"></i>, type it, and the radar checks it against the logged messages of that byte; a match is
+                    recognised from then on (and counted back through the log).
                 </p>
-                <table class="table table-sm mb-0">
-                    <thead><tr><th scope="col">Channel byte</th><th scope="col" class="text-end">7 days</th><th scope="col" class="text-end">30 days</th></tr></thead>
+                <div id="name-message" role="status" aria-live="polite"></div>
+                <table class="table table-sm mb-0 align-middle">
+                    <thead><tr><th scope="col">Channel byte</th><th scope="col" class="text-end">7 days</th><th scope="col" class="text-end">30 days</th><th scope="col"></th></tr></thead>
                     <tbody id="unknown-body"></tbody>
                 </table>
+
             </div>
         </div>
     </div>
 </div>
+</div>
+
+<div class="tab-pane fade" id="tab-watching" role="tabpanel" aria-labelledby="tab-watching-btn">
+    <p class="text-muted">
+        Channels you added (on the ChannelRadar card or with <em>Add a channel</em> on the Channel radar tab) on which the radio has
+        not heard anything in the last 30 days. The radar keeps looking for them; as soon as a message comes by, the channel moves
+        to the Channel radar list. Channels from far away (another region) usually stay here.
+    </p>
+    <div class="card mb-5">
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-sm mb-0 align-middle">
+                <thead><tr><th scope="col">Channel</th><th scope="col">Added via</th><th scope="col"></th></tr></thead>
+                <tbody id="watching-body"></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <div class="tab-pane fade" id="tab-repeaters" role="tabpanel" aria-labelledby="tab-repeaters-btn">
@@ -161,6 +210,32 @@
         });
     }
 
+    function post(path, body) {
+        return fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                             body: JSON.stringify(body || {}) })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status)); return b; }); });
+    }
+    function nameSay(text, cls) {
+        const box = document.getElementById('name-message');
+        box.replaceChildren();
+        if (text) box.appendChild(el('div', text, 'alert ' + (cls || 'alert-danger') + ' py-1 px-2 small'));
+    }
+
+    document.getElementById('add-channel-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const box = document.getElementById('add-channel-message');
+        const btn = this.querySelector('button[type=submit]'); btn.disabled = true;
+        post('/api/radar/channel', { name: document.getElementById('add-channel-name').value,
+                                     key: document.getElementById('add-channel-key').value })
+            .then(function (r) {
+                box.replaceChildren(el('div', r.added + ' added. The radar looks for it from the next minute on (also in the packet log).', 'alert alert-success py-1 px-2 small'));
+                document.getElementById('add-channel-name').value = ''; document.getElementById('add-channel-key').value = '';
+                load();
+            })
+            .catch(function (err) { box.replaceChildren(el('div', 'Not added: ' + err.message, 'alert alert-danger py-1 px-2 small')); })
+            .then(function () { btn.disabled = false; });
+    });
+
     function onRadio(label) {
         const l = label.toLowerCase();
         if (l.indexOf('publiek') === 0) return true;
@@ -179,7 +254,7 @@
             const name = el('td', c.label, 'fw-semibold');
             if (c.found) {
                 const b = el('span', 'found', 'badge bg-info text-dark ms-2');
-                b.title = 'Not on the built-in list: found among the generated names (only shown from 2 messages).';
+                b.title = 'Just found: not on the built-in list but among the generated names (shown from 2 messages; the label stays on the first day and the day after).';
                 name.appendChild(b);
             }
             tr.appendChild(name);
@@ -187,22 +262,102 @@
             tr.appendChild(el('td', c.week, 'text-end'));
             tr.appendChild(el('td', c.month, 'text-end'));
             tr.appendChild(el('td', ago(c.last_ts), 'text-end text-muted'));
-            const mine = el('td');
+            const mine = el('td', null, 'text-nowrap');
             mine.appendChild(el('span', onRadio(c.label) ? 'yes' : 'no', 'badge ' + (onRadio(c.label) ? 'bg-success' : 'bg-secondary')));
+            if (!onRadio(c.label) && c.label.charAt(0) === '#') {
+                const queued = (data.add_to_radio || []).indexOf(c.label.toLowerCase()) !== -1;
+                if (queued) mine.appendChild(el('span', 'adding…', 'small text-muted ms-2'));
+                else {
+                    const b = el('button', null, 'btn btn-outline-primary btn-sm ms-2 py-0');
+                    b.type = 'button'; b.title = 'Put this channel on your radio (in a free slot; nothing is overwritten)';
+                    b.appendChild(el('i', null, 'fas fa-plus'));
+                    b.appendChild(document.createTextNode(' Add to radio'));
+                    b.addEventListener('click', function () {
+                        if (!confirm('Put ' + c.label + ' on your radio? The bot (and Home Assistant) will then receive this channel. It uses one free channel slot.')) return;
+                        b.disabled = true;
+                        post('/api/radar/add_to_radio', { name: c.label }).then(function () { load(); })
+                            .catch(function (e) { alert('Could not add it: ' + e.message); b.disabled = false; });
+                    });
+                    mine.appendChild(b);
+                }
+            }
             tr.appendChild(mine);
             body.appendChild(tr);
         });
         const ub = document.getElementById('unknown-body');
         ub.replaceChildren();
         if (!data.unknown.length) {
-            const tr = el('tr'); const td = el('td', 'None', 'text-center text-muted'); td.colSpan = 3; tr.appendChild(td); ub.appendChild(tr);
+            const tr = el('tr'); const td = el('td', 'None', 'text-center text-muted'); td.colSpan = 4; tr.appendChild(td); ub.appendChild(tr);
         }
         data.unknown.slice(0, 20).forEach(function (u) {
             const tr = el('tr');
             tr.appendChild(el('td', u.hash, 'font-monospace'));
             tr.appendChild(el('td', u.week, 'text-end'));
             tr.appendChild(el('td', u.month, 'text-end'));
+            const act = el('td', null, 'text-end');
+            const b = el('button', null, 'btn btn-outline-secondary btn-sm py-0');
+            b.type = 'button'; b.title = 'Name it: type the hashtag name you suspect'; b.setAttribute('aria-label', 'Name channel byte ' + u.hash);
+            b.appendChild(el('i', null, 'fas fa-tag'));
+            b.addEventListener('click', function () {
+                const name = prompt('Which hashtag name could channel byte ' + u.hash + ' be? (for example mesh-zl)');
+                if (!name) return;
+                b.disabled = true;
+                post('/api/radar/name', { hash: u.hash, name: name }).then(function (r) {
+                    nameSay(r.name + ' it is: ' + r.messages + ' logged messages match. Counted from the next minute on.', 'alert-success');
+                    load();
+                }).catch(function (e) { nameSay(e.message); b.disabled = false; });
+            });
+            act.appendChild(b);
+            tr.appendChild(act);
             ub.appendChild(tr);
+        });
+        const added = document.getElementById('added-names');
+        added.replaceChildren();
+        if ((data.added_names || []).length) {
+            added.appendChild(el('span', 'Added here: ', 'text-muted'));
+            data.added_names.forEach(function (n) {
+                const chip = el('span', n + ' ', 'badge text-bg-light border me-1');
+                const x = el('button', '×', 'btn btn-link btn-sm p-0 text-danger text-decoration-none');
+                x.type = 'button'; x.setAttribute('aria-label', 'Remove ' + n);
+                x.addEventListener('click', function () {
+                    if (!confirm('Stop recognising ' + n + '?')) return;
+                    post('/api/radar/name/delete', { name: n }).then(function () { load(); }).catch(function (e) { nameSay(e.message); });
+                });
+                chip.appendChild(x);
+                added.appendChild(chip);
+            });
+        }
+        const watching = data.watching || [];
+        document.getElementById('watching-count').textContent = watching.length || '';
+        document.getElementById('radar-watching').textContent = watching.length
+            ? watching.length + ' added channel(s) not heard yet: see the tab "Not heard yet".' : '';
+        const wb = document.getElementById('watching-body');
+        wb.replaceChildren();
+        if (!watching.length) {
+            const tr = el('tr'); const td = el('td', 'Nothing: every channel you added has been heard.', 'text-center text-muted py-3');
+            td.colSpan = 3; tr.appendChild(td); wb.appendChild(tr);
+        }
+        const SOURCES = { 'card': 'ChannelRadar card (name)', 'card-key': 'ChannelRadar card (with key)',
+                          'page': 'Add a channel (name)', 'page-key': 'Add a channel (with key)' };
+        watching.forEach(function (w) {
+            const tr = el('tr');
+            tr.appendChild(el('td', w.label, 'fw-semibold'));
+            tr.appendChild(el('td', SOURCES[w.source] || w.source, 'small text-muted'));
+            const act = el('td', null, 'text-end');
+            if (w.source === 'page' || w.source === 'page-key') {
+                const x = el('button', null, 'btn btn-outline-danger btn-sm py-0');
+                x.type = 'button'; x.title = 'Stop looking for this channel'; x.setAttribute('aria-label', 'Remove ' + w.label);
+                x.appendChild(el('i', null, 'fas fa-trash'));
+                x.addEventListener('click', function () {
+                    if (!confirm('Stop looking for ' + w.label + '?')) return;
+                    post('/api/radar/name/delete', { name: w.label }).then(function () { load(); }).catch(function (e) { alert(e.message); });
+                });
+                act.appendChild(x);
+            } else {
+                act.appendChild(el('span', 'remove it on the card', 'small text-muted'));
+            }
+            tr.appendChild(act);
+            wb.appendChild(tr);
         });
         document.getElementById('radar-updated').textContent = 'Updated ' + new Date(data.generated_at * 1000).toLocaleTimeString() +
             (data.since ? ' · counting since ' + data.since : '');
@@ -224,7 +379,7 @@
     }
 
     load();
-    setInterval(load, 60000);
+    setInterval(function () { if (!document.hidden) load(); }, 60000);
 })();
 
 (function () {
@@ -448,7 +603,7 @@
         try { history.replaceState(null, '', '#channels'); } catch (e) { /* ignore */ }
     });
     if (location.hash === '#repeaters' && window.bootstrap) new bootstrap.Tab(btn).show();
-    setInterval(function () { if (state.loaded) load(); }, 300000);
+    setInterval(function () { if (state.loaded && !document.hidden) load(); }, 300000);
 })();
 </script>
 {% endblock %}

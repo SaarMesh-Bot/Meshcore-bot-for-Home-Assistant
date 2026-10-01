@@ -15,7 +15,7 @@ Dutch, English, German or French.
 
 | Add-on | What it does |
 |---|---|
-| [MeshCore Proxy](meshcore-proxy/) | Shares one USB radio over TCP, so meshcore-ha and the bot can use it at the same time. |
+| [MeshCore Proxy](meshcore-proxy/) | Shares one radio (USB, or a WiFi companion) over TCP, so meshcore-ha and the bot can use it at the same time. |
 | [MeshCore Bot](meshcore-bot/) | [agessaman/meshcore-bot](https://github.com/agessaman/meshcore-bot) as an add-on: all settings in Home Assistant and on the dashboard, a dashboard in the HA sidebar, room server, webhook, notifications and many extra commands and games. |
 
 ```
@@ -28,7 +28,8 @@ Dutch, English, German or French.
 ## What you need
 
 - **Home Assistant OS or Supervised** (add-ons need the Supervisor).
-- **A MeshCore radio with the companion (USB) firmware**, plugged into the machine that runs Home Assistant, with an
+- **A MeshCore radio with the companion firmware**: over USB on the machine that runs Home Assistant, or a WiFi companion
+  on your network (handy when Home Assistant runs in Proxmox or another VM; see INSTALL.md). With an
   antenna for your band (868 MHz in Europe). For example the
   [Seeed XIAO ESP32S3 + Wio-SX1262](https://www.seeedstudio.com/XIAO-ESP32S3-for-Meshtastic-LoRa-with-3D-Printed-Enclosure-p-6314.html)
   with firmware from the [MeshCore project](https://github.com/meshcore-dev/MeshCore).
@@ -81,9 +82,12 @@ This add-on is built for that:
   seconds and says nothing if another bot has already reacted.
 - **Answers at most once every 4 seconds** in total, and splits long answers with a pause.
 
-What it does **not** do: when two bots listen on the same command channel, both answer. So before you start, ask in your
-region which channels are already served by a bot, and give your bot its own channels (for example `#bot`, `#test`) or
-agree with the other owner who answers where.
+- **Only the closest bot answers.** When several bots of this add-on (with the bot network on) hear the same information
+  command (`test`, `ping`, `path`, `trace`, `wx`, ...), only the one closest to the sender answers.
+
+What it does **not** do: when your bot and a bot of another kind listen on the same command channel, both answer. So before
+you start, ask in your region which channels are already served by a bot, and give your bot its own channels (for example
+`#bot`, `#test`) or agree with the other owner who answers where.
 
 ## Bot network
 

@@ -14,6 +14,8 @@ from .base_service import BaseServicePlugin
 
 FIRST_S = 120
 EVERY_S = 3600
+REQUEST_CHECK_S = 60   # requests from the radar page ('Add to radio') are handled within a minute
+RETRY_S = 900
 
 
 class AutoChannelsService(BaseServicePlugin):
@@ -54,14 +56,37 @@ class AutoChannelsService(BaseServicePlugin):
             self._task.cancel()
             self._task = None
 
+    def _requests_done(self) -> None:
+        """Requests from the radar page that are on the radio now are taken off the list."""
+        from ..channel_radar import ADD_META, _save_list, add_to_radio_requests
+        cm = getattr(self.bot, "channel_manager", None)
+        asked = add_to_radio_requests(self.bot.db_manager)
+        if cm is None or not asked:
+            return
+        left = [n for n in asked if cm.get_channel_number(n) is None]
+        if left != asked:
+            _save_list(self.bot.db_manager, ADD_META, left)
+
     async def _loop(self) -> None:
         await asyncio.sleep(FIRST_S)
+        last_full = 0.0
+        tried: list = []
         while self._running:
             try:
-                if getattr(self.bot, "connected", False):
-                    await ensure_channels(self.bot, self.logger)
+                from ..channel_radar import add_to_radio_requests
+                now = asyncio.get_running_loop().time()
+                asked = add_to_radio_requests(self.bot.db_manager)
+                # every hour, and within a minute when the radar page asked for a channel
+                new_request = bool(asked) and asked != tried
+                retry = bool(asked) and now - last_full >= RETRY_S   # a request that could not be done (radio full): every 15 min
+                if getattr(self.bot, "connected", False) and (new_request or retry or now - last_full >= EVERY_S):
+                    last_full, tried = now, asked
+                    made = await ensure_channels(self.bot, self.logger)
+                    if made:
+                        self.logger.info("Kanalen: op de radio gezet: %s", ", ".join(made))
+                    self._requests_done()
             except asyncio.CancelledError:
                 raise
             except Exception as e:  # noqa: BLE001
                 self.logger.warning("Kanalen: controle mislukt: %s", e)
-            await asyncio.sleep(EVERY_S)
+            await asyncio.sleep(REQUEST_CHECK_S)

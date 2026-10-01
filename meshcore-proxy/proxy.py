@@ -3,6 +3,11 @@
 meshcore-proxy: deelt één fysieke MeshCore-companion-radio (serieel) tussen
 meerdere clients (meshcore-ha, de standalone bot, ...) via TCP.
 
+De radio mag ook een WiFi-companion zijn: serial_port = "socket://<ip>:<poort>"
+(of "tcp://<ip>:<poort>" / "<ip>:<poort>"; MeshCore gebruikt standaard poort 5000).
+Een WiFi-companion accepteert maar één TCP-verbinding; de proxy is die ene
+verbinding en deelt hem, net als bij USB. Het frameprotocol is hetzelfde.
+
 Protocol (uit het `meshcore` python-package): elk frame is zelf-afbakenend
 (0x3C <len:2 LE> <payload> uitgaand, 0x3E <len:2 LE> <payload> inkomend),
 zonder client-ID. Een client die over TCP verbindt, praat dus exact hetzelfde
@@ -43,6 +48,20 @@ logging.basicConfig(
 log = logging.getLogger("meshcore-proxy")
 
 
+def radio_url(port: str) -> str:
+    """A serial device path stays as it is; tcp://host:port or host:port becomes pyserial's socket://host:port."""
+    p = (port or "").strip()
+    if p.startswith("socket://"):
+        return p
+    if p.startswith("tcp://"):
+        return "socket://" + p[len("tcp://"):]
+    if not p.startswith("/") and ":" in p:
+        host, _, num = p.rpartition(":")
+        if host and num.isdigit():
+            return f"socket://{host}:{num}"
+    return p
+
+
 class Proxy:
     def __init__(self, port, baudrate, listen_host, listen_port,
                  quiet_release=0.75, max_hold=8.0, priority_port=0):
@@ -71,6 +90,7 @@ class Proxy:
         self.loop: asyncio.AbstractEventLoop | None = None
         self.ser: serial.Serial | None = None
         self._stop = False
+        self._tcp = radio_url(port).startswith("socket://")
 
     # ---------- serial (blocking, runs in its own thread) ----------
 
@@ -78,9 +98,18 @@ class Proxy:
         while not self._stop:
             try:
                 if self.ser is None or not self.ser.is_open:
-                    self.ser = serial.Serial(self.port, self.baudrate, timeout=1)
-                    log.info(f"Serial opened: {self.port} @ {self.baudrate}")
-                data = self.ser.read(4096)
+                    url = radio_url(self.port)
+                    # serial_for_url: a device path, or socket://host:port for a WiFi companion
+                    self.ser = serial.serial_for_url(url, baudrate=self.baudrate, timeout=1)
+                    if url.startswith("socket://"):
+                        log.info(f"Radio connected over TCP (WiFi companion): {url[len('socket://'):]}")
+                    else:
+                        log.info(f"Serial opened: {self.port} @ {self.baudrate}")
+                if self._tcp:
+                    # socket://: read what is there (at least 1 byte), so replies are not held back for the 1 s timeout
+                    data = self.ser.read(max(1, min(4096, self.ser.in_waiting or 0)))
+                else:
+                    data = self.ser.read(4096)
                 if data and self.loop is not None:
                     self.loop.call_soon_threadsafe(
                         lambda d=data: asyncio.create_task(self.broadcast(d))

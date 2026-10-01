@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0
+
+- A **WiFi companion** as the radio: set *Serial port* to `socket://<ip of the radio>:5000` (or `tcp://<ip>:5000`,
+  or `<ip>:5000`). A WiFi companion takes only one TCP connection; the proxy is that connection and shares it with
+  the bot, meshcore-ha and others, as with USB. Handy when Home Assistant runs in a VM (Proxmox) without USB passthrough.
+
 ## 1.1.0
 
 - Priority port (`priority_port`, default 5011, 0 = off): clients connected there go before clients on the normal port when

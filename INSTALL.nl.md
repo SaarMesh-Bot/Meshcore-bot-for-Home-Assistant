@@ -10,7 +10,9 @@ elke add-on (Engels).
 
 - **Home Assistant OS of Supervised.** Add-ons hebben de Supervisor nodig; een installatie als *Container* of *Core* kan
   ze niet draaien.
-- **De radio zit met USB** aan de computer waarop Home Assistant draait.
+- **De radio zit met USB** aan de computer waarop Home Assistant draait, **of** het is een **WiFi-companion** in je netwerk
+  (handig als Home Assistant in Proxmox of een andere virtuele machine draait; zie
+  [Home Assistant in Proxmox](#home-assistant-in-proxmox-of-een-andere-virtuele-machine) hieronder).
 - **Je eigen publieke sleutel** (64 tekens). Die vind je in je MeshCore-app, bij de instellingen van je eigen node. Daarmee
   weet de bot wie zijn beheerder is.
 - **Welke kanalen gaat de bot gebruiken?** Vraag eerst in je regio welke kanalen al een bot hebben (zie
@@ -128,11 +130,34 @@ in het MeshCore Chat-paneel). Met de HACS-integratie *f1_sensor*: **F1** (het F1
 - Zet de **Webhook** alleen aan met een geheime token.
 - Zet bij *Admin-publieke sleutels* alleen sleutels die je vertrouwt. Admin-commando's werken alleen in echte directe berichten.
 
+### Home Assistant in Proxmox (of een andere virtuele machine)
+
+Home Assistant OS in een VM ziet een USB-radio alleen als de host hem doorgeeft. Twee manieren:
+
+**A. USB doorgeven (de radio blijft een USB-companion)**
+1. Steek de radio in de Proxmox-host. In Proxmox: kies de Home Assistant-VM, **Hardware -> Add -> USB Device**.
+2. Kies **Use USB Vendor/Device ID** (niet *Use USB Port*) en selecteer de radio (bijvoorbeeld *Espressif*, *Silicon Labs
+   CP210x* of *QinHeng CH340*). Vink **Use USB3** aan als de radio in een USB3-poort zit.
+3. **Zet de VM uit en start hem opnieuw vanuit Proxmox** (herstarten vanuit Home Assistant is niet genoeg).
+4. In Home Assistant: **Instellingen -> Systeem -> Hardware -> Alle hardware**: de radio staat er als `/dev/ttyACM0` of
+   `/dev/ttyUSB0` en onder `/dev/serial/by-id/...`. Gebruik dat pad in de proxy.
+
+Nog steeds niets? Sommige bordjes krijgen bij een reset een ander USB-ID (ESP32-S3 met eigen USB); de hele USB-poort
+doorgeven (*Use USB Port*) of een USB-controller (PCI-passthrough) is dan betrouwbaarder. Of gebruik manier B.
+
+**B. WiFi-companion (helemaal geen USB)**
+1. Flash de radio met de MeshCore companion-**WiFi**-firmware en verbind hem met je netwerk; geef hem een vast IP-adres in
+   je router.
+2. Zet in de proxy **Seriële poort** op `socket://<ip van de radio>:5000`.
+3. De rest blijft hetzelfde: de bot en meshcore-ha verbinden met de proxy (`localhost:5010`/`5011`). De radio neemt maar
+   één TCP-verbinding aan; de proxy is die ene en deelt hem. Verbind de MeshCore-app dan niet tegelijk via WiFi met de radio.
+
 ## 9. Problemen oplossen
 
 | Probleem | Probeer |
 |---|---|
-| De proxy vindt de radio niet | Kijk naar de lijst met paden in het logboek van de proxy; gebruikt een andere add-on of integratie de USB-poort nog? |
+| De proxy vindt de radio niet | Kijk naar de lijst met paden in het logboek van de proxy; gebruikt een andere add-on of integratie de USB-poort nog? In Proxmox: zie [Home Assistant in Proxmox](#home-assistant-in-proxmox-of-een-andere-virtuele-machine). |
+| De proxy blijft opnieuw verbinden met een WiFi-radio | Klopt het IP-adres en staat het vast? Is er nog iets anders (de app, meshcore-ha rechtstreeks) met de radio verbonden? Hij neemt maar één verbinding aan. |
 | De bot maakt geen verbinding | Draait de proxy? Start eerst de proxy, dan de bot. |
 | Geen antwoord in een kanaal | Staat het kanaal bij *Kanalen om op te luisteren* **én** op de radio? Herstart de bot na het toevoegen van een kanaal. |
 | Helemaal geen antwoord | Zet *Bot → Logniveau* op `DEBUG`, stuur opnieuw `ping` en lees het logboek. |

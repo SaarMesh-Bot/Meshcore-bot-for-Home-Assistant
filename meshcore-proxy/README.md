@@ -1,6 +1,6 @@
 # MeshCore Proxy
 
-Shares **one** MeshCore radio (USB) over TCP between several programs, for example the
+Shares **one** MeshCore radio (USB, or a WiFi companion) over TCP between several programs, for example the
 [meshcore-ha](https://github.com/meshcore-dev/meshcore-ha) integration and the **MeshCore Bot** add-on.
 
 A serial port can only be opened by one program at a time. This proxy opens it once and lets every

@@ -67,6 +67,14 @@ class BotNetworkService(BaseServicePlugin):
          "help": "Hours between two status messages."},
         {"key": "lists_hours", "label": "Channel and bot names at most every", "type": "int", "default": 24, "min": 1, "max": 720,
          "unit": "h", "help": "Only sent when the list changed since last time."},
+        {"key": "answer_once", "label": "Only the closest bot answers", "type": "bool", "default": True,
+         "help": ("When other bots of this network hear the same command in a channel, only the one closest to the person "
+                  "(fewest hops, then best signal) answers the commands below. Adds about 2 seconds only while another "
+                  "network bot is online; without the broker every bot answers as before.")},
+        {"key": "answer_commands", "label": "Commands for 'closest answers'", "type": "list", "default": [],
+         "help": ("Empty = test, t, ping, path, pad, sig, trace, tracer, tracert, discover, wx, weer, help, hello, version, "
+                  "stats, sun, moon, aqi, rain. Only commands every bot answers the same; never games (they keep their "
+                  "own score per bot).")},
         {"key": "find_neighbours", "label": "Find and share neighbours", "type": "bool", "default": False,
          "help": ("Ask which repeaters hear this radio directly (zero-hop discovery), store them (like PacketCapture does) and "
                   "share them. Costs one short transmission per round. Off by default.")},
@@ -188,12 +196,23 @@ class BotNetworkService(BaseServicePlugin):
         except Exception as e:  # noqa: BLE001
             self.logger.warning("Botnetwerk: verbinden met %s mislukt: %s", self.broker["host"], e)
 
-    def _publish(self, kind: str, data: Any, now: float) -> bool:
+    def _publish(self, kind: str, data: Any, now: float, retain: bool = True) -> bool:
         if self._client is None or not self.mqtt_connected:
             return False
         suffix, payload = mqtt_message(self.bot, own_name(self.bot), kind, data, now)
-        info = self._client.publish(f"{self.broker['topic']}/{suffix}", payload, qos=0, retain=True)
+        info = self._client.publish(f"{self.broker['topic']}/{suffix}", payload, qos=0, retain=retain)
         return getattr(info, "rc", 0) == 0
+
+    def own_id(self) -> str:
+        return bot_id(signing_key(self.bot).verify_key.encode().hex())
+
+    def publish_claim(self, mid: str, hops: Any, snr: Any) -> bool:
+        """'I heard this command': message id, hops, SNR (not retained; see modules/answer_arbitration.py)."""
+        try:
+            return self._publish("C", {"m": mid, "h": hops, "s": snr}, time.time(), retain=False)
+        except Exception as e:  # noqa: BLE001
+            self.logger.debug("Botnetwerk: claim niet verstuurd: %s", e)
+            return False
 
     # ------------------------------------------------------------------ the radio itself (no airtime: local commands)
     def _self_pubkey(self) -> str:

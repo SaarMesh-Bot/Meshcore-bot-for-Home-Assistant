@@ -18,6 +18,16 @@
     </div>
 </div>
 
+<ul class="nav nav-tabs mb-3" id="games-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-overview-btn" data-bs-toggle="tab" data-bs-target="#tab-overview" type="button" role="tab" aria-controls="tab-overview" aria-selected="true"><i class="fas fa-trophy"></i> Standings</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-farm-btn" data-bs-toggle="tab" data-bs-target="#tab-farm" type="button" role="tab" aria-controls="tab-farm" aria-selected="false"><i class="fas fa-seedling"></i> Farming Idle</button>
+    </li>
+</ul>
+<div class="tab-content">
+<div class="tab-pane fade show active" id="tab-overview" role="tabpanel" aria-labelledby="tab-overview-btn">
 <div class="row g-4">
     <div class="col-12 col-xl-7">
         <div class="card h-100">
@@ -115,18 +125,146 @@
         </div>
     </div>
 
-    <div class="col-12 col-md-6 col-xl-3">
-        <div class="card h-100">
-            <div class="card-header"><i class="fas fa-seedling"></i> Kwekerij (farm)</div>
-            <div class="card-body p-0">
-                <table class="table table-sm table-hover mb-0">
-                    <thead><tr><th scope="col">#</th><th scope="col">Name</th><th scope="col" class="text-end">Level</th><th scope="col" class="text-end">Coins</th></tr></thead>
-                    <tbody id="farm-body"></tbody>
-                </table>
-                <div class="small text-muted px-2 py-2">Coins = wallet + bank. Played by DM: <code>farm start</code>.</div>
+</div>
+</div>
+
+<div class="tab-pane fade" id="tab-farm" role="tabpanel" aria-labelledby="tab-farm-btn">
+    <style>
+        .farm-tile { cursor: default; }
+        #farm-players tr[data-i] { cursor: pointer; }
+        .farm-bar { height: .5rem; }
+    </style>
+    <p class="text-muted small mb-3" id="farm-updated">Loading...</p>
+    <div class="row g-3 mb-4" id="farm-tiles"></div>
+
+    <div class="card mb-4">
+        <div class="card-header"><i class="fas fa-users"></i> Players <small class="text-muted">(click a player for the details)</small></div>
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-sm table-hover mb-0 align-middle">
+                <thead><tr>
+                    <th scope="col">#</th><th scope="col">Name</th><th scope="col" class="text-end">Level</th>
+                    <th scope="col" class="text-end">Coins</th><th scope="col" class="text-end">Bank</th>
+                    <th scope="col">Fields</th><th scope="col">Workshop</th><th scope="col">Task today</th><th scope="col">Last played</th>
+                </tr></thead>
+                <tbody id="farm-players"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header"><i class="fas fa-trophy"></i> Season <small class="text-muted" id="season-name"></small></div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-12 col-lg-4">
+                    <h3 class="h6">Standing <small class="text-muted">(farm XP this season)</small></h3>
+                    <table class="table table-sm mb-0"><tbody id="season-standings"></tbody></table>
+                </div>
+                <div class="col-12 col-lg-4">
+                    <h3 class="h6">Past winners</h3>
+                    <table class="table table-sm mb-0"><tbody id="season-past"></tbody></table>
+                </div>
+                <div class="col-12 col-lg-4">
+                    <h3 class="h6">Settings</h3>
+                    <form id="season-form" class="row g-2">
+                        <div class="col-12 form-check form-switch ms-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="season-enabled">
+                            <label class="form-check-label" for="season-enabled">Seasons on</label>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small mb-1" for="season-length">A season lasts</label>
+                            <select class="form-select form-select-sm" id="season-length">
+                                <option value="month">a calendar month</option>
+                                <option value="week">a week (Monday to Sunday)</option>
+                                <option value="custom">dates I choose</option>
+                            </select>
+                        </div>
+                        <div class="col-6 season-custom d-none">
+                            <label class="form-label small mb-1" for="season-start">From</label>
+                            <input type="date" class="form-control form-control-sm" id="season-start">
+                        </div>
+                        <div class="col-6 season-custom d-none">
+                            <label class="form-label small mb-1" for="season-end">To (included)</label>
+                            <input type="date" class="form-control form-control-sm" id="season-end">
+                        </div>
+                        <div class="col-4"><label class="form-label small mb-1" for="season-r1">1st</label><input type="number" min="0" max="100000" class="form-control form-control-sm" id="season-r1"></div>
+                        <div class="col-4"><label class="form-label small mb-1" for="season-r2">2nd</label><input type="number" min="0" max="100000" class="form-control form-control-sm" id="season-r2"></div>
+                        <div class="col-4"><label class="form-label small mb-1" for="season-r3">3rd</label><input type="number" min="0" max="100000" class="form-control form-control-sm" id="season-r3"></div>
+                        <div class="col-12 small text-muted">Coins for the top 3 when a season ends. The winners are posted in the games channel at the morning task. Changing the length starts a new season. With your own dates, no season runs after the end date until you choose new dates.</div>
+                        <div class="col-12"><button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-floppy-disk"></i> Save</button> <span class="small" id="season-msg" role="status" aria-live="polite"></span></div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-6">
+            <div class="card h-100">
+                <div class="card-header"><i class="fas fa-cart-shopping"></i> The market buys <small class="text-muted">(buy orders)</small></div>
+                <div class="card-body">
+                    <p class="small text-muted">
+                        What the market wants and pays per piece. Players see it with <code>farm markt</code> and sell with
+                        <code>farm lever &lt;item&gt; [n]</code>; they are paid at once and it counts for a "sell" task. An order
+                        ends when it is full or its days are over. Tip: pay a bit more than the normal price, or nobody delivers.
+                    </p>
+                    <form class="row g-2 align-items-end mb-3" id="order-form">
+                        <div class="col-12 col-sm-4">
+                            <label class="form-label small mb-1" for="order-item">Item</label>
+                            <select class="form-select form-select-sm" id="order-item" required></select>
+                        </div>
+                        <div class="col-4 col-sm-2">
+                            <label class="form-label small mb-1" for="order-qty">Wanted</label>
+                            <input type="number" class="form-control form-control-sm" id="order-qty" min="1" max="10000" value="20" required>
+                        </div>
+                        <div class="col-4 col-sm-2">
+                            <label class="form-label small mb-1" for="order-price">Price each</label>
+                            <input type="number" class="form-control form-control-sm" id="order-price" min="1" max="100000" required>
+                        </div>
+                        <div class="col-4 col-sm-2">
+                            <label class="form-label small mb-1" for="order-days">Days</label>
+                            <input type="number" class="form-control form-control-sm" id="order-days" min="1" max="30" value="3" required>
+                        </div>
+                        <div class="col-12 col-sm-2">
+                            <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                        <div class="col-12 small text-muted" id="order-hint"></div>
+                    </form>
+                    <div id="order-message" role="status" aria-live="polite"></div>
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0 align-middle">
+                            <thead><tr><th scope="col">Item</th><th scope="col" class="text-end">Price</th><th scope="col">Delivered</th><th scope="col">Ends</th><th scope="col"></th></tr></thead>
+                            <tbody id="farm-orders"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-xl-6">
+            <div class="card h-100">
+                <div class="card-header"><i class="fas fa-store"></i> Market between players</div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th scope="col" class="text-muted">Nr</th><th scope="col">Item</th><th scope="col" class="text-end">Qty</th><th scope="col" class="text-end">Price each</th><th scope="col">Seller</th><th scope="col">Ends</th></tr></thead>
+                        <tbody id="farm-market"></tbody>
+                    </table>
+                    <div class="small text-muted px-2 py-2">Offers last 3 days; after that the goods go back to the seller's barn.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="farm-modal" tabindex="-1" aria-labelledby="farm-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="farm-modal-title">Player</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="farm-modal-body"></div>
+            </div>
+        </div>
+    </div>
+</div>
 </div>
 {% endblock %}
 
@@ -180,7 +318,7 @@
     const openRows = new Set();          // names whose XP breakdown is unfolded (kept across refreshes)
     const PART_LABELS = {
         messages: ['💬', 'Messages', 'max 20 a day'], commands: ['⌨️', 'Bot commands', 'max 10 a day'],
-        checkins: ['🔥', 'Check-ins', ''], karma: ['⭐', 'Karma received', ''], dx: ['📡', 'Best DX', 'counts up to 10 hops'], farm: ['🌱', 'Farm tasks', 'Kwekerij daily tasks']
+        checkins: ['🔥', 'Check-ins', ''], karma: ['⭐', 'Karma received', ''], dx: ['📡', 'Best DX', 'counts up to 10 hops'], farm: ['🌱', 'Farm tasks', 'Farming Idle daily tasks']
     };
 
     function breakdown(r, period, cols) {
@@ -286,7 +424,6 @@
         renderXp();
         renderDx();
         fill('karma-body', data.karma, 3, function (r) { return [el('td', r.name), el('td', r.points, 'text-end')]; });
-        fill('farm-body', data.farm || [], 4, function (r) { return [el('td', r.name), el('td', r.level, 'text-end'), el('td', r.worth, 'text-end')]; });
         fill('checkin-body', data.checkin, 4, function (r) { return [el('td', r.name), el('td', r.streak, 'text-end'), el('td', r.best, 'text-end text-muted')]; });
         renderVoorspel();
         document.getElementById('f1-season').textContent = data.f1.season ? '(' + data.f1.season + ')' : '';
@@ -321,7 +458,293 @@
     document.querySelectorAll('input[name="xp-period"]').forEach(function (i) { i.addEventListener('change', function () { if (data) renderXp(); }); });
     document.querySelectorAll('input[name="dx-period"]').forEach(function (i) { i.addEventListener('change', function () { if (data) renderDx(); }); });
     load();
-    setInterval(load, 60000);
+    setInterval(function () {   // only while visible and on the Standings tab
+        const ov = document.getElementById('tab-overview');
+        if (!document.hidden && (!ov || ov.classList.contains('active'))) load();
+    }, 60000);
+})();
+
+(function () {
+    'use strict';
+    // Farming Idle tab. Player names come from the mesh: built with textContent only.
+    const TASKS = { harvest: 'Harvest', process: 'Process', sell: 'Sell (coins)' };
+    let farm = null, shownIndex = null;
+
+    function el(tag, text, cls) {
+        const node = document.createElement(tag);
+        if (text !== undefined && text !== null) node.textContent = String(text);
+        if (cls) node.className = cls;
+        return node;
+    }
+    function nice(item) {
+        if (item.indexOf('seed:') === 0) return nice(item.slice(5)) + ' seed';
+        return item.charAt(0).toUpperCase() + item.slice(1);
+    }
+    function dur(s) {
+        if (s <= 0) return 'ready';
+        const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.ceil(s % 3600 / 60);
+        if (d) return d + 'd ' + h + 'h';
+        if (h) return h + 'h ' + (m === 60 ? 59 : m) + 'm';
+        return m + 'm';
+    }
+    function ago(ts) {
+        if (!ts) return '-';
+        const s = Math.max(0, farm.generated_at - ts);
+        return s < 3600 ? Math.floor(s / 60) + ' min ago' : s < 86400 ? Math.floor(s / 3600) + ' h ago' : Math.floor(s / 86400) + ' d ago';
+    }
+    function num(n) { return Number(n || 0).toLocaleString(); }
+    function questText(q) {
+        if (!q) return '-';
+        return q.done ? '✅ done' : (TASKS[q.kind] || q.kind) + ' ' + num(q.progress) + '/' + num(q.need);
+    }
+    function row(cells) {
+        const tr = el('tr');
+        cells.forEach(function (c) { tr.appendChild(typeof c === 'object' && c !== null && c.nodeType ? c : el('td', c)); });
+        return tr;
+    }
+    function emptyRow(body, cols, text) {
+        const td = el('td', text, 'text-center text-muted py-3'); td.colSpan = cols;
+        const tr = el('tr'); tr.appendChild(td); body.replaceChildren(tr);
+    }
+    function say(id, text, cls) {
+        const box = document.getElementById(id);
+        box.replaceChildren();
+        if (text) box.appendChild(el('div', text, 'alert ' + (cls || 'alert-danger') + ' py-2 small'));
+    }
+    function post(path, body) {
+        return fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                             body: body ? JSON.stringify(body) : undefined })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status)); return b; }); });
+    }
+
+    function tiles() {
+        const box = document.getElementById('farm-tiles');
+        box.replaceChildren();
+        const p = farm.players;
+        const openOrders = farm.orders.filter(function (o) { return o.open; });
+        const growing = p.reduce(function (n, x) { return n + x.fields.length; }, 0);
+        const list = [
+            ['fa-users', 'Players', p.length],
+            ['fa-coins', 'Coins in the game', num(p.reduce(function (n, x) { return n + x.coins + x.bank; }, 0))],
+            ['fa-seedling', 'Fields sown', growing],
+            ['fa-list-check', 'Task today', (TASKS[farm.task] || farm.task) + ' · ' + p.filter(function (x) { return x.quest && x.quest.done; }).length + ' done'],
+            ['fa-store', 'Market offers', farm.market.length],
+            ['fa-cart-shopping', 'Buy orders open', openOrders.length]
+        ];
+        list.forEach(function (t) {
+            const col = el('div', null, 'col-6 col-md-4 col-xl-2');
+            const card = el('div', null, 'card h-100 farm-tile');
+            const body = el('div', null, 'card-body py-2');
+            const lab = el('div', null, 'small text-muted');
+            const i = el('i', null, 'fas ' + t[0] + ' me-1'); lab.appendChild(i); lab.appendChild(document.createTextNode(t[1]));
+            body.append(lab, el('div', t[2], 'fs-5 fw-semibold'));
+            card.appendChild(body); col.appendChild(card); box.appendChild(col);
+        });
+    }
+
+    function players() {
+        const body = document.getElementById('farm-players');
+        if (!farm.players.length) { emptyRow(body, 9, 'Nobody plays yet. Start by DM: farm start'); return; }
+        body.replaceChildren();
+        farm.players.forEach(function (p, i) {
+            const ripe = p.fields.filter(function (f) { return f.ready_in <= 0; }).length;
+            const fields = p.fields.length + '/' + p.fields_total + ' sown' + (ripe ? ' · ' + ripe + ' ripe' : '');
+            const jobs = p.jobs.length ? p.jobs.map(function (j) { return j.qty + ' ' + nice(j.product); }).join(', ') : '-';
+            const tr = row([el('td', i + 1, 'text-muted'), el('td', p.name, 'fw-semibold'), el('td', p.level, 'text-end'),
+                            el('td', num(p.coins), 'text-end'), el('td', num(p.bank), 'text-end'), fields, jobs, questText(p.quest), ago(p.last_seen)]);
+            tr.dataset.i = i;
+            tr.tabIndex = 0;
+            tr.addEventListener('click', function () { detail(i); });
+            tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') detail(i); });
+            body.appendChild(tr);
+        });
+    }
+
+    function section(parent, title, rows, cols, emptyText) {
+        parent.appendChild(el('h3', title, 'h6 mt-3'));
+        if (!rows.length) { parent.appendChild(el('p', emptyText, 'small text-muted mb-2')); return; }
+        const t = el('table', null, 'table table-sm mb-2');
+        const head = el('tr'); cols.forEach(function (c) { head.appendChild(el('th', c)); });
+        const thead = el('thead'); thead.appendChild(head);
+        const tb = el('tbody'); rows.forEach(function (r) { tb.appendChild(row(r)); });
+        t.append(thead, tb); parent.appendChild(t);
+    }
+
+    function detail(i) {
+        const p = farm.players[i];
+        if (!p) return;
+        shownIndex = i;
+        document.getElementById('farm-modal-title').textContent = p.name + ' · level ' + p.level;
+        const body = document.getElementById('farm-modal-body');
+        body.replaceChildren();
+        const facts = el('div', null, 'd-flex flex-wrap gap-3 small mb-2');
+        [['Coins', num(p.coins)], ['Bank', num(p.bank)], ['Farm XP', num(p.xp) + (p.next_xp ? ' / ' + num(p.next_xp) : ' (max)')],
+         ['Fields', p.fields_total], ['Greenhouse', p.kas], ['Soil', p.grond], ['Workshop', p.workshop + ' at a time'],
+         ['Last played', ago(p.last_seen)]].forEach(function (f) {
+            const d = el('div'); d.append(el('span', f[0] + ': ', 'text-muted'), el('span', f[1], 'fw-semibold')); facts.appendChild(d);
+        });
+        body.appendChild(facts);
+        if (p.next_xp) {
+            const bar = el('div', null, 'progress farm-bar mb-2');
+            const fill = el('div', null, 'progress-bar bg-success');
+            fill.style.width = Math.min(100, Math.round(p.xp / p.next_xp * 100)) + '%';
+            bar.appendChild(fill); body.appendChild(bar);
+        }
+        body.appendChild(el('p', 'Task today: ' + questText(p.quest), 'small mb-0'));
+        section(body, 'Fields', p.fields.map(function (f) {
+            return [String(f.slot), nice(f.crop), f.ready_in <= 0 ? '🌾 ripe' : dur(f.ready_in), String(f.left)];
+        }), ['Field', 'Crop', 'Ripe in', 'Harvests left'], 'Nothing sown.');
+        section(body, 'Workshop', p.jobs.map(function (j) { return [nice(j.product), String(j.qty), dur(j.ready_in)]; }),
+                ['Product', 'Qty', 'Ready in'], 'The workshop is idle.');
+        const barn = Object.keys(p.barn).sort().map(function (k) { return [nice(k), String(p.barn[k])]; });
+        section(body, 'Barn', barn, ['Item', 'Qty'], 'The barn is empty.');
+        section(body, 'On the market', p.offers.map(function (o) { return ['#' + o.id, nice(o.item), String(o.qty), num(o.price)]; }),
+                ['Nr', 'Item', 'Qty', 'Price each'], 'Nothing on the market.');
+        if (window.bootstrap) bootstrap.Modal.getOrCreateInstance(document.getElementById('farm-modal')).show();
+    }
+
+    function market() {
+        const body = document.getElementById('farm-market');
+        if (!farm.market.length) { emptyRow(body, 6, 'Nothing on offer.'); return; }
+        body.replaceChildren();
+        farm.market.forEach(function (m) {
+            body.appendChild(row([el('td', '#' + m.id, 'text-muted'), nice(m.item), el('td', m.qty, 'text-end'), el('td', num(m.price), 'text-end'),
+                                  m.seller, dur(m.created + 3 * 86400 - farm.generated_at)]));
+        });
+    }
+
+    function orders() {
+        const sel = document.getElementById('order-item');
+        if (!sel.options.length) {
+            const groups = { crop: el('optgroup'), product: el('optgroup') };
+            groups.crop.label = 'Crops'; groups.product.label = 'Products';
+            Object.keys(farm.items).forEach(function (k) {
+                const o = el('option', nice(k)); o.value = k; groups[farm.items[k].kind].appendChild(o);
+            });
+            sel.append(groups.crop, groups.product);
+            hint();
+        }
+        const body = document.getElementById('farm-orders');
+        if (!farm.orders.length) { emptyRow(body, 5, 'No buy orders. Add one above.'); return; }
+        body.replaceChildren();
+        farm.orders.forEach(function (o) {
+            const status = el('td');
+            const bar = el('div', null, 'progress farm-bar mb-1');
+            const fill = el('div', null, 'progress-bar' + (o.filled >= o.qty ? ' bg-success' : ''));
+            fill.style.width = Math.round(o.filled / o.qty * 100) + '%';
+            bar.appendChild(fill);
+            status.append(bar, el('span', o.filled + ' / ' + o.qty, 'small'));
+            const ends = !o.open ? (o.filled >= o.qty ? 'full' : 'ended') : dur(o.expires - farm.generated_at);
+            const del = el('button', null, 'btn btn-outline-danger btn-sm');
+            del.type = 'button'; del.title = 'Remove'; del.setAttribute('aria-label', 'Remove this buy order');
+            del.appendChild(el('i', null, 'fas fa-trash'));
+            del.addEventListener('click', function () {
+                if (!confirm('Remove the buy order for ' + nice(o.item) + '? What was delivered stays paid.')) return;
+                post('/api/games/farm/orders/' + o.id + '/delete').then(load).catch(function (e) { say('order-message', e.message); });
+            });
+            const tdDel = el('td', null, 'text-end'); tdDel.appendChild(del);
+            const tr = row([nice(o.item), el('td', num(o.price), 'text-end'), status, el('td', ends, o.open ? '' : 'text-muted'), tdDel]);
+            if (!o.open) tr.classList.add('opacity-50');
+            body.appendChild(tr);
+        });
+    }
+
+    function hint() {
+        const it = farm && farm.items[document.getElementById('order-item').value];
+        const price = document.getElementById('order-price');
+        document.getElementById('order-hint').textContent = it ? 'Normal selling price in the game: ' + it.sell + ' each.' : '';
+        if (it && !price.value) price.value = Math.round(it.sell * 1.5);
+    }
+
+    let seasonFormFilled = false;
+    function customFields() {
+        const on = document.getElementById('season-length').value === 'custom';
+        document.querySelectorAll('.season-custom').forEach(function (n) { n.classList.toggle('d-none', !on); });
+    }
+    function season() {
+        const se = farm.season || {};
+        document.getElementById('season-name').textContent = se.settings && !se.settings.enabled ? '(off)'
+            : !se.running ? (se.settings && se.settings.start ? '(no season running; dates: ' + se.settings.start + ' to ' + se.settings.end + ')' : '(no season running)')
+            : '(' + (se.name || '') + ', ' + (se.days_left || 0) + ' days left)';
+        const st = document.getElementById('season-standings');
+        const rows = (se.standings || []).filter(function (r) { return r.points > 0; });
+        if (!rows.length) emptyRow(st, 3, 'No points yet this season.');
+        else {
+            st.replaceChildren();
+            rows.forEach(function (r, i) { st.appendChild(row([el('td', i + 1, 'text-muted'), r.name, el('td', num(r.points), 'text-end')])); });
+        }
+        const past = document.getElementById('season-past');
+        if (!(se.past || []).length) emptyRow(past, 4, 'No finished season yet.');
+        else {
+            past.replaceChildren();
+            se.past.forEach(function (p) {
+                past.appendChild(row([el('td', p.season, 'text-muted small'), (['', '🥇', '🥈', '🥉'][p.rank] || p.rank) + ' ' + p.name,
+                                      el('td', num(p.points), 'text-end'), el('td', '+' + num(p.reward), 'text-end text-muted small')]));
+            });
+        }
+        if (!seasonFormFilled && se.settings) {
+            document.getElementById('season-enabled').checked = !!se.settings.enabled;
+            document.getElementById('season-length').value = se.settings.length;
+            document.getElementById('season-start').value = se.settings.start || '';
+            document.getElementById('season-end').value = se.settings.end || '';
+            customFields();
+            ['r1', 'r2', 'r3'].forEach(function (id, i) { document.getElementById('season-' + id).value = se.settings.rewards[i]; });
+            seasonFormFilled = true;
+        }
+    }
+
+    function render() {
+        tiles(); players(); market(); orders(); season();
+        document.getElementById('farm-updated').textContent = 'Updated ' + new Date(farm.generated_at * 1000).toLocaleTimeString() +
+            ' · task of the day for everyone: ' + (TASKS[farm.task] || farm.task) + '. The amount grows with the level.';
+        const modal = document.getElementById('farm-modal');
+        if (shownIndex !== null && modal.classList.contains('show')) detail(shownIndex);
+    }
+
+    function load() {
+        return fetch('/api/games/farm', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status)); return b; }); })
+            .then(function (b) { farm = b; render(); })
+            .catch(function (e) { document.getElementById('farm-updated').textContent = 'Could not load Farming Idle: ' + e.message; });
+    }
+
+    document.getElementById('order-item').addEventListener('change', function () { document.getElementById('order-price').value = ''; hint(); });
+    document.getElementById('order-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const btn = this.querySelector('button[type=submit]'); btn.disabled = true;
+        post('/api/games/farm/orders', {
+            item: document.getElementById('order-item').value,
+            qty: parseInt(document.getElementById('order-qty').value, 10),
+            price: parseInt(document.getElementById('order-price').value, 10),
+            days: parseInt(document.getElementById('order-days').value, 10)
+        }).then(function () { say('order-message', 'Added. Players see it with farm markt.', 'alert-success'); return load(); })
+          .catch(function (err) { say('order-message', 'Could not add: ' + err.message); })
+          .then(function () { btn.disabled = false; });
+    });
+    document.getElementById('season-length').addEventListener('change', customFields);
+    document.getElementById('season-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const msg = document.getElementById('season-msg');
+        post('/api/games/farm/season', {
+            enabled: document.getElementById('season-enabled').checked,
+            length: document.getElementById('season-length').value,
+            start: document.getElementById('season-start').value,
+            end: document.getElementById('season-end').value,
+            rewards: ['r1', 'r2', 'r3'].map(function (id) { return parseInt(document.getElementById('season-' + id).value || '0', 10); })
+        }).then(function () { msg.textContent = 'Saved.'; msg.className = 'small text-success'; seasonFormFilled = false; return load(); })
+          .catch(function (err) { msg.textContent = 'Not saved: ' + err.message; msg.className = 'small text-danger'; });
+    });
+    document.getElementById('farm-modal').addEventListener('hidden.bs.modal', function () { shownIndex = null; });
+
+    const tab = document.getElementById('tab-farm-btn');
+    let timer = null;
+    tab.addEventListener('shown.bs.tab', function () {
+        history.replaceState(null, '', '#farming');
+        load();
+        if (!timer) timer = setInterval(function () { if (!document.hidden && tab.classList.contains('active')) load(); }, 60000);
+    });
+    document.getElementById('tab-overview-btn').addEventListener('shown.bs.tab', function () { history.replaceState(null, '', location.pathname + location.search); });
+    if ((location.hash === '#farming' || location.hash === '#kwekerij') && window.bootstrap) new bootstrap.Tab(tab).show();
 })();
 </script>
 {% endblock %}

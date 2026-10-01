@@ -248,7 +248,7 @@
     });
 
     load();
-    setInterval(load, 300000);
+    setInterval(function () { if (!document.hidden) load(); }, 300000);
 })();
 </script>
 {% endblock %}

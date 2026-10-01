@@ -488,7 +488,7 @@ Commands for everyone on the mesh. Each has a card on the Plugins page with an o
   the menu while the card is on) shows every bot with its numbers (this bot in bold), the network totals, charts of noise
   floor, receive airtime, messages and people over 24 hours, 7 or 30 days (every hourly status is kept 30 days), which
   repeaters each bot hears directly, and the shared channel and bot names.
-- **Kwekerij** (command `farm`, card **farm**): a farming game played by DM (the key proves who plays). Ten crops
+- **Farming Idle** (command `farm`, card **farm**; called *Kwekerij* until 1.3.0): a farming game played by DM (the key proves who plays). Ten crops
   with their own price, growing time (1 to 24 hours) and yield, processing in the workshop, a bank with 1% interest a
   day, upgrades, random events and levels 1 to 10. On the card, *Crops that are off* removes crops (and their products)
   from the shop, for example `wiet`; fields already sown keep growing. `farm top` works in a channel too (with the
@@ -526,23 +526,74 @@ Commands for everyone on the mesh. Each has a card on the Plugins page with an o
   by default) creates the hashtag channels it posts to (`#mowas` and `#mowas-en` unless set otherwise on its card) on
   the first free channel slots of the radio when it starts. Switching the card off again does not remove them:
   delete them in the MeshCore app if you do not want them.
-- **Kwekerij extras:** a daily task, the same for everyone (harvest, make or sell; the amount grows with the level),
+- **Farming Idle extras:** a daily task, the same for everyone (harvest, make or sell; the amount grows with the level),
   rewarded with coins, farm XP and 5 Mesh RPG XP (`farm opdracht`); card **FarmDaily** (on) posts the task every morning
   at *Time* (06:00) in its *Channel* or else the GamesChannel card's channel, after night mode; while nobody plays, that
   post is an invitation to start. At *Invitation at* (14:00, empty = off) an invitation to join goes out every day, also
   when people play (not on a day whose morning post was already an invitation). A market between players
   (`farm markt`, `farm bied <item> <number> <price>`, `farm koop <nr>`, `farm intrekken <nr>`), at most 5 offers per
-  player, 3 days each; unsold goods go back to the barn.
+  player, 3 days each; unsold goods go back to the barn. **The market buys:** on the dashboard (Games -> Farming Idle) you set
+  buy orders: an item, how many the market wants, the price per piece and how many days. Players see them in
+  `farm markt` and sell with `farm lever <item> [number]`, paid at once (the best price first); an order ends when it is
+  full or its days are over. At *Market buys at* (12:00, empty = off) the FarmDaily card posts the open buy orders in
+  the games channel, best price first, only on days with an open order.
 - **Install count** (card **InstallCount**, **on by default**): once a day the bot sends one retained MQTT message to
   the network's server (`mqtt.vipje.nl`) under `meshcore-bot-ha/count/v1/<random id>`: `{"v": <add-on version>, "d":
   <date>}`. The id is a random number made at the first start and kept in the bot's database; it does not come from the
   radio, the bot's name or any key. Nothing from the mesh is sent and it uses no airtime; the server sees the IP address,
   as with any connection. Switch the card off and nothing is sent (takes effect after a restart).
+- **Problems page** (Settings -> Problems; card **ProblemLog**, on): warnings and errors of the bot, grouped per kind
+  (numbers, names and keys left out, so repeats count as one), 14 days, and the commands it recognised but did not
+  answer (from the packet log), with DM answers that were sent but not confirmed (no ACK) shown apart. **Done** per row
+  (a warning kind comes back when it happens again) and **Clear all**.
+- **DM answers:** one try over the stored route, then up to three floods ([Bot] dm_max_retries 4, dm_flood_after 1,
+  dm_max_flood_attempts 3).
+- **Home Assistant over the mesh** (command `ha`, card **Ha_Command**): only in a DM and only from a key in *Admin public
+  keys*. On the card one row per entity: the entity ID, the word typed after `ha` (`feest` for switch.feest_verlichting:
+  `ha feest aan`) and *May be switched* (`aan`/`uit`/`om`; scenes and scripts are turned on). The older *Read* / *Switch*
+  lists still work (word = the entity's own name). `ha <word>` alone toggles something that may be switched (scene/script:
+  on); `ha <word> status` gives the state.
+- **Channel radar, Add a channel / Not heard yet:** at the top of the Channel radar tab a #name, or a name with its 32-hex
+  key (bot_metadata `radar.known_keys`), works at once without a restart. The tab *Not heard yet* lists the channels you
+  added (card or page) without a message in 30 days, with where they were added; those added on the page can be removed there.
+- **`ha` groups:** the *Groups* field of a row (comma-separated). `ha <group> aan/uit` switches every member that may be
+  switched, `ha <group>` / `om` toggles (one on: all off, else all on), `ha <group> status` shows every member.
+- **Channel radar from the page:** *Add to radio* (hashtag channels only) puts the request in bot_metadata
+  `radar.add_to_radio`; AutoChannels checks every minute and makes it the safe way (each slot asked from the radio, a slot
+  with a name is never overwritten; when the radio is full it tries again every 15 minutes). *Name it* on an unknown
+  channel byte: the name is only kept when logged messages of that byte match it (byte and MAC), in `radar.extra_names`;
+  recognised within a minute without a restart.
+- **Channel radar, open channels without #:** their key cannot be guessed from the name. When it is shared openly, put
+  it on the ChannelRadar card under *Known channel keys* as `Name=key` (32 hex characters); from then on they are
+  recognised like the channels on the radio. The *found* label (a generated name) shows on the first day and the day after. Nothing else can be read or switched. Hidden from `help`. When the power at home is off, the
+  bot is off too; it helps when the internet is down or you are out of reach of it.
+- **Mailbox** (command `post`, card **Mailbox**, on): `post <name> <text>` (names with spaces: `post @[Dirk Jan] ...`).
+  Delivered by DM when the bot hears that person after the message was left (a message in `message_stats` or an advert),
+  and the person is on the radio's contact list (exactly one contact with that name). 7 days, 3 waiting per sender, 10 per
+  recipient, 100 characters, not in night mode. Dashboard page **Mailbox**.
+- **Farming Idle seasons:** a calendar month, an ISO week or your own dates (from/to, start and end day included; at most a
+  year; after the end no season runs until new dates are chosen) on the Farming Idle tab, points = farm XP gained in the season
+  (players who join during a season start at 0). At the end the top 3 get the rewards (default 1000/500/250) and FarmDaily
+  posts the result at its morning time, before the task. `farm seizoen` in a DM.
+- **Only the closest bot answers** (BotNetwork card): before answering a command from the list in a channel, the bot sends
+  a signed claim (message id, hops, SNR; not retained) over the bot network and waits 2 seconds; the bot with the fewest
+  hops (then the best SNR) answers. Claims only count from bots the network knows by name and key. No broker or no other
+  bot online: no waiting, every bot answers as before. Never for games (each bot keeps its own score).
+- **Advertising:** options *Advert every (hours)* (12 = like a repeater, 0 = off, at least 3) and *Advert at start*
+  (zero-hop, flood or off). A flood advert keeps the bot in the contacts of people further away and on the map; the count
+  continues after a restart.
+- **Contact list:** the radio holds at most ~350 contacts. The **ContactCleanup** card trims it from *trigger_at* down
+  to *target*; with *Also remove repeaters that are still heard* (on) far repeaters (most hops) make room when all are
+  active. People and room servers active within *keep_days*, direct neighbours, repeaters meshcore-ha follows,
+  RepeaterWatch's list, starred and favourites stay. The bot does not need repeaters in the radio for paths, the map or
+  the radar; those use its own database.
 - **Games page:** the dashboard has a *Games* menu item (next to *Bots*) with all standings in one place: Mesh RPG, DX Jacht, karma,
   check-in streaks, the open `voorspel` question and the F1 prediction game. Read-only, refreshes every minute, bots left out.
   Click a name in Mesh RPG to unfold where that person's XP comes from (messages, commands, check-ins, karma, best DX) and
   their badges. Under the F1 standings you see who has already predicted the next race (names only; the picks stay hidden
-  until the race is scored, and only then do points appear).
+  until the race is scored, and only then do points appear). The tab **Farming Idle** shows every farmer (level, coins, bank,
+  fields, workshop, today's task); click one for their fields (what grows, ripe in), workshop, barn and market offers.
+  The market between players and the market's buy orders are there too; the buy orders are the only thing this page changes.
 
 | Command | What it does |
 |---|---|

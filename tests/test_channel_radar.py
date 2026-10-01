@@ -163,6 +163,8 @@ svc5.scan(now + 60)
 chans = R.summary(make_bot(db3), now + 60)["channels"]
 check([(c["label"], c["month"], c["found"]) for c in chans] == [("#mesh-zl", 2, True)], f"vanaf 2 berichten wel, gemarkeerd als gevonden ({chans})")
 check(took < 5, f"eerste ronde met alle namen blijft snel ({took:.2f} s)")
+later = R.summary(make_bot(db3), now + 3 * 86400)["channels"]
+check([c["found"] for c in later if c["label"] == "#mesh-zl"] == [False], f"'found' alleen de eerste dag (en de dag erna), daarna niet meer ({later})")
 # a name added on the card counts from the start of the packet log, and nothing is counted twice
 db4 = DB(f"{tmp}/bot4.db")
 k_new = R.key_for_name("zeldzaam-kanaal-q")
@@ -204,6 +206,64 @@ before_sig = db5.get_metadata("radar.names")
 svc7.scan(now + 120)
 check(db5.get_metadata("radar.names") == before_sig, "zonder wijziging op de radio wordt er niet opnieuw geteld")
 check(any("channels on your radio" in f["help"] for f in ChannelRadarService.settings_schema), "kaart legt uit dat radiokanalen vanzelf meedoen")
+
+# open channels without #: a key shared openly, added on the card as Name=key
+db7 = DB(f"{tmp}/bot7.db")
+k_open = os.urandom(16)
+add_packet(db7, now - 300, group_payload(k_open, os.urandom(20)), "OOO1")
+card = {"known_keys": f"Regio Open={k_open.hex()}, kapot=zz, Kort=abcd"}
+check(R.card_keys(make_bot(db7, card).config) == [("Regio Open", k_open)], "kaart: alleen geldige Naam=sleutel")
+ChannelRadarService(make_bot(db7, card)).scan(now)
+chans = {c["label"]: c for c in R.summary(make_bot(db7, card), now)["channels"]}
+check(chans.get("Regio Open", {}).get("month") == 1 and chans["Regio Open"]["found"] is False, f"open kanaal met gedeelde sleutel herkend ({chans})")
+check(any(f["key"] == "known_keys" for f in ChannelRadarService.settings_schema), "kaartveld voor bekende sleutels")
+
+# the radar page: 'Name it' checks a name against the logged messages of that byte; 'Add to radio' queues a request
+db8 = DB(f"{tmp}/bot8.db")
+k_secret = R.key_for_name("geheimpje-xyz")
+for i in range(3):
+    add_packet(db8, now - 600 + i, group_payload(k_secret, os.urandom(20)), f"NNN{i}")
+ch = f"{R.channel_byte(k_secret):02x}"
+check(R.verify_name(db8, "#Geheimpje-XYZ", ch) == 3, "juiste naam: alle 3 berichten kloppen (hoofdletters en # maken niet uit)")
+check(R.verify_name(db8, "iets-anders", ch) == 0, "verkeerde naam: 0")
+check(R.verify_name(db8, "geheimpje-xyz", "00" if ch != "00" else "01") == 0, "ander kanaalbyte: 0")
+check(R.clean_name("met spatie") == "" and R.clean_name("#Ok-1") == "ok-1", "alleen geldige hashtag-namen")
+R.add_dashboard_name(db8, "geheimpje-xyz")
+svc8 = ChannelRadarService(make_bot(db8))
+svc8.scan(now)
+chans = {c["label"]: c for c in R.summary(make_bot(db8), now)["channels"]}
+check(chans.get("#geheimpje-xyz", {}).get("month") == 3 and R.summary(make_bot(db8), now)["added_names"] == ["#geheimpje-xyz"],
+      f"benoemd op de pagina: meteen herkend, zonder herstart, terug in het logboek geteld ({chans})")
+check(R.remove_dashboard_name(db8, "#geheimpje-xyz") and R.dashboard_names(db8) == [], "naam weer weghalen")
+check(R.request_add_to_radio(db8, "#BeMesh") == "#bemesh" and R.add_to_radio_requests(db8) == ["#bemesh"], "verzoek 'op de radio zetten'")
+try:
+    R.request_add_to_radio(db8, "Club Kanaal"); bad = False
+except ValueError:
+    bad = True
+check(bad, "alleen hashtag-kanalen kunnen zo op de radio")
+
+# 'Add a channel' at the top of the radar page: a hashtag name, or a name with its own key; and the 'watching' line
+db9 = DB(f"{tmp}/bot9.db")
+k_club = os.urandom(16)
+add_packet(db9, now - 300, group_payload(k_club, os.urandom(20)), "KKK1")
+check(R.add_channel(db9, "#Stilte-hier") == "#stilte-hier", "hashtag-kanaal toevoegen met alleen de naam")
+check(R.add_channel(db9, "Club Kanaal", k_club.hex()) == "Club Kanaal", "kanaal met eigen sleutel toevoegen")
+check(R.add_channel(db9, "#test2", R.key_for_name("#test2").hex()) == "#test2", "hashtag met zijn eigen (afgeleide) sleutel: als naam bewaard")
+for bad in (("Zonder Sleutel", ""), ("X", "123"), ("Y", "zz" * 16), ("Pub", R.PUBLIC_KEY.hex())):
+    try:
+        R.add_channel(db9, *bad); ok = False
+    except ValueError:
+        ok = True
+    check(ok, f"geweigerd: {bad[0]}")
+b9 = make_bot(db9, {"extra_names": "95033, alameda"})
+ChannelRadarService(b9).scan(now)
+sm = R.summary(b9, now)
+chans = {c["label"]: c for c in sm["channels"]}
+check(chans.get("Club Kanaal", {}).get("month") == 1 and chans["Club Kanaal"]["found"] is False, f"kanaal met sleutel meteen herkend ({chans})")
+check([(w["label"], w["source"]) for w in sm["watching"]] == [("#95033", "card"), ("#alameda", "card"), ("#stilte-hier", "page"), ("#test2", "page")],
+      f"tabblad 'nog niets gehoord': kaart en pagina, met herkomst ({sm['watching']})")
+check(set(sm["added_names"]) == {"#stilte-hier", "#test2", "Club Kanaal"}, f"lijst 'toegevoegd' ({sm['added_names']})")
+check(R.remove_channel(db9, "Club Kanaal") and R.dashboard_keys(db9) == [] and R.remove_channel(db9, "#stilte-hier"), "weer weghalen")
 
 # a log that starts halfway yesterday: yesterday keeps the counts from before the log, only whole days are counted again
 from modules.mesh_community import day_start_ts, local_day

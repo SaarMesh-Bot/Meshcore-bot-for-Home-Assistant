@@ -20,7 +20,7 @@ if [ ! -x "$WORK/venv/bin/python" ]; then
   echo "== creating the test environment"
   python3 -m venv "$WORK/venv" || exit 2
   "$WORK/venv/bin/pip" install -q flask flask-socketio "flask-compress==1.15" requests pytz python-dateutil aiosqlite \
-      geopy maidenhead aiohttp apscheduler feedparser meshcore pyyaml paho-mqtt pynacl || exit 2
+      geopy maidenhead aiohttp apscheduler feedparser meshcore pyyaml paho-mqtt pynacl pyserial || exit 2
 fi
 PY="$WORK/venv/bin/python"
 
@@ -63,12 +63,21 @@ run "housekeeping: room login, config keys, contact capacity" "$PY" "$HERE/test_
 run "channel radar (Kanaalradar)" "$PY" "$HERE/test_channel_radar.py" "$SIM_TREE"
 run "language: English by default, help, ping, test bytes" "$PY" "$HERE/test_language.py" "$SIM_TREE"
 run "games channel (game commands in one channel)" "$PY" "$HERE/test_games_channel.py" "$SIM_TREE"
-run "Kwekerij (farm game)"              "$PY" "$HERE/test_farm_game.py" "$SIM_TREE"
+run "Farming Idle (farm game)"              "$PY" "$HERE/test_farm_game.py" "$SIM_TREE"
+run "Games page speed (Mesh RPG, DX for many names)" "$PY" "$HERE/test_games_speed.py" "$SIM_TREE"
 run "issue #1: autosave, airplanes, path" "$PY" "$HERE/test_issue1_fixes.py" "$SIM_TREE"
+run "trace (timeout, tracert) and discover" "$PY" "$HERE/test_trace_discover.py" "$SIM_TREE"
+run "interval advert survives a restart" "$PY" "$HERE/test_advert_interval.py" "$SIM_TREE"
+run "contact cleanup: far repeaters make room" "$PY" "$HERE/test_contact_cleanup.py" "$SIM_TREE"
+run "problems page (warnings, errors, unanswered)" "$PY" "$HERE/test_problem_log.py" "$SIM_TREE"
+run "web viewer: stop signal, live events" "$PY" "$HERE/test_webviewer_quiet.py" "$SIM_TREE"
+run "ha: Home Assistant over the mesh (admins)" "$PY" "$HERE/test_ha_command.py" "$SIM_TREE"
+run "mailbox (post)" "$PY" "$HERE/test_mailbox.py" "$SIM_TREE"
 run "AutoChannels (missing hashtag channels)" "$PY" "$HERE/test_auto_channels.py" "$SIM_TREE"
 run "HA sensors"                       "$PY" "$HERE/test_ha_sensors.py" "$SIM_TREE"
 run "RepeaterWatch (silent repeaters)"  "$PY" "$HERE/test_repeater_watch.py" "$SIM_TREE"
 run "bot network over the internet (signed, trust, schedule)" "$PY" "$HERE/test_bot_network.py" "$SIM_TREE"
+run "bot network: only the closest bot answers" "$PY" "$HERE/test_answer_arbitration.py" "$SIM_TREE"
 run "night mode (scheduled, feeds, webhook)" "$PY" "$HERE/test_night_mode.py" "$SIM_TREE"
 run "export/import via /share (moving the bot)" "$PY" "$HERE/test_data_transfer.py"
 run "generate_config (options -> config.ini)" "$PY" "$HERE/test_generator.py"
@@ -79,6 +88,7 @@ run "Bot network page"                 "$PY" "$HERE/test_botnet_page.py" "$SIM_T
 run "sidebar (ingress), no password"   "$PY" "$HERE/test_ingress.py" "$SIM_TREE" ""
 run "sidebar (ingress), with password" "$PY" "$HERE/test_ingress.py" "$SIM_TREE" "secret"
 run "proxy: priority port"            "$PY" "$HERE/test_proxy_priority.py"
+run "proxy: WiFi companion over TCP" "$PY" "$HERE/test_proxy_wifi.py"
 
 if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   if [ ! -d "$WORK/jsd/node_modules/jsdom" ]; then

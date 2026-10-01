@@ -119,6 +119,179 @@ def radio_channels(db: Any) -> list:
     return out
 
 
+def card_keys(config: Any) -> list:
+    """[(label, key16)] for the channels on the ChannelRadar card's "Known channel keys": open channels without # whose
+    key is shared publicly (a forum, a website, a group). 'Name=key' with the key as 32 hex characters, one per entry."""
+    if not config.has_section("ChannelRadar"):
+        return []
+    raw = config.get("ChannelRadar", "known_keys", fallback="") or ""
+    out, seen = [], set()
+    for part in str(raw).strip("[]").replace("'", "").split(","):
+        name, sep, key_hex = part.partition("=")
+        if not sep:
+            name, sep, key_hex = part.rpartition(":")
+        name, key_hex = name.strip(), key_hex.strip().lower().replace(" ", "")
+        if not name or len(key_hex) != 32 or name.lower() in seen:
+            continue
+        try:
+            key = bytes.fromhex(key_hex)
+        except ValueError:
+            continue
+        if key == PUBLIC_KEY:
+            continue
+        seen.add(name.lower())
+        out.append((name[:40], key))
+    return out
+
+
+# ---- the dashboard: names added on the radar page, and channels to put on the radio (no restart needed)
+NAMES_META = "radar.extra_names"         # JSON list of hashtag names added with 'Name it'
+ADD_META = "radar.add_to_radio"          # JSON list of '#names' AutoChannels should put on the radio
+
+
+def _json_list(db: Any, key: str) -> list:
+    import json
+    try:
+        data = json.loads(db.get_metadata(key) or "[]")
+        return [str(x) for x in data if str(x).strip()] if isinstance(data, list) else []
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def _save_list(db: Any, key: str, items: list) -> None:
+    import json
+    db.set_metadata(key, json.dumps(sorted(set(items))))
+
+
+def dashboard_names(db: Any) -> list:
+    return _json_list(db, NAMES_META)
+
+
+def clean_name(name: str) -> str:
+    """'#Mesh-ZL ' -> 'mesh-zl'; '' when it cannot be a hashtag name."""
+    n = str(name or "").strip().lower().lstrip("#").strip()
+    return n if n and len(n) <= 40 and not any(c in n for c in " ,=") else ""
+
+
+def verify_name(db: Any, name: str, ch_hex: str, max_rows: int = 20000) -> int:
+    """How many logged group messages on channel byte `ch_hex` really belong to '#name' (byte and MAC both match).
+    0 = this name is not that channel (or nothing of it is still in the packet log)."""
+    import json
+    n = clean_name(name)
+    if not n:
+        return 0
+    key = key_for_name(n)
+    try:
+        want = int(ch_hex, 16)
+    except (TypeError, ValueError):
+        return 0
+    if channel_byte(key) != want:
+        return 0
+    table = {want: [("#" + n, key)]}
+    hits, seen = 0, set()
+    with db.connection() as conn:
+        if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='packet_stream'").fetchone():
+            return 0
+        for (data,) in conn.execute("SELECT data FROM packet_stream WHERE type IN ('packet', 'routing') AND data LIKE '%GRP_TXT%' "
+                                    "ORDER BY id DESC LIMIT ?", (max_rows,)):
+            try:
+                packet = json.loads(data)
+            except ValueError:
+                continue
+            payload = packet.get("payload_hex") or ""
+            if packet.get("payload_type_name") != "GRP_TXT" or not payload.startswith(f"{want:02x}"):
+                continue
+            k = packet.get("packet_hash") or payload[:40]
+            if k in seen:
+                continue
+            seen.add(k)
+            if identify(payload, table)[0]:
+                hits += 1
+    return hits
+
+
+def add_dashboard_name(db: Any, name: str) -> None:
+    _save_list(db, NAMES_META, dashboard_names(db) + [clean_name(name)])
+
+
+def remove_dashboard_name(db: Any, name: str) -> bool:
+    names = dashboard_names(db)
+    n = clean_name(name)
+    if n not in names:
+        return False
+    _save_list(db, NAMES_META, [x for x in names if x != n])
+    return True
+
+
+KEYS_META = "radar.known_keys"           # JSON list of {"name", "key"} added on the radar page (channels with their own key)
+
+
+def dashboard_keys(db: Any) -> list:
+    """[(label, key16)] of the channels with a key added on the radar page."""
+    import json
+    try:
+        data = json.loads(db.get_metadata(KEYS_META) or "[]")
+    except Exception:  # noqa: BLE001
+        return []
+    out = []
+    for item in data if isinstance(data, list) else []:
+        try:
+            out.append((str(item["name"])[:40], bytes.fromhex(str(item["key"]))))
+        except (KeyError, TypeError, ValueError):
+            continue
+    return [(n, k) for n, k in out if n and len(k) == 16]
+
+
+def add_channel(db: Any, name: str, key_hex: str = "") -> str:
+    """'Add a channel' on the radar page. '#name' without a key: a hashtag channel (its key follows from the name).
+    With a key (32 hex characters): a channel with its own key, any name. Returns the label. ValueError when not valid."""
+    import json
+    name, key_hex = str(name or "").strip(), str(key_hex or "").strip().lower().replace(" ", "")
+    if not key_hex:
+        n = clean_name(name)
+        if not n:
+            raise ValueError("a hashtag name (#name, no spaces), or a name with its key")
+        add_dashboard_name(db, n)
+        return "#" + n
+    if len(key_hex) != 32 or any(c not in "0123456789abcdef" for c in key_hex):
+        raise ValueError("the key must be 32 hex characters (0-9, a-f)")
+    if not name or len(name) > 40 or any(c in name for c in ",="):
+        raise ValueError("give the channel a name (no , or =)")
+    if bytes.fromhex(key_hex) == PUBLIC_KEY:
+        raise ValueError("that is the public channel, it is always counted")
+    if name.startswith("#") and key_for_name(name.lower()).hex() == key_hex:
+        add_dashboard_name(db, name)     # a hashtag channel after all: the key is the one from its name
+        return "#" + clean_name(name)
+    items = [{"name": n, "key": k.hex()} for n, k in dashboard_keys(db) if n.lower() != name.lower()]
+    items.append({"name": name, "key": key_hex})
+    db.set_metadata(KEYS_META, json.dumps(items))
+    return name
+
+
+def remove_channel(db: Any, label: str) -> bool:
+    """Take a channel added on the radar page off again (a name or a channel with a key)."""
+    import json
+    label = str(label or "").strip()
+    keys = dashboard_keys(db)
+    left = [(n, k) for n, k in keys if n.lower() != label.lower()]
+    if len(left) != len(keys):
+        db.set_metadata(KEYS_META, json.dumps([{"name": n, "key": k.hex()} for n, k in left]))
+        return True
+    return remove_dashboard_name(db, label)
+
+
+def add_to_radio_requests(db: Any) -> list:
+    return _json_list(db, ADD_META)
+
+
+def request_add_to_radio(db: Any, name: str) -> str:
+    n = clean_name(name)
+    if not n:
+        raise ValueError("only hashtag channels (a name, no spaces)")
+    _save_list(db, ADD_META, add_to_radio_requests(db) + ["#" + n])
+    return "#" + n
+
+
 def radio_signature(channels: Iterable[tuple]) -> str:
     return hashlib.sha256("\n".join(sorted(f"{label.lower()}:{key.hex()}" for label, key in channels)).encode()).hexdigest()[:16]
 
@@ -192,14 +365,32 @@ def main_names(bot: Any) -> set:
     extra = ""
     if bot.config.has_section("ChannelRadar"):
         extra = bot.config.get("ChannelRadar", "extra_names", fallback="") or ""
-    names = list(DEFAULT_NAMES) + [n for n in str(extra).split(",") if n.strip()]
-    radio = {label for label, _ in radio_channels(bot.db_manager)}
+    names = list(DEFAULT_NAMES) + [n for n in str(extra).split(",") if n.strip()] + dashboard_names(bot.db_manager)
+    radio = ({label for label, _ in radio_channels(bot.db_manager)} | {label for label, _ in card_keys(bot.config)}
+             | {label for label, _ in dashboard_keys(bot.db_manager)})
     try:
         from .bot_network import network_channels
         names += network_channels(bot)
     except Exception:  # noqa: BLE001
         pass
     return {PUBLIC_LABEL} | {"#" + n.strip().lower().lstrip("#") for n in names} | radio
+
+
+def _watched(bot: Any) -> dict:
+    """{label: source} of the channels the owner added that the radar looks for, also before a first message.
+    source: 'card' (ChannelRadar card: names), 'card-key' (card: Name=key), 'page' (radar page: name), 'page-key'."""
+    extra = bot.config.get("ChannelRadar", "extra_names", fallback="") if bot.config.has_section("ChannelRadar") else ""
+    out: dict = {}
+    for n in str(extra).strip("[]").replace("'", "").split(","):
+        if n.strip():
+            out.setdefault("#" + n.strip().lower().lstrip("#"), "card")
+    for n, _ in card_keys(bot.config):
+        out.setdefault(n, "card-key")
+    for n in dashboard_names(bot.db_manager):
+        out.setdefault("#" + n, "page")
+    for n, _ in dashboard_keys(bot.db_manager):
+        out.setdefault(n, "page-key")
+    return out
 
 
 def names_signature(names: Iterable[str]) -> str:
@@ -222,6 +413,7 @@ def summary(bot: Any, now_ts: Optional[float] = None) -> dict:
             """SELECT hash, SUM(CASE WHEN day >= ? THEN messages ELSE 0 END), SUM(messages), MAX(last_ts)
                FROM channel_radar_other WHERE day >= ? GROUP BY hash ORDER BY 2 DESC, 3 DESC""", (d7, d30)).fetchall()
         first = conn.execute("SELECT MIN(day) FROM channel_radar").fetchone()[0]
+        first_ever = dict(conn.execute("SELECT label, MIN(day) FROM channel_radar GROUP BY label").fetchall())
         first_other = conn.execute("SELECT MIN(day) FROM channel_radar_other").fetchone()[0]
     since = min(d for d in (first, first_other) if d) if (first or first_other) else None
     main = main_names(bot)
@@ -229,7 +421,13 @@ def summary(bot: Any, now_ts: Optional[float] = None) -> dict:
         "generated_at": int(now_ts),
         "since": since,
         "channels": [{"label": r[0], "today": int(r[1] or 0), "week": int(r[2] or 0), "month": int(r[3] or 0),
-                      "last_ts": int(r[4] or 0), "first_day": r[5], "found": r[0] not in main}
+                      "last_ts": int(r[4] or 0), "first_day": r[5],
+                      # 'found' (a generated name, not on any list) only on the day it was first heard and the day after
+                      "found": r[0] not in main and (first_ever.get(r[0]) or "") >= (today - timedelta(days=1)).isoformat()}
                      for r in rows if r[0] in main or int(r[3] or 0) >= 2],
         "unknown": [{"hash": r[0], "week": int(r[1] or 0), "month": int(r[2] or 0), "last_ts": int(r[3] or 0)} for r in other],
+        "added_names": ["#" + n for n in dashboard_names(bot.db_manager)] + [n for n, _ in dashboard_keys(bot.db_manager)],
+        "watching": [{"label": label, "source": source} for label, source in sorted(_watched(bot).items(), key=lambda kv: kv[0].lower())
+                     if label not in {r[0] for r in rows}],
+        "add_to_radio": add_to_radio_requests(bot.db_manager),
     }

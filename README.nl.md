@@ -15,7 +15,7 @@ het Nederlands, Engels, Duits of Frans.
 
 | Add-on | Wat het doet |
 |---|---|
-| [MeshCore Proxy](meshcore-proxy/) | Deelt één USB-radio via TCP, zodat meshcore-ha en de bot hem tegelijk kunnen gebruiken. |
+| [MeshCore Proxy](meshcore-proxy/) | Deelt één radio (USB, of een WiFi-companion) via TCP, zodat meshcore-ha en de bot hem tegelijk kunnen gebruiken. |
 | [MeshCore Bot](meshcore-bot/) | De [agessaman/meshcore-bot](https://github.com/agessaman/meshcore-bot) als add-on: alle instellingen in Home Assistant en op het dashboard, een dashboard in de HA-zijbalk, room server, webhook, meldingen en veel extra commando's en spellen. |
 
 ```
@@ -28,7 +28,8 @@ het Nederlands, Engels, Duits of Frans.
 ## Wat heb je nodig
 
 - **Home Assistant OS of Supervised** (add-ons hebben de Supervisor nodig).
-- **Een MeshCore-radio met companion (USB) firmware**, via USB aan de computer waarop Home Assistant draait, met een
+- **Een MeshCore-radio met companion-firmware**: via USB aan de computer waarop Home Assistant draait, of een WiFi-companion
+  in je netwerk (handig als Home Assistant in Proxmox of een andere VM draait; zie INSTALL.nl.md). Met een
   antenne voor jouw band (868 MHz in Europa). Bijvoorbeeld de
   [Seeed XIAO ESP32S3 + Wio-SX1262](https://www.seeedstudio.com/XIAO-ESP32S3-for-Meshtastic-LoRa-with-3D-Printed-Enclosure-p-6314.html)
   met firmware van het [MeshCore-project](https://github.com/meshcore-dev/MeshCore).
@@ -81,9 +82,13 @@ Daar is deze add-on op gebouwd:
   wacht eerst 15 tot 23 seconden en zegt niets als een andere bot al gereageerd heeft.
 - **Antwoordt hooguit één keer per 4 seconden** in totaal, en knipt lange antwoorden op met een pauze.
 
-Wat hij **niet** doet: luisteren twee bots op hetzelfde commandokanaal, dan antwoorden ze allebei. Vraag daarom vooraf in
-je regio welke kanalen al een bot hebben, en geef je bot eigen kanalen (bijvoorbeeld `#bot`, `#test`) of spreek met de
-andere eigenaar af wie waar antwoordt.
+- **Alleen de dichtstbijzijnde bot antwoordt.** Horen meerdere bots met deze add-on (met het botnetwerk aan) hetzelfde
+  informatiecommando (`test`, `ping`, `path`, `trace`, `wx`, ...), dan antwoordt alleen de bot die het dichtst bij de
+  afzender is.
+
+Wat hij **niet** doet: luisteren jouw bot en een ander soort bot op hetzelfde commandokanaal, dan antwoorden ze allebei.
+Vraag daarom vooraf in je regio welke kanalen al een bot hebben, en geef je bot eigen kanalen (bijvoorbeeld `#bot`, `#test`)
+of spreek met de andere eigenaar af wie waar antwoordt.
 
 ## Botnetwerk
 

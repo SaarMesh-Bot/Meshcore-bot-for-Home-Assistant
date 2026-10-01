@@ -238,6 +238,21 @@ def receive_mqtt(bot: Any, payload: bytes, own_name: str = "", now: Optional[flo
     except Exception:  # noqa: BLE001 - not ours, not signed, or signed by someone else
         return None
     kind, sender, data = body.get("k"), str(body.get("n") or "").strip()[:40], body.get("d")
+    if kind == "C":
+        # "I heard this command" (who answers, modules/answer_arbitration.py): only from a bot the network knows by
+        # this name and key, never our own, never stored
+        if not sender or not isinstance(data, dict) or body["pk"] == signing_key(bot).verify_key.encode().hex():
+            return None
+        if abs(time.time() - int(body.get("t") or 0)) > 60:
+            return None
+        ensure_tables(bot.db_manager)
+        with bot.db_manager.connection() as conn:
+            row = conn.execute("SELECT pubkey FROM botnet_peers WHERE name = ?", (sender,)).fetchone()
+        if not row or row[0] != body["pk"]:
+            return None
+        from .answer_arbitration import add_claim
+        add_claim(str(data.get("m") or ""), bot_id(body["pk"]), data.get("h"), data.get("s"))
+        return None
     if kind not in ("H", "I", "S", "K", "B", "N") or not sender:
         return None
     if (kind in ("H", "I", "S") and not isinstance(data, dict)) or (kind in ("K", "B", "N") and not isinstance(data, list)):

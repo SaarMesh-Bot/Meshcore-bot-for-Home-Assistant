@@ -695,9 +695,9 @@
       "error": "dm failed: {error}"
     },
     "farm": {
-      "help": "farm = farming game by DM: start, sow tomato 2, harvest, sell, make soup, task, market, offer, buy, bank, top",
-      "usage": "Farm: farm, start, shop, sow, harvest, barn, sell, make, task, market, offer, buy, cancel, bank, upgrade, give, top",
-      "dm_only": "The farm is played by DM (so I know it is you). Send me: farm start",
+      "help": "farm = Farming Idle by DM: start, sow tomato 2, harvest, sell, make soup, task, market, offer, buy, bank, top",
+      "usage": "Farming Idle: start, shop, sow, harvest, barn, sell, make, task, market, offer, buy, deliver, cancel, bank, upgrade, give, top",
+      "dm_only": "Farming Idle is played in a private message, not in a channel. Open a DM with {bot} and send there: farm start",
       "error": "Something went wrong on the farm, try again in a moment.",
       "no_farm": "You have no farm yet. Send: farm start",
       "already": "You already have a farm. Send farm for your status.",
@@ -708,13 +708,13 @@
       "empty_piece": "{n} empty",
       "job_piece": "{n} {product} {left}",
       "jobs_done": "Ready in the workshop: {items}",
-      "shop_head": "Seeds (coins, growing time): ",
-      "shop_item": "{crop} {price} {hours}h",
+      "shop_head": "Seed shop (price, grows, harvests): ",
+      "shop_item": "{crop} {price} {hours}h {times}x",
       "shop_next": "L{level}: {crop}",
       "unknown_crop": "I don't know the crop '{q}'. See farm shop",
       "crop_off": "{crop} is off on this bot.",
       "crop_locked": "{crop} is available from level {level}.",
-      "no_empty": "No empty field. Harvest first, or buy one: farm upgrade field",
+      "no_empty": "No empty field: a plant gives several harvests. Clear one: farm clear <crop>, or buy: farm upgrade field",
       "no_money": "Not enough coins: {need} needed, you have {coins}.",
       "sown": "Sown: {n} {crop} ({seeds} own seeds), ripe in {left}. {coins} coins left",
       "sow_usage": "Sowing: farm sow <crop> [number], e.g. farm sow tomato 4. See farm shop",
@@ -749,7 +749,7 @@
       "give_unknown": "No farmer called {name}.",
       "give_self": "Giving to yourself makes little sense.",
       "gave": "{amount} coins to {name}. {coins} left.",
-      "top_head": "Farm top: ",
+      "top_head": "Farming Idle top: ",
       "top_empty": "No farmers yet. DM me: farm start",
       "left_min": "{m} min",
       "left_hours": "{h}:{m} h",
@@ -814,14 +814,100 @@
         "sell": "Today's task (for everyone): sell for {need} coins ({progress}/{need}). Reward {coins} coins, +{xp} xp."
       },
       "daily_post": {
-        "harvest": "🌱 Farm, today's task: harvest, any crop counts. Your goal: DM me farm task",
-        "process": "🌱 Farm, today's task: make products in your workshop. Your goal: DM me farm task",
-        "sell": "🌱 Farm, today's task: sell your crops. Your goal: DM me farm task"
+        "harvest": "🌱 Farming Idle, today's task: harvest, any crop counts. Your goal: DM me farm task",
+        "process": "🌱 Farming Idle, today's task: make products in your workshop. Your goal: DM me farm task",
+        "sell": "🌱 Farming Idle, today's task: sell your crops. Your goal: DM me farm task"
       },
-      "daily_invite": "🌱 Farm: start your own farm today! Sow, harvest, make jam or wine and trade. DM me: farm start"
+      "daily_invite": "🌱 Farming Idle: start your own farm today! Open a DM (private message) with {bot} and send there: farm start",
+      "orders_head": "Market buys: ",
+      "order_item": "{qty} {item} at {price}",
+      "no_order": "The market does not want {item} now. See farm market",
+      "delivered": "Delivered: {qty} {item} for {coins} coins. You now have {total}.",
+      "deliver_usage": "Deliver to the market: farm deliver <crop or product> [amount]. See farm market",
+      "daily_orders": "🛒 Farming Idle, the market buys: {items}. Deliver by DM: farm deliver <item> [n]",
+      "times_left": " ({n}x left)",
+      "regrow": " Grows again ({times}x left).",
+      "shop_hint": "Info: farm shop tomaat. Buy seeds for later: farm seeds tomaat 5. Sow: farm sow tomaat",
+      "crop_info": "{crop} (L{level}): seed {price}, grows {hours}h, {lo}-{hi} per harvest, {times} harvests per plant, sells {sell}. Makes: {made}",
+      "seeds_bought": "Bought {n} {crop} seeds for {cost}. In your barn: {have}. {coins} coins left",
+      "clear_usage": "Clear fields: farm clear <crop>, farm clear <field nr> or farm clear all (the plants are lost)",
+      "clear_none": "Nothing grows there. See farm",
+      "cleared": "{n} field(s) cleared. Sow something new: farm sow <crop>",
+      "dm_invite": "Hi {name}! This is where you play Farming Idle. Send in this DM: farm start",
+      "dm_invite_player": "Hi {name}! This is where you play Farming Idle. Send in this DM: farm (your farm) or farm task",
+      "dm_sent": "@[{name}] I sent you a DM, play on there.",
+      "season_head": "Season ({days} d left): ",
+      "season_line": "{rank} {name} {points}",
+      "season_empty": "no points yet, grab them!",
+      "season_you": "You: place {rank}, {points} points (farm XP this month). Top 3 win {rewards} coins.",
+      "season_place": "{rank} {name} {points} (+{reward})",
+      "season_post": "🏆 Farming Idle, season {month}: {places}. New season, everyone starts at 0!",
+      "month": {
+        "1": "January",
+        "2": "February",
+        "3": "March",
+        "4": "April",
+        "5": "May",
+        "6": "June",
+        "7": "July",
+        "8": "August",
+        "9": "September",
+        "10": "October",
+        "11": "November",
+        "12": "December"
+      },
+      "season_off": "Seasons are off on this bot.",
+      "week": "week {n}",
+      "period": "{start} to {end}",
+      "season_none": "No season is running now. The admin sets the next one on the dashboard.",
+      "season_planned": "The next season starts on {date}."
     },
     "path": {
       "more_hops": "+{n} more hops"
+    },
+    "trace": {
+      "timeout": "Trace: no reply after {seconds}s over {hops} hops ({path}). Shorter works better: tracer {short}"
+    },
+    "discover": {
+      "result": "Heard directly ({n}): {list}",
+      "none": "No direct neighbours known yet (scan: BotNetwork/PacketCapture card). New scan by DM: neighbors",
+      "help": "discover = the repeaters the bot hears directly (0 hops), best signal first. New scan by DM: neighbors"
+    },
+    "ha": {
+      "help": "ha = Home Assistant over the mesh (admins, DM): ha, ha <name> (toggles), ha <name> on/off/status, ha all",
+      "dm_only": "ha only works in a DM, and only for the admin of the bot.",
+      "not_admin": "ha is only for the admin of this bot.",
+      "nothing_shared": "Nothing shared yet: put entities on the Ha_Command card (Read / Switch) on the dashboard.",
+      "list_head": "HA (* = switchable): ",
+      "unknown": "'{q}' is not on the card. Send ha for the names.",
+      "not_switchable": "'{q}' may not be switched (Ha_Command card, Switch).",
+      "which": "Which one? {names}",
+      "state": "{name}: {state}{unit}",
+      "on": "on",
+      "off": "off",
+      "done": "Done.",
+      "error": "Home Assistant did not answer, try again in a moment.",
+      "group_item": "{name} (group of {n})",
+      "group_done": "Done, {n} {state}: {names}"
+    },
+    "post": {
+      "help": "post <name> <text> = a message for someone who is not around; I DM it as soon as I hear them again (7 days)",
+      "usage": "Like this: post <name> <text>. Name with spaces: post @[Dirk Jan] <text>",
+      "none_waiting": "No mail from you is waiting.",
+      "waiting": "Still waiting: {items}",
+      "no_bots": "Mail for a bot does not work.",
+      "saved": "Kept for {name}. I will DM it as soon as I hear {name} ({days} days).",
+      "refused": {
+        "self": "Mail to yourself does not work.",
+        "too_many": "You already have {n} messages waiting. Try later.",
+        "full": "{name}'s mailbox is full.",
+        "empty": "Like this: post <name> <text>"
+      },
+      "delivery": "📬 Mail from {name} ({ago} ago): {text}",
+      "ago_min": "{n} min",
+      "ago_h": "{n} h",
+      "ago_d": "{n} d",
+      "error": "Something went wrong with the mail, try again in a moment."
     }
   }
 }

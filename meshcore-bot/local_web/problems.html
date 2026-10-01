@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Problems - MeshCore Bot Data Viewer{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-2"><i class="fas fa-triangle-exclamation"></i> Problems</h1>
+        <p class="text-muted mb-1">
+            What went wrong: the bot's warnings and errors, grouped per kind (numbers and names left out, so repeats count
+            as one), and commands the bot recognised but did not answer. Kept for 14 days by the ProblemLog card. Looked into
+            something? Click <i class="fas fa-check"></i> (Done) and it disappears until it happens again. Refreshes every minute.
+        </p>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Period">
+                <input type="radio" class="btn-check" name="pr-days" id="pr-d1" value="1" autocomplete="off" checked>
+                <label class="btn btn-outline-primary" for="pr-d1">24 hours</label>
+                <input type="radio" class="btn-check" name="pr-days" id="pr-d7" value="7" autocomplete="off">
+                <label class="btn btn-outline-primary" for="pr-d7">7 days</label>
+                <input type="radio" class="btn-check" name="pr-days" id="pr-d14" value="14" autocomplete="off">
+                <label class="btn btn-outline-primary" for="pr-d14">14 days</label>
+            </div>
+            <span class="small text-muted" id="pr-updated">Loading...</span>
+            <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" id="pr-clear"><i class="fas fa-broom"></i> Clear all</button>
+        </div>
+        <div id="pr-message" role="status" aria-live="polite"></div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4" id="pr-tiles"></div>
+
+<div class="card mb-4">
+    <div class="card-header"><i class="fas fa-comment-slash"></i> Commands without an answer</div>
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+            <thead><tr><th scope="col">Command</th><th scope="col" class="text-end">Asked</th><th scope="col" class="text-end">No answer</th><th scope="col" class="text-end">DM not confirmed</th></tr></thead>
+            <tbody id="pr-failing"></tbody>
+        </table>
+        <details class="px-2 py-2">
+            <summary class="small">The last ones, with what was typed</summary>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 mt-2">
+                    <thead><tr><th scope="col">When</th><th scope="col">Where</th><th scope="col">Who</th><th scope="col">Typed</th><th scope="col">Note</th><th scope="col"></th></tr></thead>
+                    <tbody id="pr-unanswered"></tbody>
+                </table>
+            </div>
+        </details>
+        <div class="small text-muted px-2 pb-2">
+            <b>No answer</b>: nothing (or only "Command executed") went out; often harmless (a cooldown, a command that is off
+            in that channel, a busy radio), but the same command again and again is worth a look.
+            <b>DM not confirmed</b>: the answer was sent by DM, but its confirmation (ACK) did not come back after three
+            tries. Over a long route (many hops) that happens often, and the answer usually did arrive.
+        </div>
+    </div>
+</div>
+
+<div class="card mb-5">
+    <div class="card-header"><i class="fas fa-list"></i> Warnings and errors <small class="text-muted">(click a row for the last example)</small></div>
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead><tr><th scope="col">Level</th><th scope="col">Kind</th><th scope="col" class="text-end">Times</th><th scope="col" class="text-end">Days</th><th scope="col">Last</th><th scope="col"></th></tr></thead>
+            <tbody id="pr-problems"></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+    // Log texts and typed commands come from the mesh: built with textContent only.
+    let data = null;
+    const open = new Set();
+
+    function el(tag, text, cls) {
+        const n = document.createElement(tag);
+        if (text !== undefined && text !== null) n.textContent = String(text);
+        if (cls) n.className = cls;
+        return n;
+    }
+    function when(ts) {
+        if (!ts) return '-';
+        const d = new Date(ts * 1000);
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    }
+    function empty(body, cols, text) {
+        const td = el('td', text, 'text-center text-muted py-3'); td.colSpan = cols;
+        const tr = el('tr'); tr.appendChild(td); body.replaceChildren(tr);
+    }
+    function days() {
+        const c = document.querySelector('input[name="pr-days"]:checked');
+        return c ? c.value : '1';
+    }
+
+    function tiles() {
+        const box = document.getElementById('pr-tiles');
+        box.replaceChildren();
+        [['fa-circle-xmark', 'Errors', data.errors, data.errors ? 'text-danger' : ''],
+         ['fa-triangle-exclamation', 'Warnings', data.warnings, ''],
+         ['fa-terminal', 'Commands', data.commands, ''],
+         ['fa-comment-slash', 'Without an answer', data.unanswered_total, ''],
+         ['fa-envelope-circle-check', 'DM sent, not confirmed', data.unconfirmed_total, '']].forEach(function (t) {
+            const col = el('div', null, 'col-6 col-md-4 col-xl');
+            const card = el('div', null, 'card h-100');
+            const body = el('div', null, 'card-body py-2');
+            const lab = el('div', null, 'small text-muted');
+            lab.appendChild(el('i', null, 'fas ' + t[0] + ' me-1'));
+            lab.appendChild(document.createTextNode(t[1]));
+            body.append(lab, el('div', t[2], 'fs-5 fw-semibold ' + t[3]));
+            card.appendChild(body); col.appendChild(card); box.appendChild(col);
+        });
+    }
+
+    function failing() {
+        const body = document.getElementById('pr-failing');
+        if (!data.failing_commands.length) { empty(body, 4, 'Every recognised command got an answer.'); }
+        else {
+            body.replaceChildren();
+            data.failing_commands.forEach(function (f) {
+                const tr = el('tr');
+                tr.append(el('td', f.command, 'fw-semibold'), el('td', f.asked, 'text-end'), el('td', f.unanswered, 'text-end'),
+                          el('td', f.unconfirmed, 'text-end text-muted'));
+                body.appendChild(tr);
+            });
+        }
+        const list = document.getElementById('pr-unanswered');
+        if (!data.unanswered.length) { empty(list, 6, 'None.'); return; }
+        list.replaceChildren();
+        data.unanswered.forEach(function (u) {
+            const tr = el('tr');
+            const note = el('td', null, 'small text-muted');
+            if (u.kind === 'unconfirmed') note.appendChild(el('span', 'Sent, no confirmation (ACK) came back. ', 'badge text-bg-secondary me-1'));
+            note.appendChild(document.createTextNode(u.response || 'Nothing was sent.'));
+            tr.append(el('td', when(u.time), 'text-nowrap'), el('td', u.channel), el('td', u.user), el('td', u.input, 'font-monospace small'), note,
+                      doneButton({ type: 'command', key: u.key }, u.command));
+            list.appendChild(tr);
+        });
+    }
+
+    function problems() {
+        const body = document.getElementById('pr-problems');
+        if (!data.problems.length) { empty(body, 6, 'No warnings or errors in this period.'); return; }
+        body.replaceChildren();
+        data.problems.forEach(function (p) {
+            const tr = el('tr');
+            tr.style.cursor = 'pointer';
+            tr.tabIndex = 0;
+            const badge = el('span', p.level, 'badge ' + (p.level === 'ERROR' ? 'text-bg-danger' : 'text-bg-warning'));
+            const tdL = el('td'); tdL.appendChild(badge);
+            tr.append(tdL, el('td', p.kind, 'small'), el('td', p.count, 'text-end'), el('td', p.days, 'text-end text-muted'),
+                      el('td', when(p.last), 'text-nowrap small'), doneButton({ type: 'problem', level: p.level, kind: p.kind }, p.kind));
+            const ex = el('tr', null, open.has(p.kind) ? '' : 'd-none');
+            const td = el('td', 'Last: ' + (p.example || '-') + ' · first ' + when(p.first), 'small font-monospace text-break bg-body-tertiary');
+            td.colSpan = 6; ex.appendChild(td);
+            const toggle = function () {
+                if (open.has(p.kind)) open.delete(p.kind); else open.add(p.kind);
+                ex.classList.toggle('d-none');
+            };
+            tr.addEventListener('click', toggle);
+            tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') toggle(); });
+            body.append(tr, ex);
+        });
+    }
+
+    function post(path, body) {
+        return fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                             body: body ? JSON.stringify(body) : undefined })
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+    }
+    function doneButton(item, label) {
+        const td = el('td', null, 'text-end');
+        const b = el('button', null, 'btn btn-outline-success btn-sm');
+        b.type = 'button'; b.title = 'Done: looked into it'; b.setAttribute('aria-label', 'Done: ' + label);
+        b.appendChild(el('i', null, 'fas fa-check'));
+        b.addEventListener('click', function (e) {
+            e.stopPropagation();
+            b.disabled = true;
+            post('/api/problems/dismiss', item).then(load).catch(function (err) { say('Could not mark it done: ' + err.message); b.disabled = false; });
+        });
+        td.appendChild(b);
+        return td;
+    }
+
+    function say(text) {
+        const box = document.getElementById('pr-message');
+        box.replaceChildren();
+        if (text) box.appendChild(el('div', text, 'alert alert-danger py-2'));
+    }
+
+    function load() {
+        fetch('/api/problems?days=' + encodeURIComponent(days()), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status)); return b; }); })
+            .then(function (b) {
+                data = b; say('');
+                tiles(); failing(); problems();
+                document.getElementById('pr-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+            })
+            .catch(function (e) { say('Could not load the problems: ' + e.message); });
+    }
+
+    document.querySelectorAll('input[name="pr-days"]').forEach(function (i) { i.addEventListener('change', load); });
+    document.getElementById('pr-clear').addEventListener('click', function () {
+        if (!confirm('Mark everything on this page as done? New problems will show up again.')) return;
+        post('/api/problems/clear').then(load).catch(function (err) { say('Could not clear: ' + err.message); });
+    });
+    load();
+    setInterval(function () { if (!document.hidden) load(); }, 60000);
+})();
+</script>
+{% endblock %}

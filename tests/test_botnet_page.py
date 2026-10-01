@@ -191,5 +191,95 @@ check(wc.get("/").status_code == 200, "na de wizard: de startpagina is weer de g
 wsrc = open(os.path.join(TREE, "modules", "web_viewer", "templates", "setup.html")).read()
 check("innerHTML" not in wsrc and "insertAdjacentHTML" not in wsrc, "wizard: kanaalnamen alleen als tekst")
 
+# ---------------------------------------------------------------- Games -> Farming Idle tab (players, market, buy orders)
+gv, gc = viewer(None)
+from modules.farm_game import FarmGame  # noqa: E402
+fg = FarmGame(gv.db_manager)
+fg.start("aa" * 32, "Alice", lambda k, **kw: k)
+fg.start("bb" * 32, "Echo|🤖", lambda k, **kw: k)
+gpage = gc.get("/games").get_data(as_text=True)
+check('id="tab-farm"' in gpage and "farm-players" in gpage and "order-form" in gpage, "Games-pagina: tabblad Farming Idle")
+gsrc = open(os.path.join(TREE, "modules", "web_viewer", "templates", "games.html")).read()
+check("innerHTML" not in gsrc and "insertAdjacentHTML" not in gsrc, "Farming Idle: spelersnamen alleen als tekst")
+fo = gc.get("/api/games/farm", headers=H).get_json()
+check([p["name"] for p in fo["players"]] == ["Alice"] and fo["players"][0]["fields_total"] == 4, f"spelers, bots weggelaten ({[p['name'] for p in fo['players']]})")
+check("aa" * 6 not in str(fo), "geen publieke sleutels naar de browser")
+r = gc.post("/api/games/farm/orders", headers=H, json={"item": "jam", "qty": 10, "price": 80, "days": 2})
+oid = r.get_json().get("id")
+check(r.status_code == 200 and oid, "inkooporder toevoegen")
+check(gc.post("/api/games/farm/orders", headers=H, json={"item": "goud", "qty": 1, "price": 1}).status_code == 400, "onbekend item: 400")
+check(gc.post("/api/games/farm/orders", headers=H, json={"item": "jam", "qty": 0, "price": 5}).status_code == 400, "aantal 0: 400")
+fo = gc.get("/api/games/farm", headers=H).get_json()
+check(fo["orders"][0]["item"] == "jam" and fo["orders"][0]["open"] and fo["orders"][0]["price"] == 80, "order staat in het overzicht")
+gv.app.config["TESTING"] = False
+check(gc.post("/api/games/farm/orders", json={"item": "jam", "qty": 1, "price": 5}).status_code == 403, "zonder X-Requested-With: geweigerd")
+gv.app.config["TESTING"] = True
+check(gc.post(f"/api/games/farm/orders/{oid}/delete", headers=H).get_json()["deleted"] is True, "order verwijderen")
+check(gc.get("/api/games/farm", headers=H).get_json()["orders"] == [], "daarna geen orders")
+r = gc.post("/api/games/farm/season", headers=H, json={"enabled": True, "length": "week", "rewards": [100, 50, 25]})
+check(r.status_code == 200 and r.get_json()["length"] == "week", "seizoensinstellingen opslaan")
+check(gc.get("/api/games/farm", headers=H).get_json()["season"]["settings"]["rewards"] == [100, 50, 25], "en terug in het overzicht")
+check(gc.post("/api/games/farm/season", headers=H, json={"rewards": [1, 2]}).status_code == 400, "twee beloningen: 400")
+check(gc.post("/api/games/farm/season", headers=H, json={"length": "custom", "rewards": [1, 2, 3], "start": "2099-01-10", "end": "2099-01-01"}).status_code == 400,
+      "eigen periode: eind voor begin -> 400")
+r = gc.post("/api/games/farm/season", headers=H, json={"length": "custom", "rewards": [1, 2, 3], "start": "2099-01-01", "end": "2099-01-31"})
+check(r.status_code == 200 and r.get_json()["start"] == "2099-01-01", "eigen periode opslaan")
+check('id="season-start"' in gc.get("/games").get_data(as_text=True), "datumvelden op het tabblad")
+check('id="season-form"' in gc.get("/games").get_data(as_text=True), "seizoensblok op het tabblad")
+
+# ---------------------------------------------------------------- Mailbox page
+from modules import mailbox as _mb  # noqa: E402
+_mb.add(gv.db_manager, "Carol", None, "Bob", "tot zaterdag", "#bot")
+_mb.add(gv.db_manager, "Dirk", "ee" * 32, "Bob", "geheim", "DM")
+mp = gc.get("/mailbox").get_data(as_text=True)
+check('id="mb-body"' in mp and 'href="/mailbox"' in mp, "pagina Mailbox met menu-item")
+mj = gc.get("/api/mailbox", headers=H).get_json()
+texts = {m["from"]: m["text"] for m in mj["messages"]}
+check(mj["counts"]["waiting"] == 2 and texts["Carol"] == "tot zaterdag" and texts["Dirk"] is None and "geheim" not in str(mj),
+      "wachtende berichten; tekst van een DM-bericht niet naar de browser")
+mid = next(m["id"] for m in mj["messages"] if m["from"] == "Carol")
+check(gc.post(f"/api/mailbox/{mid}/delete", headers=H).get_json()["deleted"] is True and
+      gc.get("/api/mailbox", headers=H).get_json()["counts"]["waiting"] == 1, "bericht weghalen")
+msrc = open(os.path.join(TREE, "modules", "web_viewer", "templates", "mailbox.html")).read()
+check("innerHTML" not in msrc and "insertAdjacentHTML" not in msrc, "Mailbox: teksten alleen als tekst")
+
+# ---------------------------------------------------------------- ha card: one row per entity
+hp = next(p for p in gc.get("/api/plugins", headers=H).get_json()["plugins"] if p["name"] == "ha")
+check(any(rb["id"] == "entity" for rb in hp["repeating_blocks"]), "ha-kaart heeft regels per entiteit")
+r = gc.post("/api/plugins/command/ha", headers=H, json={"repeating_blocks": {"entity": [
+    {"enabled": True, "values": {"entity_id": "switch.feest_verlichting", "name": "feest", "switch": True}}]}})
+check(r.status_code == 200, f"regel opslaan ({r.get_json()})")
+hp = next(p for p in gc.get("/api/plugins", headers=H).get_json()["plugins"] if p["name"] == "ha")
+blk = next(rb for rb in hp["repeating_blocks"] if rb["id"] == "entity")["blocks"]
+check(blk and blk[0]["values"].get("entity_id") == "switch.feest_verlichting" and blk[0]["values"].get("name") == "feest",
+      f"en weer gelezen ({blk})")
+
+# ---------------------------------------------------------------- radar page: Name it / Add to radio
+check(gc.post("/api/radar/name", headers=H, json={"hash": "ab", "name": "niets-hier"}).status_code == 400, "naam zonder passende berichten: 400")
+r = gc.post("/api/radar/add_to_radio", headers=H, json={"name": "#bemesh"})
+check(r.status_code == 200 and r.get_json()["queued"] == "#bemesh", "Add to radio: in de wachtrij")
+check(gc.get("/api/radar", headers=H).get_json()["add_to_radio"] == ["#bemesh"], "de pagina ziet het verzoek")
+check(gc.post("/api/radar/add_to_radio", headers=H, json={"name": "met spatie"}).status_code == 400, "geen hashtag-naam: 400")
+r = gc.post("/api/radar/channel", headers=H, json={"name": "Club Kanaal", "key": "00112233445566778899aabbccddeeff"})
+check(r.status_code == 200 and r.get_json()["added"] == "Club Kanaal", "kanaal met sleutel toevoegen via de pagina")
+check(gc.post("/api/radar/channel", headers=H, json={"name": "Club", "key": "kort"}).status_code == 400, "foute sleutel: 400")
+check("Club Kanaal" in [w["label"] for w in gc.get("/api/radar", headers=H).get_json()["watching"]], "staat bij 'nog niets gehoord'")
+check('id="tab-watching"' in gc.get("/radar").get_data(as_text=True), "tabblad 'Not heard yet'")
+check(gc.post("/api/radar/name/delete", headers=H, json={"name": "Club Kanaal"}).get_json()["deleted"] is True, "weer weghalen")
+check('id="add-channel-form"' in gc.get("/radar").get_data(as_text=True), "formulier bovenaan de radarpagina")
+
+# ---------------------------------------------------------------- Settings -> Problems
+pp = gc.get("/problems").get_data(as_text=True)
+check('id="pr-problems"' in pp and 'href="/problems"' in pp, "pagina Problems met menu-item")
+pj = gc.get("/api/problems?days=7", headers=H).get_json()
+check(pj.get("days") == 7 and "problems" in pj and "unanswered" in pj, f"/api/problems antwoordt ({sorted(pj)})")
+check(gc.post("/api/problems/dismiss", headers=H, json={"type": "command", "key": "c|1|ping|x"}).get_json()["dismissed"] is True, "afvinken via de API")
+check(gc.post("/api/problems/clear", headers=H).get_json()["cleared"] is True, "alles wissen via de API")
+gv.app.config["TESTING"] = False
+check(gc.post("/api/problems/clear").status_code == 403, "wissen zonder X-Requested-With: geweigerd")
+gv.app.config["TESTING"] = True
+psrc = open(os.path.join(TREE, "modules", "web_viewer", "templates", "problems.html")).read()
+check("innerHTML" not in psrc and "insertAdjacentHTML" not in psrc, "Problems: logteksten alleen als tekst")
+
 print(f"\n{len(fails)} fouten")
 sys.exit(1 if fails else 0)

@@ -7,6 +7,17 @@ Home Assistant. The author uses the [Seeed XIAO ESP32S3 + Wio-SX1262 kit](https:
 kit, flashed with MeshCore firmware from the [MeshCore project](https://github.com/meshcore-dev/MeshCore)).
 Any other board that runs the MeshCore companion firmware over USB serial works the same way.
 
+**A WiFi companion works too** (for example when Home Assistant runs in a virtual machine, such as Proxmox, and USB
+passthrough is awkward). Flash the companion **WiFi** firmware, give the radio a fixed IP address in your router, and set
+**Serial port** to `socket://<ip of the radio>:5000` (`tcp://...` or just `192.168.1.50:5000` work as well; 5000 is the
+MeshCore default port). A WiFi companion accepts only one TCP connection at a time: the proxy is that one connection and
+shares it with every client, exactly as with USB. Baud rate is ignored then. If the radio drops off WiFi, the proxy
+reconnects every 2 seconds. Do not connect the MeshCore app to the radio over WiFi at the same time.
+
+**Home Assistant in Proxmox:** either pass the USB radio through (Proxmox: VM -> Hardware -> Add -> USB Device -> *Use USB
+Vendor/Device ID*, then stop and start the VM) or use a WiFi companion as above. Step by step: INSTALL.md, section
+*Home Assistant in Proxmox*.
+
 Typical clients: the **MeshCore Bot** add-on from this repository, the
 [meshcore-ha](https://github.com/meshcore-dev/meshcore-ha) integration and, through it, the
 [MeshCore Chat](https://github.com/mwolter805/meshcore-ha-chat) panel.
@@ -27,7 +38,7 @@ Start the proxy first, so the clients find it when they start.
 
 | Option | Meaning |
 |---|---|
-| Serial port | Path of the radio, for example `/dev/ttyACM0`. |
+| Serial port | Path of the radio, for example `/dev/ttyACM0`, or `socket://<ip>:5000` for a WiFi companion. |
 | Baud rate | 115200 for MeshCore companion firmware. |
 | Listen port | TCP port for clients. Default 5010. |
 | Priority port | Clients on this port go first when several want the radio (a running turn is finished first). Default 5011, 0 = off. |

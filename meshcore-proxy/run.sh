@@ -10,9 +10,15 @@ QUIET_RELEASE=$(bashio::config 'turn_quiet_seconds')
 MAX_HOLD=$(bashio::config 'turn_max_seconds')
 LOG_LEVEL=$(bashio::config 'log_level')
 
-if [ ! -e "${SERIAL_PORT}" ]; then
+case "${SERIAL_PORT}" in
+    socket://*|tcp://*|[!/]*:[0-9]*) IS_TCP=1 ;;
+    *) IS_TCP=0 ;;
+esac
+
+if [ "${IS_TCP}" = "0" ] && [ ! -e "${SERIAL_PORT}" ]; then
     bashio::log.fatal "Serial port ${SERIAL_PORT} does not exist."
     bashio::log.fatal "Plug in the radio and check the 'serial_port' option (a /dev/serial/by-id/... path is the most stable)."
+    bashio::log.fatal "A WiFi companion instead: serial_port = socket://<ip of the radio>:5000"
     ls -l /dev/serial/by-id/ 2>/dev/null || true
     exit 1
 fi

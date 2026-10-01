@@ -15,7 +15,7 @@ import time
 from datetime import timedelta
 from typing import Any, Optional
 
-from ..channel_radar import (DEFAULT_NAMES, build_table, ensure_tables, generated_names, identify, names_signature, radio_channels,
+from ..channel_radar import (DEFAULT_NAMES, build_table, card_keys, dashboard_keys, dashboard_names, ensure_tables, generated_names, identify, names_signature, radio_channels,
                              radio_signature, record)
 from ..mesh_community import day_start_ts, local_day, table_exists
 from .base_service import BaseServicePlugin
@@ -37,6 +37,10 @@ class ChannelRadarService(BaseServicePlugin):
          "help": ("Comma-separated, without or with #, for example: mijnstad, nl-zuid. They are added to the built-in list of "
                   "about 200 common names. The channels on your radio (private ones too) are recognised by themselves; other private "
                   "channels show up as unknown.")},
+        {"key": "known_keys", "label": "Known channel keys (open channels without #)", "type": "list", "default": [],
+         "help": ("Channels without # have their own key; when it is shared openly (a forum, a website, a group) the radar can "
+                  "recognise them too. One entry per channel: Name=key, the key as 32 hex characters (in the MeshCore app: "
+                  "the channel's secret). They are only counted, never decrypted.")},
     ]
 
     def __init__(self, bot: Any):
@@ -86,11 +90,17 @@ class ChannelRadarService(BaseServicePlugin):
         # Channels on the radio are recognised with their own keys; a channel added on the radio is picked up here
         # (within a minute) and the days still in the packet log are counted again with it.
         radio = radio_channels(db)
+        have = {label.lower() for label, _ in radio}
+        for label, key in card_keys(self.bot.config) + dashboard_keys(db):   # channels with a key: the card, the radar page
+            if label.lower() not in have:
+                have.add(label.lower())
+                radio.append((label, key))
         try:
             from ..bot_network import network_channels
             shared = network_channels(self.bot)   # names other bots found (trusted, or from at least two bots)
         except Exception:  # noqa: BLE001
             shared = []
+        shared = shared + dashboard_names(db)       # names added on the radar page ('Name it'), no restart needed
         rsig = radio_signature(radio) + ("." + names_signature(shared) if shared else "")
         if rsig != self._radio_sig:
             self._radio_sig = rsig

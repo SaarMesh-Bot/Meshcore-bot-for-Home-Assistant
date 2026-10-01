@@ -24,6 +24,15 @@ CAMEL_CASE = {"dadjoke": "DadJoke", "webviewer": "WebViewer"}
 BOT_SUFFIX = "|\U0001F916"  # |🤖
 
 
+def advert_hours(value) -> int:
+    """0 = off; otherwise at least 3 hours (like the repeater firmware), at most a week."""
+    try:
+        h = int(float(value))
+    except (TypeError, ValueError):
+        return 12
+    return 0 if h <= 0 else max(3, min(168, h))
+
+
 def bot_name(name: str) -> str:
     # Strip any robot emoji / pipe the user typed at the end (with or without
     # the variation selector), so "Bot", "Bot 🤖" and "Bot|🤖" all become
@@ -120,6 +129,16 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
         **({"command_prefix": str(g("bot", "command_prefix", "")).strip(),
             "require_command_prefix": bool_str(g("bot", "require_command_prefix", False))}
            if str(g("bot", "command_prefix", "") or "").strip() else {}),
+        # Advert like a repeater: a flood advert every N hours (0 = off; at least 3, the repeater firmware's minimum),
+        # so people far away keep the bot in their contacts and on the map. And one when the bot starts.
+        "advert_interval_hours": str(advert_hours(g("bot", "advert_hours", 12))),
+        "startup_advert": {"off": "false", "zero-hop": "zero-hop", "flood": "flood"}.get(
+            str(g("bot", "startup_advert", "zero-hop") or "zero-hop"), "zero-hop"),
+        # DM replies: one try over the stored route, then up to three floods. Upstream tried the stored route twice
+        # and flooded once; a stale route (the person moved, or wrote via another path) then lost the answer.
+        "dm_max_retries": "4",
+        "dm_flood_after": "1",
+        "dm_max_flood_attempts": "3",
         "protect_starred": bool_str(g("contacts", "protect_starred", True)),
         "keep_radio_favourites": bool_str(g("contacts", "keep_radio_favourites", True)),
     }
@@ -285,12 +304,16 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
     cfg["AutoChannels"] = {"enabled": "true"}
     # HASensors: the bot's numbers as Home Assistant sensors (sensor.meshcore_bot_...). On.
     cfg["HASensors"] = {"enabled": "true", "interval_minutes": "5"}
+    # ProblemLog: warnings/errors per day and kind for the dashboard page Settings -> Problems. On.
+    cfg["ProblemLog"] = {"enabled": "true"}
+    # Mailbox: delivers messages left with 'post' by DM when the recipient is heard again. On.
+    cfg["Mailbox"] = {"enabled": "true"}
     # RepeaterWatch: a directly heard repeater that goes silent is reported (Notifications + Home Assistant). On.
     # Setup: the first-start wizard on the dashboard (a banner until it is done). Only a new installation starts at
     # "false"; an update of an existing installation gets "true" (see merge_with_existing).
     cfg["Setup"] = {"done": "false"}
-    # FarmDaily: the Kwekerij's task of the day in the games channel at 06:00. On (posts nothing without a games channel).
-    cfg["FarmDaily"] = {"enabled": "true", "time": "06:00", "invite_time": "14:00", "channel": ""}
+    # FarmDaily: the Farming Idle's task of the day in the games channel at 06:00. On (posts nothing without a games channel).
+    cfg["FarmDaily"] = {"enabled": "true", "time": "06:00", "invite_time": "14:00", "orders_time": "12:00", "channel": ""}
     cfg["RepeaterWatch"] = {"enabled": "true", "silent_hours": "24", "extra": "", "ha_notification": "true"}
     cfg["NightMode"] = {"enabled": "false", "start": "23:00", "end": "07:00", "scheduled": "true", "feeds": "true", "webhook": "false"}
 
@@ -372,7 +395,7 @@ STATE_FILE = "generated_keys.json"
 # it was rewritten on every start until 2.6.1.
 MOVED_SECTIONS = {"Notifications", "ContactCleanup", "RoomServer_Login", "HomeAssistantBridge",
                   "Webhook", "ChannelHint", "Greeter_Command", "HARepeater", "F1", "F1_Command", "Heartbeat",
-                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily"}
+                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox"}
 # Never removed by the "generated last time but not now" cleanup: the moved sections, and the scheduled
 # messages (the dashboard's Schedule page owns them since 2.8.0; the old announcement option is gone).
 KEEP_SECTIONS = MOVED_SECTIONS | {"Scheduled_Messages"}

@@ -37,6 +37,12 @@ configuration:
       tx_delay_seconds:
         name: Delay between message parts
         description: Seconds between the parts of a long, multi-message reply. Higher gives the mesh more breathing room but makes long replies slower.
+      advert_hours:
+        name: Advert every (hours)
+        description: "Like a repeater: the bot sends a flood advert every this many hours, so people further away keep it in their contacts and see it on the map. 0 = off, otherwise at least 3. 12 is what repeaters do. The count continues after a restart."
+      startup_advert:
+        name: Advert at start
+        description: "An advert when the bot starts: zero-hop (only the neighbours, costs almost no airtime), flood (the whole mesh; not recommended with frequent restarts) or off."
       rate_limit_seconds:
         name: Minimum time between replies
         description: The bot answers at most once per this many seconds in total (a second command within that time gets no answer). Upstream uses 10, this add-on 4. Lower means more airtime on the mesh.

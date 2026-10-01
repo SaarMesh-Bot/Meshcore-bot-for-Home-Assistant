@@ -45,6 +45,62 @@ patch(
                 self.logger.error(f"Error in /api/radar: {e}", exc_info=True)
                 return jsonify({'error': 'Internal error - see server logs'}), 500
 
+        @self.app.route('/api/radar/name', methods=['POST'])
+        def api_radar_name():
+            \"\"\"(add-on) 'Name it': {hash, name}. Kept only when logged messages of that channel byte really belong to
+            '#name' (byte and check code); then the radar recognises it within a minute, no restart.\"\"\"
+            from modules import channel_radar
+            try:
+                data = request.get_json(silent=True) or {}
+                name = channel_radar.clean_name(data.get('name'))
+                if not name:
+                    return jsonify({'error': 'Type a hashtag name (no spaces).'}), 400
+                hits = channel_radar.verify_name(self.db_manager, name, str(data.get('hash') or ''))
+                if not hits:
+                    return jsonify({'error': f'#{name} is not this channel.', 'match': False}), 400
+                channel_radar.add_dashboard_name(self.db_manager, name)
+                return jsonify({'match': True, 'name': '#' + name, 'messages': hits})
+            except Exception as e:
+                self.logger.error(f"Error in /api/radar/name: {e}", exc_info=True)
+                return jsonify({'error': 'Internal error - see server logs'}), 500
+
+        @self.app.route('/api/radar/channel', methods=['POST'])
+        def api_radar_channel():
+            \"\"\"(add-on) 'Add a channel': {name, key?}. #name = hashtag channel; a name with a 32-hex key = its own key.\"\"\"
+            from modules import channel_radar
+            try:
+                data = request.get_json(silent=True) or {}
+                return jsonify({'added': channel_radar.add_channel(self.db_manager, data.get('name'), data.get('key') or '')})
+            except ValueError as e:
+                return jsonify({'error': str(e)}), 400
+            except Exception as e:
+                self.logger.error(f"Error in /api/radar/channel: {e}", exc_info=True)
+                return jsonify({'error': 'Internal error - see server logs'}), 500
+
+        @self.app.route('/api/radar/name/delete', methods=['POST'])
+        def api_radar_name_delete():
+            from modules import channel_radar
+            try:
+                data = request.get_json(silent=True) or {}
+                return jsonify({'deleted': channel_radar.remove_channel(self.db_manager, data.get('name'))})
+            except Exception as e:
+                self.logger.error(f"Error in /api/radar/name/delete: {e}", exc_info=True)
+                return jsonify({'error': 'Internal error - see server logs'}), 500
+
+        @self.app.route('/api/radar/add_to_radio', methods=['POST'])
+        def api_radar_add_to_radio():
+            \"\"\"(add-on) 'Add to radio': a hashtag channel goes on the list AutoChannels makes on the radio (within a
+            minute, only in a free slot that the radio itself reports empty; never overwrites).\"\"\"
+            from modules import channel_radar
+            try:
+                data = request.get_json(silent=True) or {}
+                return jsonify({'queued': channel_radar.request_add_to_radio(self.db_manager, data.get('name'))})
+            except ValueError as e:
+                return jsonify({'error': str(e)}), 400
+            except Exception as e:
+                self.logger.error(f"Error in /api/radar/add_to_radio: {e}", exc_info=True)
+                return jsonify({'error': 'Internal error - see server logs'}), 500
+
         @self.app.route('/api/radar/repeaters')
         def api_radar_repeaters():
             \"\"\"Repeater radar: the repeaters heard in the last 1, 7 or 30 days (see modules/repeater_radar.py).\"\"\"

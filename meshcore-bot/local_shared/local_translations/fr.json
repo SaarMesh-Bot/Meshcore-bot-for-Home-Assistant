@@ -778,7 +778,8 @@
     },
     "trace": {
       "description": "Trace de liaison (trace = chemin manuel, tracer = aller-retour pour que le bot entende la réponse)",
-      "help": "trace [chemin] — chemin manuel (le retour peut ne pas être entendu). tracer [chemin] — aller-retour. Chemin : hex à 2 caractères séparés par des virgules (ex. 01,7a,55). Sans chemin = le chemin de ton message."
+      "help": "trace [chemin] — chemin manuel (le retour peut ne pas être entendu). tracer [chemin] — aller-retour. Chemin : hex à 2 caractères séparés par des virgules (ex. 01,7a,55). Sans chemin = le chemin de ton message.",
+      "timeout": "Trace : rien après {seconds}s sur {hops} sauts ({path}). Plus court marche mieux : tracer {short}"
     },
     "prefix": {
       "older_entries_note": "(Les entrées peuvent dater de plus de {days} jours)"
@@ -1079,9 +1080,9 @@
       "error": "dm a échoué : {error}"
     },
     "farm": {
-      "help": "farm = ferme par DM : start, sème tomate 2, récolte, vendre, fabrique soupe, tâche, marché, offre, achète, bank, top",
-      "usage": "Ferme : farm, start, boutique, sème, récolte, grange, vendre, fabrique, tâche, marché, offre, achète, bank, top",
-      "dm_only": "La ferme se joue par DM (je sais alors que c'est vous). Envoyez-moi : farm start",
+      "help": "farm = Farming Idle par DM : start, sème tomate 2, récolte, vendre, fabrique soupe, tâche, marché, offre, achète, bank, top",
+      "usage": "Farming Idle : start, boutique, sème, récolte, grange, vendre, fabrique, tâche, marché, offre, achète, livre, bank, top",
+      "dm_only": "Farming Idle se joue en message privé, pas dans un canal. Ouvre un DM avec {bot} et envoie-y : farm start",
       "error": "Un souci à la ferme, réessayez dans un instant.",
       "no_farm": "Vous n'avez pas encore de ferme. Envoyez : farm start",
       "already": "Vous avez déjà une ferme. Envoyez farm pour votre état.",
@@ -1092,13 +1093,13 @@
       "empty_piece": "{n} vide",
       "job_piece": "{n} {product} {left}",
       "jobs_done": "Prêt à l'atelier : {items}",
-      "shop_head": "Graines (pièces, pousse) : ",
-      "shop_item": "{crop} {price} {hours}h",
+      "shop_head": "Graines (prix, pousse, récoltes) : ",
+      "shop_item": "{crop} {price} {hours}h {times}x",
       "shop_next": "N{level} : {crop}",
       "unknown_crop": "Je ne connais pas la plante '{q}'. Voir farm boutique",
       "crop_off": "{crop} est désactivé sur ce bot.",
       "crop_locked": "{crop} est disponible dès le niveau {level}.",
-      "no_empty": "Aucun champ libre. Récoltez d'abord, ou achetez-en un : farm upgrade champ",
+      "no_empty": "Pas de champ libre : une plante donne plusieurs récoltes. Vide : farm vide <culture>, ou achète : farm upgrade champ",
       "no_money": "Pas assez de pièces : {need} nécessaires, vous avez {coins}.",
       "sown": "Semé : {n} {crop} ({seeds} graines à vous), mûr dans {left}. Reste {coins} pièces",
       "sow_usage": "Semer : farm sème <plante> [nombre], p. ex. farm sème tomate 4. Voir farm boutique",
@@ -1133,7 +1134,7 @@
       "give_unknown": "Aucun fermier nommé {name}.",
       "give_self": "Se donner à soi-même n'a pas grand intérêt.",
       "gave": "{amount} pièces à {name}. Reste {coins}.",
-      "top_head": "Top de la ferme : ",
+      "top_head": "Top Farming Idle : ",
       "top_empty": "Pas encore de fermiers. DM : farm start",
       "left_min": "{m} min",
       "left_hours": "{h} h {m}",
@@ -1198,14 +1199,97 @@
         "sell": "Tâche du jour (pour tous) : vendez pour {need} pièces ({progress}/{need}). Récompense {coins} pièces, +{xp} xp."
       },
       "daily_post": {
-        "harvest": "🌱 Ferme, tâche du jour : récoltez, toute plante compte. Votre objectif : DM farm tâche",
-        "process": "🌱 Ferme, tâche du jour : fabriquez des produits à l'atelier. Votre objectif : DM farm tâche",
-        "sell": "🌱 Ferme, tâche du jour : vendez votre récolte. Votre objectif : DM farm tâche"
+        "harvest": "🌱 Farming Idle, tâche du jour : récoltez, toute plante compte. Votre objectif : DM farm tâche",
+        "process": "🌱 Farming Idle, tâche du jour : fabriquez des produits à l'atelier. Votre objectif : DM farm tâche",
+        "sell": "🌱 Farming Idle, tâche du jour : vendez votre récolte. Votre objectif : DM farm tâche"
       },
-      "daily_invite": "🌱 Ferme : lancez votre propre ferme aujourd'hui ! Semer, récolter, faire confiture ou vin et échanger. DM : farm start"
+      "daily_invite": "🌱 Farming Idle : lance ta ferme aujourd'hui ! Ouvre un DM (message privé) avec {bot} et envoie-y : farm start",
+      "orders_head": "Le marché achète : ",
+      "order_item": "{qty} {item} à {price}",
+      "no_order": "Le marché ne veut pas de {item} maintenant. Voir farm marché",
+      "delivered": "Livré : {qty} {item} pour {coins} pièces. Tu as maintenant {total}.",
+      "deliver_usage": "Livrer au marché : farm livre <culture ou produit> [nombre]. Voir farm marché",
+      "daily_orders": "🛒 Farming Idle, le marché achète : {items}. Livre en DM : farm livre <objet> [n]",
+      "times_left": " (encore {n}x)",
+      "regrow": " Repousse (encore {times}x).",
+      "shop_hint": "Infos : farm boutique tomaat. Graines pour plus tard : farm graines tomaat 5. Semer : farm sème tomaat",
+      "crop_info": "{crop} (N{level}) : graine {price}, pousse {hours}h, {lo}-{hi} par récolte, {times} récoltes par plante, vente {sell}. Donne : {made}",
+      "seeds_bought": "Acheté {n} graines {crop} pour {cost}. Dans ta grange : {have}. Reste {coins} pièces",
+      "clear_usage": "Vider des champs : farm vide <culture>, farm vide <n° champ> ou farm vide tout (plantes perdues)",
+      "clear_none": "Rien ne pousse là. Voir farm",
+      "cleared": "{n} champ(s) vidé(s). Sème autre chose : farm sème <culture>",
+      "dm_invite": "Salut {name} ! Ici tu joues à Farming Idle. Envoie dans ce DM : farm start",
+      "dm_invite_player": "Salut {name} ! Ici tu joues à Farming Idle. Envoie dans ce DM : farm (ta ferme) ou farm tâche",
+      "dm_sent": "@[{name}] Je t'ai envoyé un DM, continue là-bas.",
+      "season_head": "Saison (encore {days} j) : ",
+      "season_line": "{rank} {name} {points}",
+      "season_empty": "pas encore de points, à toi !",
+      "season_you": "Toi : place {rank}, {points} points (XP ferme ce mois). Le top 3 gagne {rewards} pièces.",
+      "season_place": "{rank} {name} {points} (+{reward})",
+      "season_post": "🏆 Farming Idle, saison {month} : {places}. Nouvelle saison, tout le monde repart de 0 !",
+      "month": {
+        "1": "janvier",
+        "2": "février",
+        "3": "mars",
+        "4": "avril",
+        "5": "mai",
+        "6": "juin",
+        "7": "juillet",
+        "8": "août",
+        "9": "septembre",
+        "10": "octobre",
+        "11": "novembre",
+        "12": "décembre"
+      },
+      "season_off": "Les saisons sont désactivées sur ce bot.",
+      "week": "semaine {n}",
+      "period": "du {start} au {end}",
+      "season_none": "Aucune saison en cours. L'admin choisit la prochaine sur le tableau de bord.",
+      "season_planned": "La prochaine saison commence le {date}."
     },
     "path": {
       "more_hops": "+{n} sauts de plus"
+    },
+    "discover": {
+      "result": "Entendus en direct ({n}) : {list}",
+      "none": "Aucun voisin direct connu (scan : carte BotNetwork/PacketCapture). Nouveau scan en DM : neighbors",
+      "help": "discover = les répéteurs que le bot entend en direct (0 saut), meilleur signal d'abord. Nouveau scan en DM : neighbors"
+    },
+    "ha": {
+      "help": "ha = Home Assistant via le mesh (admins, DM) : ha, ha <nom> (bascule), ha <nom> on/off/status, ha tout",
+      "dm_only": "ha ne marche qu'en DM, et seulement pour l'admin du bot.",
+      "not_admin": "ha est réservé à l'admin de ce bot.",
+      "nothing_shared": "Rien de partagé : mets des entités sur la carte Ha_Command (Read / Switch) du tableau de bord.",
+      "list_head": "HA (* = commutable) : ",
+      "unknown": "'{q}' n'est pas sur la carte. Envoie ha pour les noms.",
+      "not_switchable": "'{q}' ne peut pas être commuté (carte Ha_Command, Switch).",
+      "which": "Lequel ? {names}",
+      "state": "{name} : {state}{unit}",
+      "on": "allumé",
+      "off": "éteint",
+      "done": "Fait.",
+      "error": "Home Assistant ne répond pas, réessaie dans un moment.",
+      "group_item": "{name} (groupe de {n})",
+      "group_done": "Fait, {n} {state} : {names}"
+    },
+    "post": {
+      "help": "post <nom> <texte> = message pour quelqu'un d'absent ; je l'envoie en DM dès que je l'entends (7 jours)",
+      "usage": "Ainsi : post <nom> <texte>. Nom avec espaces : post @[Dirk Jan] <texte>",
+      "none_waiting": "Aucun courrier de toi n'attend.",
+      "waiting": "En attente : {items}",
+      "no_bots": "Le courrier pour un bot ne marche pas.",
+      "saved": "Gardé pour {name}. Je l'envoie en DM dès que j'entends {name} ({days} jours).",
+      "refused": {
+        "self": "Le courrier à toi-même ne marche pas.",
+        "too_many": "Tu as déjà {n} messages en attente. Réessaie plus tard.",
+        "full": "La boîte de {name} est pleine.",
+        "empty": "Ainsi : post <nom> <texte>"
+      },
+      "delivery": "📬 Courrier de {name} (il y a {ago}) : {text}",
+      "ago_min": "{n} min",
+      "ago_h": "{n} h",
+      "ago_d": "{n} j",
+      "error": "Un souci avec le courrier, réessaie dans un moment."
     }
   },
   "common": {

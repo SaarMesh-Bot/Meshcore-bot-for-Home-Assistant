@@ -246,7 +246,9 @@ async def main():
     svc.snapshot = F.parse(S.states(S.ts(2026, 9, 21, 10)))
     svc.last_read = 1.0
     r = await run("f1")
-    check(len(r) == 1 and r[0].startswith("Volgende: GP Italië (Monza), zo 4 okt 15:00 (over "), "f1: volgende race")
+    # in the real race week (the test data's race is 4 Oct 2026) a second line with the weekend schedule follows
+    check(r[0].startswith("Volgende: GP Italië (Monza), zo 4 okt 15:00 (over ")
+          and (len(r) == 1 or (len(r) == 2 and r[1].startswith("Raceweek: GP Italië"))), f"f1: volgende race ({r})")
     r = await run("!f1 stand")
     check(len(r) == 2 and r[0].startswith("WK na ronde 15: 1 VER 288 | 2 NOR 276") and all(len(x.encode()) <= 130 for x in r) and "10 TSU" in r[1], "f1 stand: top 10 met de ronde, in twee berichten")
     r = await run("f1 wk")

@@ -15,7 +15,7 @@ Tekens: **DM** = alleen via een DM · **#f1** = in het kanaal #f1 of via DM · �
 - [Basis en hulp](#basis-en-hulp)
 - [Mesh en radio](#mesh-en-radio)
 - [Spellen en community](#spellen-en-community)
-- [Kwekerij](#kwekerij)
+- [Farming Idle](#farming-idle)
 - [Formule 1](#formule-1)
 - [Handig (Nederland en België)](#handig-nederland-en-belgië)
 - [Weer, zon en ruimte](#weer-zon-en-ruimte)
@@ -36,6 +36,8 @@ Tekens: **DM** = alleen via een DM · **#f1** = in het kanaal #f1 of via DM · �
 | `channels`<br><sub>ook: channel</sub> | `channels [lijst\|#kanaal]` | Overzicht van bekende hashtag-kanalen. |
 | `dm` | `dm` | Typ in een kanaal: de bot stuurt je een DM, daarna kun je hem privé gebruiken. |
 | `info bot`<br><sub>ook: infobot</sub> | `info bot` | Wat deze bot is en wat je nodig hebt voor een eigen bot. **DM** |
+| `post`<br><sub>ook: brief, mail</sub> | `post Bob ik ben er zaterdag`  /  `post @[Dirk Jan] bel je?`  /  `post` | Brievenbus: een bericht voor iemand die er niet is. Zodra de bot die persoon weer hoort, stuurt hij het per DM door (7 dagen geldig, max 3 wachtend per afzender). `post` alleen toont wat van jou nog wacht. |
+| `ha` | `ha`  /  `ha woonkamer temperatuur`  /  `ha tuinlicht aan` | Home Assistant via de mesh, **alleen voor de beheerder** van de bot (sleutel in *Admin public keys*). Alleen wat op de kaart *Ha_Command* staat: per entiteit een regel met het woord dat je achter `ha` typt (bv. `feest` voor switch.feest_verlichting: `ha feest aan`). `ha feest` zonder aan/uit zet hem om; `ha feest status` toont alleen de stand. Groepen (veld *Groups* op de kaart): `ha tuin uit` zet alles in de groep tuin uit. Staat niet in `help`. **DM** |
 
 ## Mesh en radio
 
@@ -44,7 +46,8 @@ Tekens: **DM** = alleen via een DM · **#f1** = in het kanaal #f1 of via DM · �
 | `pad` | `pad` | De route van je bericht in één regel: hops, km en repeaters (? = gok). |
 | `sig`<br><sub>ook: signaal</sub> | `sig` | SNR, RSSI en hops van je bericht met een oordeel (goed/redelijk/zwak). Handig bij antenne-tuning. |
 | `path`<br><sub>ook: decode, route</sub> | `path  /  path 4a,c2,8c` | Lange versie van de route: elke repeater op een eigen regel. Lange antwoorden krijgen (1/2), (2/2); op de kaart *path* kan *Max hops shown* het korter maken. |
-| `trace`<br><sub>ook: tracer</sub> | `trace [pad]` | Trace langs een pad (heen en terug), met signaal per stap. |
+| `trace`<br><sub>ook: tracer, tracert</sub> | `trace [pad]` | Trace langs een pad (heen en terug), met signaal per stap. Zonder pad: jouw berichtpad heen en terug. Lange paden (veel hops) lukken minder vaak; `tracer da,69` probeert een kort stuk. |
+| `discover`<br><sub>ook: buren</sub> | `discover` | De repeaters die de bot direct hoort (0 hops), beste signaal eerst. Verstuurt zelf niets over de radio. |
 | `multitest`<br><sub>ook: mt</sub> | `multitest` | Luistert 6 seconden en toont alle routes waarlangs je bericht binnenkwam. |
 | `prefix`<br><sub>ook: lookup</sub> | `prefix 4a` | Welke repeaters een bepaalde prefix hebben, met locatie. 🌐 |
 | `meshkaart`<br><sub>ook: nodes</sub> | `meshkaart` | Hoeveel nodes, repeaters en rooms de bot hoort (24 uur, 7 dagen, ooit). |
@@ -75,18 +78,19 @@ Tekens: **DM** = alleen via een DM · **#f1** = in het kanaal #f1 of via DM · �
 | `roll` | `roll 100` | Willekeurig getal van 1 tot en met het getal. |
 | `magic8` | `magic8 Wordt het droog?` | De Magic 8-Ball beantwoordt een ja/nee-vraag. |
 
-## Kwekerij
+## Farming Idle
 
-Een boerderijspel dat je **via een DM** met de bot speelt (dan weet de bot dat jij het bent). Zaai gewassen, oogst ze,
+Een boerderijspel dat je **via een DM** met de bot speelt (dan weet de bot dat jij het bent). Typ je `farm` in een kanaal, dan stuurt de bot je zelf een DM; antwoord daar met `farm start`. Zaai gewassen, oogst ze,
 verwerk ze in je werkplaats tot iets wat meer oplevert, verkoop, spaar in de bank en groei van level 1 naar 10.
 
 | Commando | Voorbeeld | Wat het doet |
 |---|---|---|
 | `farm` | `farm` | Je stand: level, munten, bank, wat er rijp is en wanneer de rest rijp is. **DM** |
-| `farm start` | `farm start` | Begin je kwekerij: 4 velden en 200 munten. **DM** |
-| `farm winkel`<br><sub>ook: shop</sub> | `farm winkel` | Het zaad dat je op jouw level kunt kopen, met prijs en groeitijd. **DM** |
+| `farm start` | `farm start` | Begin je boerderij: 4 velden en 200 munten. **DM** |
+| `farm winkel`<br><sub>ook: shop, zaad</sub> | `farm winkel`  /  `farm winkel tomaat`  /  `farm zaad tomaat 5` | De zaadwinkel: wat je op jouw level kunt kopen (prijs, groeitijd, aantal oogsten), alles over één gewas, of zaad kopen voor je schuur (later zaaien of op de markt verkopen). **DM** |
 | `farm zaai`<br><sub>ook: plant, sow</sub> | `farm zaai tomaat 4` | Zaai op je lege velden. Eigen zaad gaat eerst, de rest koop je. **DM** |
-| `farm oogst`<br><sub>ook: harvest</sub> | `farm oogst` | Oogst alles wat rijp is; het gaat naar je schuur. **DM** |
+| `farm oogst`<br><sub>ook: harvest</sub> | `farm oogst` | Oogst alles wat rijp is; het gaat naar je schuur. Een plant geeft meerdere oogsten (tomaat 10x) en groeit daarna opnieuw; pas als hij op is, is het veld leeg. **DM** |
+| `farm ruim`<br><sub>ook: clear</sub> | `farm ruim tomaat`  /  `farm ruim 2`  /  `farm ruim alles` | Maak velden leeg om iets anders te zaaien (de planten ben je kwijt). **DM** |
 | `farm schuur` | `farm schuur` | Wat er in je schuur ligt: oogst, producten en zaad. **DM** |
 | `farm verkoop` | `farm verkoop`  /  `farm verkoop jam` | Verkoop alles, of één soort. **DM** |
 | `farm verwerk`<br><sub>ook: maak, make</sub> | `farm verwerk soep 2` | Maak in je werkplaats een product van je oogst (zie de tabel). **DM** |
@@ -94,10 +98,12 @@ verwerk ze in je werkplaats tot iets wat meer oplevert, verkoop, spaar in de ban
 | `farm upgrade` | `farm upgrade`  /  `farm upgrade kas` | Extra veld, betere kas (sneller groeien), betere grond (meer oogst) of een grotere werkplaats. **DM** |
 | `farm geef` | `farm geef Alex 100` | Geef munten aan een andere boer. **DM** |
 | `farm opdracht` | `farm opdracht` | De opdracht van vandaag (voor iedereen dezelfde: oogsten, maken of verkopen; hoeveel hangt af van je level) en je voortgang. Beloning: munten, farm-XP en 5 XP voor Mesh RPG. **DM** |
-| `farm markt` | `farm markt` | Wat andere boeren te koop aanbieden. Werkt ook in `#games`. |
+| `farm markt` | `farm markt` | Wat andere boeren te koop aanbieden, en wat de markt zelf inkoopt (*Markt koopt*). Werkt ook in `#games`. |
+| `farm lever` | `farm lever jam 5` | Verkoop aan de markt als die erom vraagt: je krijgt meteen de prijs die de markt biedt (vaak meer dan bij `farm verkoop`). Telt mee voor een verkoop-opdracht. **DM** |
 | `farm bied` | `farm bied jam 3 60` | Bied oogst of producten aan op de markt (aantal, prijs per stuk), 3 dagen geldig. **DM** |
 | `farm koop`<br><sub>ook: intrekken</sub> | `farm koop 2`  /  `farm intrekken 2` | Koop aanbieding 2 van de markt, of neem je eigen aanbieding terug. **DM** |
 | `farm top` | `farm top` | De rijkste boeren (munten + bank). Werkt ook in `#games`. |
+| `farm seizoen`<br><sub>ook: season</sub> | `farm seizoen` | Het seizoen (een maand, of een week als de beheerder dat kiest): de top 5 in farm-XP van dit seizoen, jouw plek en hoeveel dagen nog. De top 3 krijgt munten; de uitslag komt in `#games`. **DM** |
 
 **Gewassen en producten**
 
@@ -119,7 +125,7 @@ verwerk ze in je werkplaats tot iets wat meer oplevert, verkoop, spaar in de ban
 - Je level stijgt met XP uit oogsten en verwerken; elk level brengt een nieuw gewas.
 - Soms gebeurt er iets bij het oogsten: een **topoogst** (dubbel), **storm** (een veld kapot), een **zakkenroller** (10% van
   je munten, niet van de bank) of een **controle** als je wiet oogst.
-- Elke ochtend om 06:00 zet de bot de opdracht van de dag in `#games`, en om 14:00 een uitnodiging om mee te doen (kaart *FarmDaily*).
+- Elke ochtend om 06:00 zet de bot de opdracht van de dag in `#games`, om 12:00 wat de markt inkoopt (alleen als er een inkooporder open staat) en om 14:00 een uitnodiging om mee te doen (kaart *FarmDaily*).
 - Een bot-eigenaar kan gewassen uitzetten (kaart *farm*), bijvoorbeeld wiet.
 
 ## Formule 1

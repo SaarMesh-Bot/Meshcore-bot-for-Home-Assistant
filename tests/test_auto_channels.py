@@ -97,6 +97,13 @@ before = len(r.asked)
 asyncio.run(A.ensure_channels(b, log))
 check(len(r.asked) == before, "niets ontbreekt: geen enkele vraag aan de radio")
 
+# a channel asked for on the radar page ('Add to radio') is made too, the same safe way
+meta = {"radar.add_to_radio": '["#bemesh"]'}
+b2 = bot(Radio({0: "Public", 1: "#bot", 2: "#test"}), {0: "Public", 1: "#bot", 2: "#test"})
+b2.db_manager = types.SimpleNamespace(get_metadata=lambda k: meta.get(k), set_metadata=lambda k, v: meta.__setitem__(k, v))
+check(A.wanted_channels(b2) == ["#test", "#bot", "#bemesh"], f"verzoek van de radarpagina hoort bij de gewenste kanalen ({A.wanted_channels(b2)})")
+check(asyncio.run(A.ensure_channels(b2, log)) == ["#bemesh"] and b2.channel_manager.added == [(3, "#bemesh")], "en wordt in een leeg slot gezet")
+
 # the scan missed a channel (timeout counted as empty): recognised, not made twice
 b = bot(Radio({0: "Public", 1: "#bot", 2: "#test"}), {0: "Public", 1: "#bot"})
 check(asyncio.run(A.ensure_channels(b, log)) == [] and b.channel_manager.added == [], "kanaal dat de scan miste: niet nog eens aangemaakt")

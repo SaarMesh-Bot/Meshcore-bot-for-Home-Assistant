@@ -100,14 +100,14 @@ check(s["direct_neighbours"]["state"] == 1, "directe buren van de laatste 7 dage
 check(s["noise_floor"]["state"] == -108 and s["noise_floor"]["attributes"]["unit_of_measurement"] == "dBm" and s["airtime_rx"]["state"] == 7.9,
       "radio: ruisvloer en zendtijd")
 check(all(v["attributes"].get("friendly_name", "").startswith("MeshCore") for v in s.values()), "elke sensor heeft een leesbare naam")
-check("farm_players" not in s and "map_uploads_today" not in s, "geen kwekerij of kaartuploads: die sensoren weggelaten")
+check("farm_players" not in s and "map_uploads_today" not in s, "geen Farming Idle of kaartuploads: die sensoren weggelaten")
 imp("modules.map_upload_stats").record(db, "sent", now)
 with db.connection() as c:
     c.execute("CREATE TABLE farm_players (name TEXT, coins INTEGER, bank INTEGER)")
     c.execute("INSERT INTO farm_players VALUES ('Alice', 500, 100), ('Bob', 50, 0)"); c.commit()
 s = S.collect(bot, {}, now)
 check(s["farm_players"]["state"] == 2 and s["farm_richest"]["state"] == "Alice" and s["farm_richest"]["attributes"]["coins"] == 600,
-      "kwekerij: aantal spelers en de rijkste")
+      "Farming Idle: aantal spelers en de rijkste")
 check(s["map_uploads_today"]["state"] == 1 and "noise_floor" not in s, "kaartuploads; zonder radiocijfers geen ruisvloer")
 
 # the service: every sensor posted to /core/api/states/sensor.meshcore_bot_<name> with the token

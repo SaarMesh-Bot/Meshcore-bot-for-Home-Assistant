@@ -1,7 +1,7 @@
 configuration:
   serial_port:
     name: Seriële poort
-    description: "Pad van de MeshCore-radio, bijvoorbeeld /dev/ttyACM0. Een /dev/serial/by-id/usb-...-pad is het stabielst, omdat het niet verandert als je andere USB-apparaten aansluit. De add-on-log toont de beschikbare paden als de poort niet wordt gevonden."
+    description: "Pad van de MeshCore-radio, bijvoorbeeld /dev/ttyACM0. Een /dev/serial/by-id/usb-...-pad is het stabielst, omdat het niet verandert als je andere USB-apparaten aansluit. De add-on-log toont de beschikbare paden als de poort niet wordt gevonden. Een WiFi-companion in plaats van USB: socket://<ip van de radio>:5000"
   baudrate:
     name: Baudrate
     description: Seriële snelheid van de radio. De MeshCore companion-firmware gebruikt 115200.

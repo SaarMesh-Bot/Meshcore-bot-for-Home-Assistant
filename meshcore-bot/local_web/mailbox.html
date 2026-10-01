@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Mailbox - MeshCore Bot Data Viewer{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-2"><i class="fas fa-envelope"></i> Mailbox</h1>
+        <p class="text-muted mb-1">
+            Messages left with <code>post &lt;name&gt; &lt;text&gt;</code>. The bot sends one by DM as soon as it hears that
+            person again (a message or an advert), when that person is on the radio's contact list. The text of a message
+            left by DM is private and not shown here; one left in a channel was public already. Last 30 days; refreshes
+            every minute.
+        </p>
+        <p class="small text-muted" id="mb-limits"></p>
+        <div id="mb-message" role="status" aria-live="polite"></div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3" id="mb-tiles"></div>
+
+<div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+    <div class="btn-group btn-group-sm" role="group" aria-label="Show">
+        <input type="radio" class="btn-check" name="mb-filter" id="mb-f-waiting" value="waiting" autocomplete="off" checked>
+        <label class="btn btn-outline-primary" for="mb-f-waiting">Waiting</label>
+        <input type="radio" class="btn-check" name="mb-filter" id="mb-f-delivered" value="delivered" autocomplete="off">
+        <label class="btn btn-outline-primary" for="mb-f-delivered">Delivered</label>
+        <input type="radio" class="btn-check" name="mb-filter" id="mb-f-expired" value="expired" autocomplete="off">
+        <label class="btn btn-outline-primary" for="mb-f-expired">Expired</label>
+        <input type="radio" class="btn-check" name="mb-filter" id="mb-f-all" value="all" autocomplete="off">
+        <label class="btn btn-outline-primary" for="mb-f-all">All</label>
+    </div>
+</div>
+
+<div class="card mb-5">
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+            <thead><tr>
+                <th scope="col">Left</th><th scope="col">From</th><th scope="col">To</th><th scope="col">Where</th>
+                <th scope="col">Message</th><th scope="col">Status</th><th scope="col"></th>
+            </tr></thead>
+            <tbody id="mb-body"></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+    // Names and texts come from the mesh: built with textContent only.
+    let data = null;
+
+    function el(tag, text, cls) {
+        const n = document.createElement(tag);
+        if (text !== undefined && text !== null) n.textContent = String(text);
+        if (cls) n.className = cls;
+        return n;
+    }
+    function when(ts) {
+        if (!ts) return '-';
+        const d = new Date(ts * 1000);
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    }
+    function say(text, cls) {
+        const box = document.getElementById('mb-message');
+        box.replaceChildren();
+        if (text) box.appendChild(el('div', text, 'alert ' + (cls || 'alert-danger') + ' py-2'));
+    }
+    function filter() {
+        const c = document.querySelector('input[name="mb-filter"]:checked');
+        return c ? c.value : 'waiting';
+    }
+
+    function render() {
+        const l = data.limits;
+        document.getElementById('mb-limits').textContent = 'A message waits at most ' + l.keep_days + ' days; at most ' + l.max_pending +
+            ' waiting per sender and ' + l.max_per_recipient + ' per recipient; ' + l.max_text + ' characters.';
+        const tiles = document.getElementById('mb-tiles');
+        tiles.replaceChildren();
+        [['fa-hourglass-half', 'Waiting', data.counts.waiting], ['fa-check', 'Delivered', data.counts.delivered],
+         ['fa-clock-rotate-left', 'Expired', data.counts.expired]].forEach(function (t) {
+            const col = el('div', null, 'col-4 col-md-2');
+            const card = el('div', null, 'card h-100');
+            const body = el('div', null, 'card-body py-2');
+            const lab = el('div', null, 'small text-muted');
+            lab.appendChild(el('i', null, 'fas ' + t[0] + ' me-1'));
+            lab.appendChild(document.createTextNode(t[1]));
+            body.append(lab, el('div', t[2], 'fs-5 fw-semibold'));
+            card.appendChild(body); col.appendChild(card); tiles.appendChild(col);
+        });
+        const f = filter();
+        const rows = data.messages.filter(function (m) { return f === 'all' || m.status === f; });
+        const body = document.getElementById('mb-body');
+        if (!rows.length) {
+            const td = el('td', 'Nothing here.', 'text-center text-muted py-3'); td.colSpan = 7;
+            const tr = el('tr'); tr.appendChild(td); body.replaceChildren(tr); return;
+        }
+        body.replaceChildren();
+        rows.forEach(function (m) {
+            const tr = el('tr');
+            const text = m.private ? el('td', '(private, left by DM)', 'text-muted fst-italic small') : el('td', m.text, 'small text-break');
+            const status = m.status === 'delivered' ? 'delivered ' + when(m.delivered)
+                : m.status === 'waiting' ? 'waiting (until ' + when(m.expires) + ')' : 'expired';
+            const tdDel = el('td', null, 'text-end');
+            if (m.status === 'waiting') {
+                const b = el('button', null, 'btn btn-outline-danger btn-sm');
+                b.type = 'button'; b.title = 'Take out'; b.setAttribute('aria-label', 'Take this message out');
+                b.appendChild(el('i', null, 'fas fa-trash'));
+                b.addEventListener('click', function () {
+                    if (!confirm('Take this message for ' + m.to + ' out? It will not be delivered.')) return;
+                    fetch('/api/mailbox/' + m.id + '/delete', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return load(); })
+                        .catch(function (e) { say('Could not take it out: ' + e.message); });
+                });
+                tdDel.appendChild(b);
+            }
+            tr.append(el('td', when(m.created), 'text-nowrap small'), el('td', m.from), el('td', m.to, 'fw-semibold'), el('td', m.via, 'small'),
+                      text, el('td', status, 'small'), tdDel);
+            body.appendChild(tr);
+        });
+    }
+
+    function load() {
+        return fetch('/api/mailbox', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status)); return b; }); })
+            .then(function (b) { data = b; say(''); render(); })
+            .catch(function (e) { say('Could not load the mailbox: ' + e.message); });
+    }
+
+    document.querySelectorAll('input[name="mb-filter"]').forEach(function (i) { i.addEventListener('change', function () { if (data) render(); }); });
+    load();
+    setInterval(function () { if (!document.hidden) load(); }, 60000);
+})();
+</script>
+{% endblock %}

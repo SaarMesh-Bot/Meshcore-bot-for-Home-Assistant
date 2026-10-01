@@ -25,7 +25,7 @@ class HASensorsService(BaseServicePlugin):
     config_section = "HASensors"
     name = "hasensors"
     description = ("The bot's numbers as Home Assistant sensors (sensor.meshcore_bot_...): people, messages, commands, nodes "
-                   "heard, direct neighbours, noise floor, airtime, map uploads, Kwekerij")
+                   "heard, direct neighbours, noise floor, airtime, map uploads, Farming Idle")
 
     settings_schema = [
         {"key": "interval_minutes", "label": "Update every", "type": "int", "default": 5, "min": 1, "max": 60, "unit": "min",

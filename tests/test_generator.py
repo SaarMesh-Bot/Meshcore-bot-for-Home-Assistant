@@ -54,9 +54,10 @@ run(GEN, NEW, d)
 B = read(d)
 check(sections(B, MOVED_SECTIONS) == moved_a, "verhuisde secties zijn na de update identiek (geen enkele waarde verloren)")
 others = [s for s in A.sections() if s not in MOVED_SECTIONS]
-def _strip(sec): return {k: v for k, v in sec.items() if not (k == "rate_limit_seconds")}
+def _strip(sec): return {k: v for k, v in sec.items() if k not in ("rate_limit_seconds", "advert_interval_hours", "startup_advert",
+                                                                  "dm_max_retries", "dm_flood_after", "dm_max_flood_attempts")}
 check({s: _strip(dict(A[s])) for s in others} == {s: _strip(dict(B[s])) for s in others}, "alle andere secties zijn ook identiek (alleen de nieuwe zendgrens-sleutel in [Bot] komt erbij)")
-check(set(B.sections()) - set(A.sections()) == {"HARepeater", "F1", "F1_Command", "Heartbeat", "Localization", "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily"} and set(A.sections()) <= set(B.sections()), "alleen de nieuwe secties HARepeater, F1, F1_Command, Heartbeat, Localization, AutoLanguage, Reminders, Community, ChannelRadar, NightMode, GamesChannel, BotNetwork, InstallCount, AutoChannels, HASensors, RepeaterWatch, Setup en FarmDaily komen erbij, geen enkele sectie is weg")
+check(set(B.sections()) - set(A.sections()) == {"HARepeater", "F1", "F1_Command", "Heartbeat", "Localization", "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox"} and set(A.sections()) <= set(B.sections()), "alleen de nieuwe secties HARepeater, F1, F1_Command, Heartbeat, Localization, AutoLanguage, Reminders, Community, ChannelRadar, NightMode, GamesChannel, BotNetwork, InstallCount, AutoChannels, HASensors, RepeaterWatch, Setup en FarmDaily komen erbij, geen enkele sectie is weg")
 check(B["Reminders"]["enabled"] == "true" and B["Reminders"]["language"] == B["Localization"]["language"] and B["Community"]["enabled"] == "true", "Reminders en Community staan na de update aan (anders werken herinner en dx/xp maar half)")
 check(B["F1"]["enabled"] == "false" and B["F1"]["channel"] == "#f1" and B["F1_Command"]["channels"] == "#f1", "F1 staat na de update UIT; het f1-commando krijgt alleen #f1 als kanaal")
 check("f1" not in B["Channels"]["monitor_channels"].lower(), "#f1 staat NIET bij de kanalen van de bot (zo werken ping, wx en de rest daar niet)")
@@ -246,5 +247,15 @@ urllib.request.urlopen = boom
 check(gen_mod.ha_home() == {}, "Home Assistant antwoordt niet: geen locatie, geen fout")
 urllib.request.urlopen = real_urlopen
 os.environ.pop("SUPERVISOR_TOKEN", None)
+
+# ---- O. advert like a repeater: every 12 h and zero-hop at the start by default; 0 = off, at least 3 h
+d = tempfile.mkdtemp(); run(GEN, NEW, d); O = read(d)
+check(O["Bot"]["advert_interval_hours"] == "12" and O["Bot"]["startup_advert"] == "zero-hop", "zonder optie: elke 12 uur, zero-hop bij de start")
+check((O["Bot"]["dm_max_retries"], O["Bot"]["dm_flood_after"], O["Bot"]["dm_max_flood_attempts"]) == ("4", "1", "3"),
+      "DM-antwoord: 1x via de route, daarna tot 3x flood")
+for val, want in ((0, "0"), (1, "3"), (6, "6"), (500, "168")):
+    o = copy.deepcopy(NEW); o["bot"]["advert_hours"] = val; o["bot"]["startup_advert"] = "off"
+    d = tempfile.mkdtemp(); run(GEN, o, d); O = read(d)
+    check(O["Bot"]["advert_interval_hours"] == want and O["Bot"]["startup_advert"] == "false", f"advert_hours {val} -> {want}, start uit")
 
 print(f"\n{len(fails)} fouten"); sys.exit(1 if fails else 0)

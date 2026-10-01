@@ -75,8 +75,16 @@ def plan_cleanup(
     now: Optional[float] = None,
     is_repeater=lambda c: c.get("type") in (2, 3, 4),
     limit: int = _MAX_REMOVALS_PER_RUN,
+    trim_active_repeaters: bool = False,
+    protected_prefixes: tuple = (),
 ) -> list:
-    """Return the contacts to remove, in removal order (may be empty)."""
+    """Return the contacts to remove, in removal order (may be empty).
+
+    trim_active_repeaters: repeaters may go even when they were heard recently (keep_days only protects people and
+    room servers then), farthest first (most hops; unknown path counts as far). The bot does not need repeaters in the
+    radio's contacts for paths, the map or the radar (those come from its database), only to log in to them, and a
+    full list makes the firmware overwrite people who talk to the bot. protected_prefixes: key beginnings that are
+    never removed (repeaters meshcore-ha follows, direct neighbours, RepeaterWatch)."""
     now = time.time() if now is None else now
     need = len(contacts) - target
     if need <= 0:
@@ -89,16 +97,26 @@ def plan_cleanup(
             flags = int(contact.get("flags") or 0)
         except (TypeError, ValueError):
             flags = 0
-        if pub in protected or (flags & 1):
+        if pub in protected or (flags & 1) or any(pub.startswith(p) for p in protected_prefixes if p):
             continue
         recency = contact_recency(contact)
+        repeater = bool(is_repeater(contact))
         if recency > cutoff:
-            continue
-        candidates.append((0 if is_repeater(contact) else 1, recency, pub, contact))
-    # Infrastructure nodes that have gone quiet go first, then quiet companions;
-    # within each group the one not heard for longest goes first.
-    candidates.sort(key=lambda item: (item[0], item[1]))
-    return [item[3] for item in candidates[: min(need, limit)]]
+            if not (trim_active_repeaters and repeater):
+                continue
+            group = 1   # a repeater heard recently: after the quiet ones
+        else:
+            group = 0 if repeater else 2
+        try:
+            hops = int(contact.get("out_path_len"))
+        except (TypeError, ValueError):
+            hops = -1
+        far = 64 if hops < 0 else hops
+        candidates.append((group, -far if group == 1 else 0, recency, pub, contact))
+    # Quiet repeaters first, then (optionally) active repeaters farthest first, then quiet companions;
+    # within a group the one not heard for longest goes first.
+    candidates.sort(key=lambda item: (item[0], item[1], item[2]))
+    return [item[4] for item in candidates[: min(need, limit)]]
 
 
 def describe_contacts(contacts: dict, protected: set, keep_days: int, now: Optional[float] = None) -> dict:
@@ -174,6 +192,12 @@ class ContactCleanupService(BaseServicePlugin):
          "min": 0, "max": 365, "unit": "days",
          "help": ("Starred contacts, radio favourites, the room server, admins and recently active contacts are "
                   "never removed. Removed contacts stay on the dashboard map.")},
+        {"key": "trim_active_repeaters", "label": "Also remove repeaters that are still heard (farthest first)", "type": "bool",
+         "default": True,
+         "help": ("When the list is full of repeaters that are all still active, nothing could go and the radio overwrote "
+                  "people instead. With this on, far repeaters (most hops) make room. Never removed: direct neighbours, "
+                  "repeaters meshcore-ha follows (HARepeater), RepeaterWatch's list, starred and favourites. Paths, the "
+                  "map and the radar keep working (they use the bot's database).")},
         {"key": "stale_enabled", "label": "Weekly removal of silent contacts", "type": "bool", "default": False,
          "help": "Once a week, whatever the fill level, contacts that have been silent for too long are removed."},
         {"key": "stale_repeater_days", "label": "Repeaters silent for more than", "type": "int", "default": 14,
@@ -192,6 +216,7 @@ class ContactCleanupService(BaseServicePlugin):
         self.trigger_at = cfg.getint(section, "trigger_at", fallback=300) if has else 300
         self.target = cfg.getint(section, "target", fallback=250) if has else 250
         self.keep_days = cfg.getint(section, "keep_days", fallback=7) if has else 7
+        self.trim_active_repeaters = cfg.getboolean(section, "trim_active_repeaters", fallback=True) if has else True
         self.protect_starred = cfg.getboolean("Bot", "protect_starred", fallback=False)
         self.stale_enabled = cfg.getboolean(section, "stale_enabled", fallback=False) if has else False
         self.stale_repeater_days = cfg.getint(section, "stale_repeater_days", fallback=14) if has else 14
@@ -287,6 +312,29 @@ class ContactCleanupService(BaseServicePlugin):
             protected.add(room_key)
         return protected
 
+    def _protected_prefixes(self) -> tuple:
+        """Key beginnings never removed: repeaters meshcore-ha follows (HARepeater telemetry, 30 days), direct
+        neighbours (neighbour discovery, 7 days) and RepeaterWatch's 'Also watch' prefixes."""
+        out: set = set()
+        try:
+            with self.bot.db_manager.connection() as conn:
+                tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+                if "repeater_telemetry" in tables:
+                    out |= {str(k).lower() for (k,) in conn.execute(
+                        "SELECT DISTINCT repeater_key FROM repeater_telemetry WHERE recorded_at >= ?", (int(time.time()) - 30 * 86400,))}
+                if "neighbor_links" in tables:
+                    out |= {str(k).lower()[:12] for (k,) in conn.execute(
+                        "SELECT DISTINCT neighbor_public_key FROM neighbor_links WHERE last_seen >= datetime('now', '-7 day')")}
+        except Exception as e:  # noqa: BLE001
+            self.logger.debug("ContactCleanup: kon gevolgde repeaters niet lezen: %s", e)
+        cfg = self.bot.config
+        if cfg.has_section("RepeaterWatch"):
+            for part in (cfg.get("RepeaterWatch", "extra", fallback="") or "").strip("[]").replace("'", "").split(","):
+                p = part.strip().lower()
+                if len(p) >= 4 and all(c in "0123456789abcdef" for c in p):
+                    out.add(p)
+        return tuple(sorted(p for p in out if p))
+
     def plan(self, target: Optional[int] = None) -> list:
         contacts = dict(getattr(getattr(self.bot, "meshcore", None), "contacts", None) or {})
         repeater_manager = getattr(self.bot, "repeater_manager", None)
@@ -297,6 +345,7 @@ class ContactCleanupService(BaseServicePlugin):
         return plan_cleanup(
             contacts, self._protected_keys(), target if target is not None else self.target,
             self.keep_days, is_repeater=is_repeater,
+            trim_active_repeaters=self.trim_active_repeaters, protected_prefixes=self._protected_prefixes(),
         )
 
     async def run(self, dry_run: bool = True, reason: str = "manual", target: Optional[int] = None) -> dict:

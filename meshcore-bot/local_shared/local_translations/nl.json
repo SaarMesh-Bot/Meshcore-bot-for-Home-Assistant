@@ -574,7 +574,8 @@
     },
     "trace": {
       "description": "Voer een linktrace uit (trace=handmatig pad, tracer=retour zodat de bot het antwoord hoort)",
-      "help": "trace [pad] — handmatig pad (retour wordt mogelijk niet gehoord). tracer [pad] — retour. Pad: komma-gescheiden 2-tekens hex (bv. 01,7a,55). Geen pad = gebruikt jouw berichtpad."
+      "help": "trace [pad] — handmatig pad (retour wordt mogelijk niet gehoord). tracer [pad] — retour. Pad: komma-gescheiden 2-tekens hex (bv. 01,7a,55). Geen pad = gebruikt jouw berichtpad.",
+      "timeout": "Trace: geen antwoord na {seconds}s over {hops} hops ({path}). Korter lukt vaker: tracer {short}"
     },
     "prefix": {
       "older_entries_note": "(Items kunnen ouder zijn dan {days} dagen)"
@@ -1079,12 +1080,12 @@
       "error": "dm mislukt: {error}"
     },
     "farm": {
-      "help": "farm = kwekerij via DM: start, zaai tomaat 2, oogst, verkoop, verwerk soep, opdracht, markt, bied, koop, bank, top",
-      "usage": "Kwekerij: farm, start, winkel, zaai, oogst, schuur, verkoop, verwerk, opdracht, markt, bied, koop, bank, upgrade, geef, top",
-      "dm_only": "De kwekerij speel je via een DM (dan weet ik dat jij het bent). Stuur me: farm start",
-      "error": "Er ging iets mis in de kwekerij, probeer het zo nog eens.",
-      "no_farm": "Je hebt nog geen kwekerij. Stuur: farm start",
-      "already": "Je hebt al een kwekerij. Stuur farm voor je stand.",
+      "help": "farm = Farming Idle via DM: start, zaai tomaat 2, oogst, verkoop, verwerk soep, opdracht, markt, bied, koop, bank, top",
+      "usage": "Farming Idle: start, winkel, zaai, oogst, schuur, verkoop, verwerk, opdracht, markt, bied, koop, lever, bank, upgrade, geef, top",
+      "dm_only": "Farming Idle speel je in een privébericht, niet in een kanaal. Open een DM met {bot} en stuur daar: farm start",
+      "error": "Er ging iets mis in Farming Idle, probeer het zo nog eens.",
+      "no_farm": "Je hebt nog geen boerderij. Stuur: farm start",
+      "already": "Je hebt al een boerderij. Stuur farm voor je stand.",
       "started": "Welkom, boer {name}! {fields} velden en {coins} munten. Zaai: farm zaai {crop} 4, oogst na een uur: farm oogst",
       "status_head": "L{level} ({xp}/{next} xp), {coins} munten, bank {bank} | ",
       "ready_piece": "{n} {crop} rijp",
@@ -1092,13 +1093,13 @@
       "empty_piece": "{n} leeg",
       "job_piece": "{n} {product} {left}",
       "jobs_done": "Klaar in de werkplaats: {items}",
-      "shop_head": "Zaad (munten, groeitijd): ",
-      "shop_item": "{crop} {price} {hours}u",
+      "shop_head": "Zaadwinkel (prijs, groeit, oogsten): ",
+      "shop_item": "{crop} {price} {hours}u {times}x",
       "shop_next": "L{level}: {crop}",
       "unknown_crop": "Gewas '{q}' ken ik niet. Zie farm winkel",
       "crop_off": "{crop} staat uit op deze bot.",
       "crop_locked": "{crop} kan vanaf level {level}.",
-      "no_empty": "Geen leeg veld. Oogst eerst, of koop er een: farm upgrade veld",
+      "no_empty": "Geen leeg veld: een plant geeft meerdere oogsten. Ruim er een: farm ruim <gewas>, of koop: farm upgrade veld",
       "no_money": "Te weinig munten: {need} nodig, je hebt {coins}.",
       "sown": "Gezaaid: {n} {crop} ({seeds} eigen zaad), rijp over {left}. Nog {coins} munten",
       "sow_usage": "Zaaien: farm zaai <gewas> [aantal], bv. farm zaai tomaat 4. Zie farm winkel",
@@ -1133,7 +1134,7 @@
       "give_unknown": "Geen boer met de naam {name}.",
       "give_self": "Aan jezelf geven heeft weinig zin.",
       "gave": "{amount} munten naar {name}. Nog {coins}.",
-      "top_head": "Kwekerij top: ",
+      "top_head": "Farming Idle top: ",
       "top_empty": "Nog geen boeren. DM mij: farm start",
       "left_min": "{m} min",
       "left_hours": "{h}:{m} u",
@@ -1198,14 +1199,97 @@
         "sell": "Opdracht vandaag (voor iedereen): verkoop voor {need} munten ({progress}/{need}). Beloning {coins} munten, +{xp} xp."
       },
       "daily_post": {
-        "harvest": "🌱 Kwekerij, opdracht van vandaag: oogst zoveel mogelijk, elk gewas telt. Jouw doel: DM mij farm opdracht",
-        "process": "🌱 Kwekerij, opdracht van vandaag: maak producten in je werkplaats. Jouw doel: DM mij farm opdracht",
-        "sell": "🌱 Kwekerij, opdracht van vandaag: verkoop je oogst. Jouw doel: DM mij farm opdracht"
+        "harvest": "🌱 Farming Idle, opdracht van vandaag: oogst zoveel mogelijk, elk gewas telt. Jouw doel: DM mij farm opdracht",
+        "process": "🌱 Farming Idle, opdracht van vandaag: maak producten in je werkplaats. Jouw doel: DM mij farm opdracht",
+        "sell": "🌱 Farming Idle, opdracht van vandaag: verkoop je oogst. Jouw doel: DM mij farm opdracht"
       },
-      "daily_invite": "🌱 Kwekerij: begin vandaag je eigen boerderij! Zaaien, oogsten, jam of wijn maken en handelen. DM mij: farm start"
+      "daily_invite": "🌱 Farming Idle: begin vandaag je eigen boerderij! Open een DM (privébericht) met {bot} en stuur daar: farm start",
+      "orders_head": "Markt koopt: ",
+      "order_item": "{qty} {item} à {price}",
+      "no_order": "De markt vraagt nu geen {item}. Zie farm markt",
+      "delivered": "Geleverd: {qty} {item} voor {coins} munten. Je hebt nu {total}.",
+      "deliver_usage": "Leveren aan de markt: farm lever <gewas of product> [aantal]. Zie farm markt",
+      "daily_orders": "🛒 Farming Idle, de markt koopt: {items}. Lever via DM: farm lever <item> [aantal]",
+      "times_left": " (nog {n}x)",
+      "regrow": " Groeit opnieuw (nog {times}x).",
+      "shop_hint": "Info: farm winkel tomaat. Zaad kopen voor later: farm zaad tomaat 5. Zaaien: farm zaai tomaat",
+      "crop_info": "{crop} (L{level}): zaad {price}, groeit {hours}u, {lo}-{hi} per oogst, {times} oogsten per plant, verkoop {sell}. Maak: {made}",
+      "seeds_bought": "Gekocht: {n} zaad {crop} voor {cost}. In je schuur: {have}. Nog {coins} munten",
+      "clear_usage": "Veld leegmaken: farm ruim <gewas>, farm ruim <veldnr> of farm ruim alles (de planten ben je kwijt)",
+      "clear_none": "Daar groeit niets. Zie farm",
+      "cleared": "{n} veld(en) leeggemaakt. Zaai iets nieuws: farm zaai <gewas>",
+      "dm_invite": "Hoi {name}! Hier speel je Farming Idle. Stuur in deze DM: farm start",
+      "dm_invite_player": "Hoi {name}! Hier speel je Farming Idle. Stuur in deze DM: farm (je stand) of farm opdracht",
+      "dm_sent": "@[{name}] Ik heb je een DM gestuurd, speel daar verder.",
+      "season_head": "Seizoen (nog {days} d): ",
+      "season_line": "{rank} {name} {points}",
+      "season_empty": "nog niemand punten, pak ze!",
+      "season_you": "Jij: plek {rank}, {points} punten (farm-XP deze maand). Top 3 wint {rewards} munten.",
+      "season_place": "{rank} {name} {points} (+{reward})",
+      "season_post": "🏆 Farming Idle, seizoen {month}: {places}. Nieuw seizoen, iedereen begint op 0!",
+      "month": {
+        "1": "januari",
+        "2": "februari",
+        "3": "maart",
+        "4": "april",
+        "5": "mei",
+        "6": "juni",
+        "7": "juli",
+        "8": "augustus",
+        "9": "september",
+        "10": "oktober",
+        "11": "november",
+        "12": "december"
+      },
+      "season_off": "Seizoenen staan uit op deze bot.",
+      "week": "week {n}",
+      "period": "{start} t/m {end}",
+      "season_none": "Er loopt nu geen seizoen. De beheerder kiest het volgende op het dashboard.",
+      "season_planned": "Het volgende seizoen begint op {date}."
     },
     "path": {
       "more_hops": "+{n} hops meer"
+    },
+    "discover": {
+      "result": "Direct gehoord ({n}): {list}",
+      "none": "Nog geen directe buren bekend (burenscan: kaart BotNetwork/PacketCapture). Nieuwe scan via DM: neighbors",
+      "help": "discover = de repeaters die de bot direct hoort (0 hops), beste signaal eerst. Nieuwe scan via DM: neighbors"
+    },
+    "ha": {
+      "help": "ha = Home Assistant via de mesh (alleen beheerders, DM): ha, ha <naam> (schakelt om), ha <naam> aan/uit/status, ha alles",
+      "dm_only": "ha werkt alleen in een DM, en alleen voor de beheerder van de bot.",
+      "not_admin": "ha is alleen voor de beheerder van deze bot.",
+      "nothing_shared": "Nog niets gedeeld: zet entiteiten op de kaart Ha_Command (Read / Switch) op het dashboard.",
+      "list_head": "HA (* = schakelbaar): ",
+      "unknown": "'{q}' staat niet op de kaart. Stuur ha voor de namen.",
+      "not_switchable": "'{q}' mag niet geschakeld worden (kaart Ha_Command, Switch).",
+      "which": "Welke? {names}",
+      "state": "{name}: {state}{unit}",
+      "on": "aan",
+      "off": "uit",
+      "done": "Gedaan.",
+      "error": "Home Assistant gaf geen antwoord, probeer het zo nog eens.",
+      "group_item": "{name} (groep van {n})",
+      "group_done": "Gedaan, {n} {state}: {names}"
+    },
+    "post": {
+      "help": "post <naam> <tekst> = bericht voor iemand die er niet is; ik stuur het per DM zodra ik diegene weer hoor (7 dagen)",
+      "usage": "Zo: post <naam> <tekst>. Naam met spaties: post @[Dirk Jan] <tekst>",
+      "none_waiting": "Er wacht geen post van jou.",
+      "waiting": "Wacht nog: {items}",
+      "no_bots": "Post voor een bot gaat niet.",
+      "saved": "Bewaard voor {name}. Ik stuur het per DM zodra ik {name} hoor ({days} dagen geldig).",
+      "refused": {
+        "self": "Post aan jezelf gaat niet.",
+        "too_many": "Je hebt al {n} berichten die wachten. Probeer later.",
+        "full": "De brievenbus van {name} zit vol.",
+        "empty": "Zo: post <naam> <tekst>"
+      },
+      "delivery": "📬 Post van {name} ({ago} geleden): {text}",
+      "ago_min": "{n} min",
+      "ago_h": "{n} u",
+      "ago_d": "{n} d",
+      "error": "Er ging iets mis met de post, probeer het zo nog eens."
     }
   },
   "common": {

@@ -37,6 +37,11 @@ def wanted_channels(bot: Any) -> list:
         names += _names(cfg.get("GamesChannel", "channel", fallback=""))
     if _on(cfg, "F1"):
         names += _names(cfg.get("F1", "channel", fallback="#f1"))
+    try:   # channels asked for on the radar page ('Add to radio')
+        from .channel_radar import add_to_radio_requests
+        names += add_to_radio_requests(bot.db_manager)
+    except Exception:  # noqa: BLE001
+        pass
     out = []
     for n in names:
         n = n.lower()

@@ -29,7 +29,7 @@ SYNC_DAYS = 8
 MIN_SYNC_GAP_S = 60
 MSG_CAP, CMD_CAP = 20, 10
 XP_MSG, XP_CMD, XP_CHECKIN, XP_KARMA, XP_HOP = 1, 2, 5, 10, 5
-XP_FARM_TASK = 5   # a finished Kwekerij daily task (farm_game.py)
+XP_FARM_TASK = 5   # a finished Farming Idle daily task (farm_game.py)
 DX_HOP_CAP = 10   # the best DX counts for at most 10 hops (50 XP): one lucky far message must not outweigh weeks of taking part
 TITLE_LEVELS = [(18, 6), (12, 5), (8, 4), (5, 3), (3, 2), (1, 1), (0, 0)]   # (from level, title number)
 
@@ -46,12 +46,20 @@ ARCHIVE_SCHEMA = [
 _last_sync: dict = {}
 
 
+_archive_ready: set = set()
+
+
 def ensure_archive(db: Any) -> None:
+    """Create the archive tables once per database (the dashboard asks a lot; a write every time slowed it down)."""
+    key = (id(db), str(getattr(db, "db_path", "") or getattr(db, "path", "")))
+    if key in _archive_ready:
+        return
     ensure_tables(db)
     with db.connection() as conn:
         for statement in ARCHIVE_SCHEMA:
             conn.execute(statement)
         conn.commit()
+    _archive_ready.add(key)
 
 
 def sync(bot: Any, now_ts: Optional[float] = None, force: bool = False) -> bool:
@@ -107,12 +115,15 @@ def dx_best(bot: Any, since_day: Optional[str], name: Optional[str] = None, limi
     if name:
         where.append("LOWER(name) = LOWER(?)")
         params.append(name)
+    cond = " AND ".join(where)
     with bot.db_manager.connection() as conn:
+        # each person's best once (GROUP BY), then the rows at that best; was a sub-query per row (slow with many rows)
         rows = conn.execute(
-            f"""SELECT name, hops, ts FROM community_dx d WHERE {' AND '.join(where)}
-                AND hops = (SELECT MAX(hops) FROM community_dx e WHERE LOWER(e.name) = LOWER(d.name) {'AND e.day >= ?' if since_day else ''})
-                ORDER BY hops DESC, ts ASC LIMIT 400""",
-            params + ([since_day] if since_day else [])).fetchall()
+            f"""WITH best AS (SELECT LOWER(name) AS k, MAX(hops) AS h FROM community_dx WHERE {cond} GROUP BY LOWER(name))
+                SELECT d.name, d.hops, d.ts FROM community_dx d JOIN best b ON LOWER(d.name) = b.k AND d.hops = b.h
+                WHERE {cond.replace('day', 'd.day').replace('LOWER(name)', 'LOWER(d.name)')}
+                ORDER BY d.hops DESC, d.ts ASC LIMIT 400""",
+            params + params).fetchall()
     seen, out = set(), []
     for n, h, t in rows:                      # one row per person (their first time at their best)
         if n.lower() in seen:
@@ -169,6 +180,38 @@ def xp_of(bot: Any, name: str, since_day: Optional[str] = None) -> dict:
           + parts["karma"] * XP_KARMA + min(parts["best_hops"], DX_HOP_CAP) * XP_HOP + parts["farm_tasks"] * XP_FARM_TASK)
     level = level_for(xp)
     return {**parts, "xp": xp, "level": level, "next": xp_for_level(level + 1), "title": title_number(level)}
+
+
+def xp_all(bot: Any, since_day: Optional[str] = None) -> list:
+    """[(name, info)] for every name with archived activity (since that day), the same numbers as xp_of() gives per
+    name, but with one query per table for everyone instead of seven per person (the Games page took 9 s)."""
+    ensure_archive(bot.db_manager)
+    where = " WHERE day >= ?" if since_day else ""
+    p = [since_day] if since_day else []
+    with bot.db_manager.connection() as conn:
+        act = conn.execute(
+            f"SELECT LOWER(name), name, COALESCE(SUM(MIN(messages, {MSG_CAP})),0), COALESCE(SUM(MIN(commands, {CMD_CAP})),0), "
+            f"COUNT(*), COALESCE(SUM(messages),0) FROM community_activity{where} GROUP BY LOWER(name)", p).fetchall()
+
+        def counts(sql: str) -> dict:
+            return {k: v for k, v in conn.execute(sql, p).fetchall()}
+        checkins = counts(f"SELECT LOWER(name), COUNT(*) FROM community_checkin{where} GROUP BY LOWER(name)")
+        karma = counts(f"SELECT LOWER(receiver), COUNT(*) FROM community_karma{where} GROUP BY LOWER(receiver)")
+        hops = counts(f"SELECT LOWER(name), COALESCE(MAX(hops),0) FROM community_dx{where} GROUP BY LOWER(name)")
+        tasks = {}
+        if conn.execute("SELECT 1 FROM sqlite_master WHERE name='farm_quests'").fetchone():
+            tasks = counts(f"SELECT LOWER(name), COUNT(*) FROM farm_quests WHERE done=1{' AND day >= ?' if since_day else ''} "
+                           "GROUP BY LOWER(name)")
+    out = []
+    for key, name, msgs, cmds, active, raw in act:
+        parts = {"messages": int(msgs), "commands": int(cmds), "active_days": int(active), "all_messages": int(raw),
+                 "checkins": int(checkins.get(key, 0)), "karma": int(karma.get(key, 0)), "best_hops": int(hops.get(key, 0) or 0),
+                 "farm_tasks": int(tasks.get(key, 0))}
+        xp = (parts["messages"] * XP_MSG + parts["commands"] * XP_CMD + parts["checkins"] * XP_CHECKIN
+              + parts["karma"] * XP_KARMA + min(parts["best_hops"], DX_HOP_CAP) * XP_HOP + parts["farm_tasks"] * XP_FARM_TASK)
+        level = level_for(xp)
+        out.append((name, {**parts, "xp": xp, "level": level, "next": xp_for_level(level + 1), "title": title_number(level)}))
+    return out
 
 
 def known_names(bot: Any, since_day: Optional[str] = None) -> list:

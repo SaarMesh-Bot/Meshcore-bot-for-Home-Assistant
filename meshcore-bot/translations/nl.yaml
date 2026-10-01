@@ -37,6 +37,12 @@ configuration:
       tx_delay_seconds:
         name: Pauze tussen berichtdelen
         description: Seconden tussen de delen van een lang antwoord uit meerdere berichten. Hoger geeft het mesh meer ruimte, maar lange antwoorden duren langer.
+      advert_hours:
+        name: Adverteren elke (uur)
+        description: "Net als een repeater: de bot stuurt elke zoveel uur een flood-advert, zodat mensen verder weg hem in hun contacten houden en op de kaart zien. 0 = uit, anders minstens 3. Repeaters doen 12. Het tellen gaat door na een herstart."
+      startup_advert:
+        name: Advert bij het starten
+        description: "Een advert als de bot start: zero-hop (alleen de buren, kost bijna geen zendtijd), flood (de hele mesh; niet aan te raden als je vaak herstart) of off (uit)."
       rate_limit_seconds:
         name: Minimale tijd tussen antwoorden
         description: De bot antwoordt in totaal hooguit één keer per zoveel seconden (een tweede commando binnen die tijd krijgt geen antwoord). Upstream gebruikt 10, deze add-on 4. Lager betekent meer airtime op de mesh.

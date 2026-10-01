@@ -53,6 +53,8 @@ ENUMS = {
     "commands.farm.product": ["soep", "pasta", "jam", "lantaarn", "joint", "wijn", "olie", "taart", "bier", "espresso", "chocolade"],
     "commands.farm.up": ["veld", "kas", "grond", "werkplaats"],
     "commands.farm.quest": ["harvest", "process", "sell"],
+    "commands.post.refused": ["self", "too_many", "full", "empty"],
+    "commands.farm.month": [str(i) for i in range(1, 13)],
     "commands.farm.daily_post": ["harvest", "process", "sell"],
     "commands.farm.up_name": ["veld", "kas", "grond", "werkplaats"],
     "commands.file.type": ["AbnormalTraffic", "Accident", "GeneralObstruction", "VehicleObstruction"],

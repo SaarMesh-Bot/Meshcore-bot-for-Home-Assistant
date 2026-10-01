@@ -3,7 +3,7 @@
 Every few minutes the bot writes a handful of sensor states through Home Assistant's REST API (the add-on has
 homeassistant_api), the same way as the heartbeat: people and messages in the last 24 hours, commands answered, nodes
 heard by kind, new nodes today, most hops today, direct neighbours, the radio's noise floor and airtime, map uploads
-and the Kwekerij's richest farmer. They can go on a Home Assistant dashboard and into automations. Nothing is sent over
+and the Farming Idle's richest farmer. They can go on a Home Assistant dashboard and into automations. Nothing is sent over
 the radio; the radio numbers come from local commands.
 
 States written this way live in Home Assistant until it restarts; the bot writes them again within minutes.
@@ -54,10 +54,10 @@ def collect(bot: Any, radio: Optional[dict] = None, now: Optional[float] = None)
             if conn.execute("SELECT 1 FROM sqlite_master WHERE name='farm_players'").fetchone():
                 players = conn.execute("SELECT COUNT(*) FROM farm_players").fetchone()[0]
                 top = conn.execute("SELECT name, coins + bank FROM farm_players ORDER BY coins + bank DESC LIMIT 1").fetchone()
-                out["farm_players"] = _count("players", players, "MeshCore Kwekerij players", "mdi:sprout")
+                out["farm_players"] = _count("players", players, "MeshCore Farming Idle players", "mdi:sprout")
                 if top:
                     out["farm_richest"] = {"state": top[0] or "?", "attributes": {
-                        "friendly_name": "MeshCore Kwekerij richest farmer", "icon": "mdi:trophy", "coins": top[1]}}
+                        "friendly_name": "MeshCore Farming Idle richest farmer", "icon": "mdi:trophy", "coins": top[1]}}
     except Exception:  # noqa: BLE001 - a missing table only leaves that sensor out
         pass
     try:

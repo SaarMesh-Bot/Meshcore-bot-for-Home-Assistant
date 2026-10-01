@@ -9,7 +9,9 @@ the MeshCore **companion (USB)** firmware. Every option is also explained in the
 
 - **Home Assistant OS or Supervised.** Add-ons need the Supervisor; a Home Assistant *Container* or *Core* installation
   cannot run them.
-- **The radio is plugged in** by USB into the machine that runs Home Assistant.
+- **The radio is plugged in** by USB into the machine that runs Home Assistant, **or** it is a **WiFi companion** on your
+  network (handy when Home Assistant runs in Proxmox or another virtual machine; see
+  [Home Assistant in Proxmox](#home-assistant-in-proxmox-or-another-virtual-machine) below).
 - **Your own public key** (64 characters). You find it in your MeshCore app, in the settings of your own node. With it,
   the bot knows who its admin is.
 - **Which channels will the bot use?** Ask around in your region first which channels already have a bot (see
@@ -126,11 +128,35 @@ MeshCore Chat panel). With the HACS integration *f1_sensor*: **F1** (the F1 chan
 - Switch on the **Webhook** only with a secret token.
 - Only put keys you trust under *Admin public keys*. Admin commands only work in real direct messages.
 
+### Home Assistant in Proxmox (or another virtual machine)
+
+Home Assistant OS in a VM only sees a USB radio when the host passes it through. Two ways:
+
+**A. USB passthrough (the radio stays a USB companion)**
+1. Plug the radio into the Proxmox host. In Proxmox: select the Home Assistant VM, **Hardware -> Add -> USB Device**.
+2. Choose **Use USB Vendor/Device ID** (not *Use USB Port*) and pick the radio (for example *Espressif*, *Silicon Labs
+   CP210x* or *QinHeng CH340*). Tick **Use USB3** when the radio is on a USB3 port.
+3. **Shut the VM down and start it again from Proxmox** (a restart from inside Home Assistant is not enough).
+4. In Home Assistant: **Settings -> System -> Hardware -> All hardware**: the radio shows up as `/dev/ttyACM0` or
+   `/dev/ttyUSB0` and under `/dev/serial/by-id/...`. Use that path in the proxy.
+
+Still nothing? Some boards change their USB ID when they reset (ESP32-S3 with native USB); passing the whole USB port
+(*Use USB Port*) or a USB controller (PCI passthrough) is then more reliable. Or use way B.
+
+**B. WiFi companion (no USB at all)**
+1. Flash the radio with the MeshCore companion **WiFi** firmware and connect it to your network; give it a fixed IP
+   address in your router.
+2. In the proxy, set **Serial port** to `socket://<ip of the radio>:5000`.
+3. Everything else stays the same: the bot and meshcore-ha connect to the proxy (`localhost:5010`/`5011`). The radio takes
+   only one TCP connection; the proxy is that one and shares it. Do not also connect the MeshCore app to the radio
+   over WiFi at the same time.
+
 ## 9. Troubleshooting
 
 | Problem | Try |
 |---|---|
-| The proxy cannot find the radio | Check the list of paths in the proxy log; is another add-on or integration still using the USB port? |
+| The proxy cannot find the radio | Check the list of paths in the proxy log; is another add-on or integration still using the USB port? In Proxmox: see [Home Assistant in Proxmox](#home-assistant-in-proxmox-or-another-virtual-machine). |
+| The proxy keeps reconnecting to a WiFi radio | Is the IP address right and fixed? Is something else (the app, meshcore-ha directly) connected to the radio? It takes one connection only. |
 | The bot does not connect | Is the proxy running? Start the proxy first, then the bot. |
 | No answer in a channel | Is the channel in *Channels to listen on* **and** on the radio? Restart the bot after adding a channel. |
 | No answer at all | Set *Bot → Log level* to `DEBUG`, send `ping` again and read the log. |

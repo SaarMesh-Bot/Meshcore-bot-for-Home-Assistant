@@ -17,7 +17,7 @@ Signs: **DM** = direct message only · **#f1** = in the #f1 channel or by DM · 
 - [Basics and help](#basics-and-help)
 - [Mesh and radio](#mesh-and-radio)
 - [Games and community](#games-and-community)
-- [Farm](#farm)
+- [Farming Idle](#farming-idle)
 - [Formula 1](#formula-1)
 - [Useful (Netherlands and Belgium)](#useful-netherlands-and-belgium)
 - [Weather, sun and space](#weather-sun-and-space)
@@ -38,6 +38,8 @@ Signs: **DM** = direct message only · **#f1** = in the #f1 channel or by DM · 
 | `channels`<br><sub>also: channel</sub> | `channels [list\|#channel]` | Overview of known hashtag channels. |
 | `dm` | `dm` | Type it in a channel: the bot sends you a DM, so you can use it privately from then on. |
 | `info bot`<br><sub>also: infobot</sub> | `info bot` | What this bot is and what you need for a bot of your own. **DM** |
+| `post`<br><sub>also: mail</sub> | `post Bob see you Saturday`  /  `post @[Dirk Jan] call me?`  /  `post` | Mailbox: a message for someone who is not around. As soon as the bot hears that person again it sends it by DM (valid 7 days, at most 3 waiting per sender). `post` alone shows what of yours is still waiting. |
+| `ha` | `ha`  /  `ha living room temperature`  /  `ha garden light on` | Home Assistant over the mesh, **only for the bot's admin** (key in *Admin public keys*). Only what is on the *Ha_Command* card: one row per entity with the word you type after `ha` (e.g. `feest` for switch.feest_verlichting: `ha feest aan`). `ha feest` alone toggles it; `ha feest status` only shows the state. Groups (field *Groups* on the card): `ha tuin uit` switches off everything in the group tuin. Not in `help`. **DM** |
 
 ## Mesh and radio
 
@@ -46,7 +48,8 @@ Signs: **DM** = direct message only · **#f1** = in the #f1 channel or by DM · 
 | `pad` | `pad` | The route of your message in one line: hops, km and repeaters (? = guess). |
 | `sig`<br><sub>also: signaal</sub> | `sig` | SNR, RSSI and hops of your message with a verdict (good/fair/weak). Handy when tuning an antenna. |
 | `path`<br><sub>also: decode, route</sub> | `path  /  path 4a,c2,8c` | Long version of the route: every repeater on its own line. Long replies get (1/2), (2/2); *Max hops shown* on the *path* card makes it shorter. |
-| `trace`<br><sub>also: tracer</sub> | `trace [path]` | Trace along a path (there and back), with the signal per step. |
+| `trace`<br><sub>also: tracer, tracert</sub> | `trace [path]` | Trace along a path (there and back), with the signal per step. Without a path: your message's path there and back. Long paths (many hops) fail more often; `tracer da,69` tries a short stretch. |
+| `discover` | `discover` | The repeaters the bot hears directly (0 hops), best signal first. Sends nothing over the radio itself. |
 | `multitest`<br><sub>also: mt</sub> | `multitest` | Listens for 6 seconds and shows every route your message came in by. |
 | `prefix`<br><sub>also: lookup</sub> | `prefix 4a` | Which repeaters have a given prefix, with their location. 🌐 |
 | `meshkaart`<br><sub>also: nodes</sub> | `meshkaart` | How many nodes, repeaters and rooms the bot hears (24 hours, 7 days, ever). |
@@ -77,18 +80,19 @@ Signs: **DM** = direct message only · **#f1** = in the #f1 channel or by DM · 
 | `roll` | `roll 100` | Random number from 1 up to the number. |
 | `magic8` | `magic8 Will it stay dry?` | The Magic 8-Ball answers a yes/no question. |
 
-## Farm
+## Farming Idle
 
-A farming game you play **by DM** with the bot (so the bot knows it is you). Sow crops, harvest them, process them in
+A farming game you play **by DM** with the bot (so the bot knows it is you). Type `farm` in a channel and the bot sends you a DM itself; answer there with `farm start`. Sow crops, harvest them, process them in
 your workshop into something worth more, sell, save in the bank and grow from level 1 to 10.
 
 | Command | Example | What it does |
 |---|---|---|
 | `farm` | `farm` | Your status: level, coins, bank, what is ripe and when the rest is. **DM** |
 | `farm start` | `farm start` | Start your farm: 4 fields and 200 coins. **DM** |
-| `farm shop`<br><sub>also: winkel</sub> | `farm shop` | The seeds you can buy at your level, with price and growing time. **DM** |
+| `farm shop`<br><sub>also: winkel, seeds</sub> | `farm shop`  /  `farm shop tomaat`  /  `farm seeds tomaat 5` | The seed shop: what you can buy at your level (price, growing time, number of harvests), everything about one crop, or buy seeds for your barn (sow later or sell on the market). **DM** |
 | `farm sow`<br><sub>also: plant, zaai</sub> | `farm sow tomato 4` | Sow on your empty fields. Your own seeds go first, you buy the rest. **DM** |
-| `farm harvest`<br><sub>also: oogst</sub> | `farm harvest` | Harvest everything that is ripe; it goes to your barn. **DM** |
+| `farm harvest`<br><sub>also: oogst</sub> | `farm harvest` | Harvest everything that is ripe; it goes to your barn. A plant gives several harvests (tomato 10x) and grows again after each; only when it is spent is the field empty. **DM** |
+| `farm clear`<br><sub>also: ruim</sub> | `farm clear tomaat`  /  `farm clear 2`  /  `farm clear all` | Clear fields to sow something else (the plants are lost). **DM** |
 | `farm barn` | `farm barn` | What is in your barn: crops, products and seeds. **DM** |
 | `farm sell` | `farm sell`  /  `farm sell jam` | Sell everything, or one kind. **DM** |
 | `farm make`<br><sub>also: verwerk</sub> | `farm make soup 2` | Make a product from your crops in the workshop (see the table). **DM** |
@@ -96,10 +100,12 @@ your workshop into something worth more, sell, save in the bank and grow from le
 | `farm upgrade` | `farm upgrade`  /  `farm upgrade greenhouse` | An extra field, a better greenhouse (faster), better soil (bigger crops) or a bigger workshop. **DM** |
 | `farm give` | `farm give Alex 100` | Give coins to another farmer. **DM** |
 | `farm task` | `farm task` | Today's task (the same for everyone: harvest, make or sell; how much depends on your level) and your progress. Reward: coins, farm XP and 5 Mesh RPG XP. **DM** |
-| `farm market` | `farm market` | What other farmers offer for sale. Also works in `#games`. |
+| `farm market` | `farm market` | What other farmers offer for sale, and what the market itself buys (*Market buys*). Also works in `#games`. |
+| `farm deliver` | `farm deliver jam 5` | Sell to the market when it asks for something: you get the market's price at once (often more than with `farm sell`). Counts for a sell task. **DM** |
 | `farm offer` | `farm offer jam 3 60` | Offer crops or products on the market (number, price each), valid 3 days. **DM** |
 | `farm buy`<br><sub>also: cancel</sub> | `farm buy 2`  /  `farm cancel 2` | Buy offer 2 from the market, or take your own offer back. **DM** |
 | `farm top` | `farm top` | The richest farmers (coins + bank). Also works in `#games`. |
+| `farm season`<br><sub>also: seizoen</sub> | `farm season` | The season (a month, or a week if the admin chooses): the top 5 in farm XP this season, your place and the days left. The top 3 get coins; the result is posted in `#games`. **DM** |
 
 **Crops and products**
 
@@ -121,7 +127,7 @@ your workshop into something worth more, sell, save in the bank and grow from le
 - Your level rises with XP from harvesting and processing; every level brings a new crop.
 - Sometimes something happens at harvest time: a **bumper crop** (double), a **storm** (one field lost), a **pickpocket**
   (10% of your coins, not of the bank) or an **inspection** when you harvest weed.
-- Every morning at 06:00 the bot posts the task of the day in `#games`, and at 14:00 an invitation to join (card *FarmDaily*).
+- Every morning at 06:00 the bot posts the task of the day in `#games`, at 12:00 what the market buys (only when a buy order is open) and at 14:00 an invitation to join (card *FarmDaily*).
 - A bot owner can switch crops off (card *farm*), for example weed.
 
 ## Formula 1

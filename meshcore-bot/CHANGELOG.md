@@ -1,5 +1,88 @@
 # Changelog
 
+## 1.4.0
+
+- Channel radar: **Add a channel** at the top (a #name, or a name with its key; works at once, no restart) and a tab
+  **Not heard yet** with the channels you added on which nothing was heard yet (they used to be invisible).
+- `ha` **groups**: every row on the Ha card can be in groups (`tuin, alles`); `ha tuin uit` switches the whole group,
+  `ha tuin` toggles it (one on: all off), `ha tuin status` shows it.
+- Dashboard: live events (packets, commands, messages) only go to pages that asked for them, not to every open page
+  (Radar and Games got every radio packet for nothing). An update no longer logs "Web viewer process exited
+  unexpectedly (code -15)": a stop signal is a normal stop.
+
+- Channel radar, straight from the page: **Add to radio** next to a recognised hashtag channel that is not on your radio
+  (AutoChannels puts it in a free slot within a minute, asking the radio for each slot first; nothing is overwritten),
+  and **Name it** next to an unknown channel byte: the name is checked against the logged messages of that byte (channel
+  byte and check code must match) and, when right, recognised at once, without a restart, and counted back through the
+  log. Names added there can be removed again.
+
+- Channel radar: the *found* label only on the day a channel is first heard and the day after. Open channels **without
+  #** whose key is shared openly can be added on the ChannelRadar card (*Known channel keys*, `Name=key`); they are
+  counted (never decrypted) like the channels on the radio.
+- `ha <word>` without aan/uit **toggles** something that may be switched (a scene or script: turns it on);
+  `ha <word> status` shows its state.
+
+- **Dashboard much faster:** the Games page took 9 seconds for every load (and again every minute), because Mesh RPG was
+  worked out person by person (seven queries each, for everyone who ever wrote, twice) and DX Jacht searched the whole
+  table for every row. Now a few queries for everyone: 0.35 s for 1500 names, same results. Pages only refresh while you
+  look at them (not in another browser tab or a minimised window).
+
+- **DM answers arrive more often:** one try over the stored route, then up to three floods (was: twice the stored route,
+  one flood). A stale route (the person wrote via another path) lost the answer before.
+- Problems page: a DM answer that went out but whose confirmation (ACK) never came back is shown apart (*DM sent, not
+  confirmed*) from a command that got no answer at all. **Done** per row and **Clear all**: what you looked into
+  disappears until it happens again.
+- Farming Idle seasons: besides a month or a week, **your own dates** (from ... to ..., with a calendar on the tab). After
+  the end date the result is posted and no season runs until you choose new dates; `farm seizoen` tells when the next
+  one starts.
+
+- **Problems page** (Settings -> Problems, card *ProblemLog*): the bot's warnings and errors grouped per kind (repeats
+  count as one), and commands it recognised but did not answer, with what was typed. 24 hours, 7 or 14 days.
+- **Home Assistant over the mesh**: `ha` by DM, only for the bot's admin. Read the entities on the *Ha_Command* card
+  (`ha woonkamer temperatuur`, `ha alles`) and switch the ones marked so (`ha tuinlicht aan`, scenes, scripts). On the
+  card every entity is a row of its own with the word you type after `ha` (switch.feest_verlichting -> `ha feest aan`).
+  Not in `help`.
+- **Mailbox**: `post <name> <text>` leaves a message for someone; the bot DMs it as soon as it hears that person again
+  (a message or an advert; 7 days). New page *Mailbox* on the dashboard: waiting, delivered, expired, take one out; the
+  text of a message left by DM is not shown.
+- Farming Idle **seasons**: a month (or a week), points = farm XP gained; `farm seizoen`; the top 3 get coins (1000 /
+  500 / 250) and the result is posted in the games channel. On, off, length and rewards on the Farming Idle tab.
+- Bot network: **only the closest bot answers**. When bots of this add-on hear the same information command (test,
+  ping, path, trace, wx, help, ...) in a channel, the one with the fewest hops (then the best signal) answers, the others
+  stay silent. BotNetwork card: *Only the closest bot answers* (on) and the list of commands. Without the broker, or
+  with no other network bot online, nothing changes.
+
+- **Advert like a repeater:** new options *Advert every (hours)* (default 12, 0 = off, at least 3) and *Advert at start*
+  (default zero-hop). The count continues after a restart (the time of the last advert is kept in the database).
+- **Contact list full of repeaters:** the ContactCleanup card may now also remove repeaters that are still heard, the
+  farthest first (*Also remove repeaters that are still heard*, on). The radio held 349 of 350 contacts, almost all active
+  repeaters, so nothing could go and the firmware overwrote people instead. Never removed: direct neighbours, repeaters
+  meshcore-ha follows, RepeaterWatch's list, starred and favourites.
+- Farming Idle: `farm` in a channel now opens a **DM from the bot** to that person (when their name matches exactly one
+  contact; once a day per person), so they can play on there at once. Otherwise the answer says clearly to open a DM
+  with the bot (by name) and send `farm start` there; the daily invitation says the same.
+
+- The farm game is now called **Farming Idle** (it was *Kwekerij*). The command stays `farm`; farms, coins and fields
+  are kept.
+- Farming Idle: after a harvest the answer says the plant **grows again** and how often (`farm` shows "(9x left)" per
+  crop), because a field only gets empty once the plant is spent. `farm ruim <crop|field nr|alles>` (en `clear`) clears
+  fields to sow something else. A real **seed shop**: `farm winkel` lists price, growing time and number of harvests,
+  `farm winkel tomaat` tells everything about a crop, and `farm zaad tomaat 5` (en `seeds`) buys seeds for the barn to
+  sow later or sell on the market.
+- Games page: a **Farming Idle** tab with everything of the farm game: all players (level, coins, bank, fields, workshop,
+  today's task, last played); click a player to see what grows on each field and when it is ripe, what the workshop
+  makes, the barn and their market offers. The market between players is on the tab too. (The small farm card on
+  the standings tab is gone.)
+- **The market buys:** on the Farming Idle tab you set what the market wants, how many and the price per piece (and for how
+  many days). Players see it in `farm markt` (*Market buys*) and sell with `farm lever jam 5` (en: `deliver`, de:
+  `liefere`, fr: `livre`), paid at once; it counts for a sell task. At 12:00 the FarmDaily card posts what the market
+  buys in the games channel (only on days with an open order; *Market buys at* on the card, empty = off).
+- **trace** on long paths: it waited only 5.5 s for a round trip of 9 hops and nearly always failed. The default is now
+  2 s + 1.5 s per hop (as the card already said); a timeout answers in your language with the hops, the time and a tip
+  (`tracer da,69` for a shorter stretch). `tracert` works as well.
+- New command **discover** (also `buren`): the repeaters the bot hears directly, best signal first, from neighbour
+  discovery; sends nothing over the radio.
+
 ## 1.3.0
 
 - **Fix:** `ping` did not answer at all since 1.1.0 (new installations have no ping keyword, and the translated
