@@ -191,8 +191,20 @@ def farm_order_delete(db_manager: Any, config: Any, oid: int) -> bool:
     return _farm_game(db_manager, config).delete_order(oid)
 
 
-def standings(db_manager: Any, config: Any, logger: Optional[logging.Logger] = None) -> dict:
-    """Everything the Games page shows, bots left out."""
+_standings_cache: dict = {}
+
+
+def standings(db_manager: Any, config: Any, logger: Optional[logging.Logger] = None, cache_s: float = 0) -> dict:
+    """Everything the Games page shows, bots left out. cache_s > 0: an answer of at most that age is reused (the page
+    refreshes every minute and the standings do not change by the second)."""
+    if cache_s > 0:
+        key = id(db_manager)
+        hit = _standings_cache.get(key)
+        if hit and time.monotonic() - hit[0] < cache_s:
+            return hit[1]
+        data = standings(db_manager, config, logger)
+        _standings_cache[key] = (time.monotonic(), data)
+        return data
     bot = _bot(db_manager, config, logger)
     ensure_archive(db_manager)
     week, month = week_start_day(bot), month_start_day(bot)

@@ -7,6 +7,7 @@ come from meshcore-ha's own code (custom_components/meshcore/sensor.py):
     sensor.meshcore_<10 hex of the key>_<metric>_<slug of the repeater name>     e.g. ..._bat_nl_xx_town_rptr_01
     sensor.meshcore_<10 hex>_neighbor_<6 hex>        state = SNR in dB; attributes pubkey_prefix, resolved_name, secs_ago
     sensor.meshcore_<10 hex>_neighbor_count
+    sensor.meshcore_<10 hex>_ch2_current_<slug>  (and any chN_<kind>: telemetry channels of the repeater's sensors)
 
 Units in Home Assistant: `bat` is in volts (attribute raw_millivolts = millivolts); `uptime`, `airtime` and
 `rx_airtime` are durations: minutes by default, but meshcore-ha suggests days for uptime and a user can pick any unit,
@@ -43,6 +44,10 @@ METRICS = {
     "ch1_voltage": "ch1_voltage",
 }
 
+
+# other telemetry channels (Cayenne LPP from the repeater's sensors): ch2_current, ch2_voltage, ch3_power, ...
+TELEMETRY = re.compile(r"^ch(?P<n>\d{1,2})_(?P<kind>voltage|current|power|temperature|humidity|pressure|illuminance|"
+                       r"altitude|percentage|energy|frequency|distance|generic)$")
 
 # seconds per unit of a Home Assistant duration sensor
 DURATION_UNITS = {"s": 1, "sec": 1, "min": 60, "h": 3600, "hr": 3600, "d": 86400, "w": 604800}
@@ -144,6 +149,11 @@ def parse_states(states: list, now: Optional[float] = None) -> dict:
             metric = _split_metric(rest, slug)
             if metric in METRICS:
                 rep[METRICS[metric]] = num(st.get("state"))
+            elif metric and TELEMETRY.match(metric):
+                value = num(st.get("state"))
+                if value is not None:
+                    unit = str((st.get("attributes") or {}).get("unit_of_measurement") or "")
+                    rep.setdefault("telemetry", {})[metric] = {"value": value, "unit": unit}
             elif metric == "online":
                 rep["online"] = str(st.get("state")).lower() == "on"
             elif rest == "neighbor_count":       # this one has no repeater name in its entity id

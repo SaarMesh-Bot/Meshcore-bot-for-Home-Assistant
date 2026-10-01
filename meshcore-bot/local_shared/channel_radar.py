@@ -376,6 +376,14 @@ def main_names(bot: Any) -> set:
     return {PUBLIC_LABEL} | {"#" + n.strip().lower().lstrip("#") for n in names} | radio
 
 
+def _hunt_status(db: Any) -> dict:
+    try:
+        from .name_hunt import status
+        return status(db)
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 def _watched(bot: Any) -> dict:
     """{label: source} of the channels the owner added that the radar looks for, also before a first message.
     source: 'card' (ChannelRadar card: names), 'card-key' (card: Name=key), 'page' (radar page: name), 'page-key'."""
@@ -430,4 +438,5 @@ def summary(bot: Any, now_ts: Optional[float] = None) -> dict:
         "watching": [{"label": label, "source": source} for label, source in sorted(_watched(bot).items(), key=lambda kv: kv[0].lower())
                      if label not in {r[0] for r in rows}],
         "add_to_radio": add_to_radio_requests(bot.db_manager),
+        "name_hunt": _hunt_status(bot.db_manager),
     }

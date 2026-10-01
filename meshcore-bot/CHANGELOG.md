@@ -1,5 +1,57 @@
 # Changelog
 
+## 1.5.0
+
+- Repeater page: a repeater could appear twice (once with a single reading) when Home Assistant had not yet passed on
+  its full key just after a restart. Such readings now go under the full key, and existing ones are merged at the start.
+
+- **Users with roles for the dashboard** (Settings -> Users): admin accounts, and **read-only viewers** that only see the pages you tick
+  and, on the Repeater page, only their repeaters or repeater **groups**. Enforced on the server: a viewer cannot change anything, gets no
+  channel keys and no live connection. Salted password hashes, a pause after 8 wrong attempts, changes work at once. The add-on password
+  still logs in as admin (name empty). The Home Assistant sidebar needs no second login any more.
+
+- **The dashboard in the bot's language**: with *Language of the replies* on `nl`, `de`, `fr` or `da`, the whole dashboard (menus,
+  headings, buttons, messages, help texts; also what appears later) is shown in that language.
+
+- **Danish** as a fifth language (*Bot > Language of the replies*: `da`): every text of this add-on and of the bot
+  itself. Only the long joke lists (hacker, cat facts, hello variations) stay English. AutoLanguage now also answers in
+  a language only this add-on has (Danish) and recognises a few Danish greetings (godmorgen, tak, ...). The info bot,
+  F1 and Reminders cards have *Dansk* as a choice too.
+
+- **Repeater page: charging current and other sensors.** Repeaters that report extra telemetry through meshcore-ha
+  (such as `ch2_current` and `ch2_voltage` of a charge controller, or temperature/humidity sensors) get a tile and a
+  chart per value, with its unit. Only values the repeater actually reports appear.
+
+- **MQTT observers** (card *ObserverFeed*, off by default): listens to MeshCore observers on an MQTT broker (the common
+  format `meshcore/{IATA}/{PUBLIC_KEY}/packets` and `/status`, as meshcoretomqtt, LetsMesh and meshcore-ha publish).
+  The Radar page gets a tab **Observers**: per observer online/offline, model and firmware, packets per hour (adverts,
+  group messages, other), signal, and which nodes it hears. Group messages an observer hears also count on the Channel
+  radar (once, also when the bot's radio heard them too). Only listens: nothing is published, nothing goes over the
+  radio, messages are not decrypted. Kept 30 days.
+
+- **Fix: the greeter never greeted.** With a wait before the greeting (*dead air delay*), the greeter put the newcomer on
+  its list at once and, after the wait, took that mark for "already greeted" and stayed silent (12 greetings in a day,
+  none sent). The welcome goes out again; someone greeted before is still not greeted twice.
+
+- **Time zone from Home Assistant:** with the option *Time zone* empty, the bot now uses Home Assistant's own time zone
+  (Settings -> System -> General) instead of Europe/Amsterdam, like it already did with the home location.
+
+- Dashboard: the banner check (radio offline, ...) every 30 s and only while the page is visible (was every 10 s, also in
+  a background tab); the Games standings are reused for 30 s.
+
+- **Dashboard in the Home Assistant sidebar no longer hangs:** every page opened a live connection (socket.io), also
+  pages that never use it. Through Home Assistant (ingress) the browser talks to one address with about six connections
+  at a time, and Home Assistant's own connections plus a live connection per page filled that up, so the next request
+  had to wait. Now only Realtime, Logs and Mesh open it; other pages show *Live: off* in the bar.
+
+- **Name hunt** (card *NameHunt*, on): at the quietest hours of the day (default 02:00-06:00 until there is enough to go
+  on), the bot tries millions of names against the unknown channels of the Channel radar.
+  The names come from what it hears itself: node and place names, words and #hashtags typed in channels, the radar's
+  lists and combinations. A name only counts when two stored messages match. Found channels appear on the radar at
+  once. Quiet hours are the hours in which people send the fewest messages and commands (the last week); radio packets
+  are not used, because most of them are repeater adverts, also at night. At most 30 minutes in every quiet hour (adjustable), in small portions, so the bot keeps answering; when every
+  name has been tried it waits for something new (new words heard, a new unknown channel). Nothing is sent.
+
 ## 1.4.0
 
 - Channel radar: **Add a channel** at the top (a #name, or a name with its key; works at once, no restart) and a tab

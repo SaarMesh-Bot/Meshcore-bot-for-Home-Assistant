@@ -38,6 +38,8 @@ def repeater_states():
         s("sensor", "nb_sent", "20412"), s("sensor", "nb_recv", "98211"),
         s("sensor", "last_rssi", "-96"), s("sensor", "last_snr", "7.25"), s("sensor", "noise_floor", "-112"),
         s("sensor", "ch1_temperature", "21.4"), s("sensor", "ch1_voltage", "3.91"),
+        s("sensor", "ch2_current", "0.423", {"unit_of_measurement": "A"}), s("sensor", "ch2_voltage", "13.2", {"unit_of_measurement": "V"}),
+        s("sensor", "ch3_power", "unavailable"),
         s("binary_sensor", "online", "on"),
         s("sensor", "neighbor_count", 3, slug=None),
         s("sensor", "neighbor_984d7b", "9.5", {"pubkey_prefix": "984d7b0a11cc", "resolved_name": "NL-AB-RP02", "secs_ago": 300}, slug=None),
@@ -71,6 +73,8 @@ check(r["uptime_s"] == 1107330 and r["airtime_s"] == 24612, "uptime en airtime: 
 check(reps["f6e5d4c3b2"]["uptime_s"] == 18000, "raw_seconds wordt boven de afgeronde minuten verkozen")
 check(r["airtime_util"] == 1.85 and r["nb_sent"] == 20412 and r["nb_recv"] == 98211 and r["last_snr"] == 7.25 and r["noise_floor"] == -112, "overige metingen kloppen")
 check(r["temperature"] == 21.4 and r["ch1_voltage"] == 3.91 and r["online"] is True and r["neighbor_count"] == 3, "temperatuur, spanning, online en aantal buren")
+check(r.get("telemetry") == {"ch2_current": {"value": 0.423, "unit": "A"}, "ch2_voltage": {"value": 13.2, "unit": "V"}},
+      f"overige telemetriekanalen (laadstroom ch2), onbeschikbare weggelaten ({r.get('telemetry')})")
 check([n["prefix"][:6] for n in r["neighbors"]] == ["c5f9b3", "984d7b", "a98031", "11ab02"], "buren gesorteerd op sterkste signaal, onbekende SNR laatst")
 check(r["neighbors"][0]["name"] == "BE-Nabij" and r["neighbors"][3]["snr"] is None, "buurnamen en 'unavailable' -> geen waarde")
 check(all("_seen" not in n["prefix"] for n in r["neighbors"]) and len(r["neighbors"]) == 4, "de '_seen'-sensoren tellen niet als buur")

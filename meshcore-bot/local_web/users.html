@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Users - MeshCore Bot Data Viewer{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-2"><i class="fas fa-users"></i> Users</h1>
+        <p class="text-muted mb-1">
+            Accounts for this dashboard. An <b>admin</b> can do everything, like the add-on's web viewer password. A
+            <b>viewer</b> can only look: only the pages you tick, nothing can be changed, and on the Repeater page only the
+            repeaters or groups you choose (none chosen = all). Changes work at once, also for someone who is logged in.
+        </p>
+        <p class="small text-muted mb-3" id="us-auth"></p>
+        <div id="us-message" role="status" aria-live="polite"></div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><i class="fas fa-user"></i> Accounts</div>
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+            <thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col">Pages</th><th scope="col">Repeaters</th><th scope="col">Last login</th><th scope="col"></th></tr></thead>
+            <tbody id="us-list"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><i class="fas fa-user-pen"></i> <span id="us-form-title">New account</span></div>
+    <div class="card-body">
+        <form id="us-form" autocomplete="off">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label" for="us-name">Name</label>
+                    <input class="form-control" id="us-name" maxlength="32" required autocapitalize="none" spellcheck="false">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="us-pass">Password</label>
+                    <input class="form-control" id="us-pass" type="password" minlength="8" autocomplete="new-password">
+                    <div class="form-text" id="us-pass-help">At least 8 characters.</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="us-role">Role</label>
+                    <select class="form-select" id="us-role">
+                        <option value="viewer">Viewer (read-only)</option>
+                        <option value="admin">Admin (everything)</option>
+                    </select>
+                </div>
+                <div class="col-12" id="us-viewer-part">
+                    <div class="mb-2"><span class="form-label d-block">Pages this viewer may open</span><div id="us-pages" class="d-flex flex-wrap gap-3"></div></div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="us-reps">Repeaters (Repeater page)</label>
+                            <select class="form-select" id="us-reps" multiple size="8"></select>
+                            <div class="form-text">Ctrl/Cmd-click for several. None and no group = all repeaters.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="us-groups">Repeater groups</label>
+                            <select class="form-select" id="us-groups" multiple size="8"></select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-floppy-disk"></i> Save</button>
+                    <button type="button" class="btn btn-outline-secondary" id="us-new">New account</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><i class="fas fa-layer-group"></i> Repeater groups</div>
+    <div class="card-body">
+        <p class="small text-muted">A group is a named set of repeaters (for example everything of one club or region). Give a viewer a group instead of
+            single repeaters; a repeater added to the group later is visible to them at once.</p>
+        <div id="us-group-list" class="mb-3"></div>
+        <form id="us-group-form" class="row g-2" autocomplete="off">
+            <div class="col-md-4">
+                <label class="form-label" for="us-gname">Group name</label>
+                <input class="form-control" id="us-gname" maxlength="32" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="us-greps">Repeaters in this group</label>
+                <select class="form-select" id="us-greps" multiple size="6"></select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-floppy-disk"></i> Save group</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+    let data = { users: [], groups: [], repeaters: [], pages: [] };
+
+    function el(tag, text, cls) {
+        const e = document.createElement(tag);
+        if (text !== null && text !== undefined) e.textContent = String(text);
+        if (cls) e.className = cls;
+        return e;
+    }
+    function say(text, ok) {
+        const box = document.getElementById('us-message');
+        box.replaceChildren();
+        if (text) box.appendChild(el('div', text, 'alert py-2 ' + (ok ? 'alert-success' : 'alert-danger')));
+    }
+    function when(ts) { return ts ? new Date(ts * 1000).toLocaleString() : '-'; }
+    function repName(key) {
+        const r = data.repeaters.find(function (x) { return x.key.toLowerCase() === String(key).toLowerCase(); });
+        return r ? r.name : String(key).slice(0, 10);
+    }
+    function post(path, body) {
+        return fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                             body: JSON.stringify(body || {}) })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status)); return b; }); });
+    }
+    function selected(id) {
+        return Array.prototype.filter.call(document.getElementById(id).options, function (o) { return o.selected; }).map(function (o) { return o.value; });
+    }
+    function fillSelect(id, items, chosen) {
+        const s = document.getElementById(id);
+        const keep = new Set((chosen || []).map(function (x) { return String(x).toLowerCase(); }));
+        s.replaceChildren();
+        items.forEach(function (it) {
+            const o = el('option', it.label);
+            o.value = it.value;
+            o.selected = keep.has(String(it.value).toLowerCase());
+            s.appendChild(o);
+        });
+    }
+
+    function renderList() {
+        const body = document.getElementById('us-list');
+        body.replaceChildren();
+        if (!data.users.length) {
+            const tr = el('tr'); const td = el('td', 'No accounts yet. Only the add-on password (if set) gives access.', 'text-muted small');
+            td.colSpan = 6; tr.appendChild(td); body.appendChild(tr); return;
+        }
+        data.users.forEach(function (u) {
+            const tr = el('tr');
+            const pages = u.role === 'admin' ? 'all' : (u.pages.map(function (p) { const x = data.pages.find(function (q) { return q.id === p; }); return x ? x.label : p; }).join(', ') || 'none');
+            let reps = 'all';
+            if (u.role !== 'admin' && (u.repeaters.length || u.groups.length)) {
+                reps = u.repeaters.map(repName).concat(u.groups.map(function (g) { return 'group ' + g; })).join(', ');
+            }
+            const nameTd = el('td'); nameTd.appendChild(el('span', u.name, 'fw-medium')); nameTd.setAttribute('data-no-i18n', '');
+            tr.append(nameTd, el('td', u.role === 'admin' ? 'Admin' : 'Viewer'), el('td', pages, 'small'), el('td', reps, 'small'),
+                      el('td', when(u.last_login), 'small text-nowrap'));
+            const act = el('td', null, 'text-end text-nowrap');
+            const edit = el('button', null, 'btn btn-outline-primary btn-sm me-1'); edit.type = 'button'; edit.title = 'Edit';
+            edit.setAttribute('aria-label', 'Edit'); edit.appendChild(el('i', null, 'fas fa-pen'));
+            edit.addEventListener('click', function () { openForm(u); });
+            const del = el('button', null, 'btn btn-outline-danger btn-sm'); del.type = 'button'; del.title = 'Delete';
+            del.setAttribute('aria-label', 'Delete'); del.appendChild(el('i', null, 'fas fa-trash'));
+            del.addEventListener('click', function () {
+                if (!confirm('Delete this account?')) return;
+                post('/api/users/delete', { name: u.name }).then(function () { say('Deleted.', true); load(); }).catch(function (e) { say(e.message); });
+            });
+            act.append(edit, del); tr.appendChild(act);
+            body.appendChild(tr);
+        });
+    }
+
+    function renderGroups() {
+        const box = document.getElementById('us-group-list');
+        box.replaceChildren();
+        if (!data.groups.length) { box.appendChild(el('div', 'No groups yet.', 'small text-muted')); }
+        data.groups.forEach(function (g) {
+            const row = el('div', null, 'd-flex align-items-center gap-2 mb-1');
+            const name = el('span', g.name, 'fw-medium'); name.setAttribute('data-no-i18n', '');
+            const reps = el('span', g.repeaters.map(repName).join(', ') || '-', 'small text-muted flex-grow-1');
+            const edit = el('button', null, 'btn btn-outline-primary btn-sm'); edit.type = 'button'; edit.title = 'Edit';
+            edit.appendChild(el('i', null, 'fas fa-pen'));
+            edit.addEventListener('click', function () {
+                document.getElementById('us-gname').value = g.name;
+                fillSelect('us-greps', data.repeaters.map(function (r) { return { value: r.key, label: r.name }; }), g.repeaters);
+            });
+            const del = el('button', null, 'btn btn-outline-danger btn-sm'); del.type = 'button'; del.title = 'Delete';
+            del.appendChild(el('i', null, 'fas fa-trash'));
+            del.addEventListener('click', function () {
+                if (!confirm('Delete this group?')) return;
+                post('/api/users/group', { name: g.name, delete: true }).then(load).catch(function (e) { say(e.message); });
+            });
+            row.append(name, reps, edit, del);
+            box.appendChild(row);
+        });
+    }
+
+    function openForm(u) {
+        u = u || null;
+        document.getElementById('us-form-title').textContent = u ? 'Edit account' : 'New account';
+        const name = document.getElementById('us-name');
+        name.value = u ? u.name : ''; name.readOnly = !!u;
+        document.getElementById('us-pass').value = '';
+        document.getElementById('us-pass').required = !u;
+        document.getElementById('us-pass-help').textContent = u ? 'Empty = keep the current password.' : 'At least 8 characters.';
+        document.getElementById('us-role').value = u ? u.role : 'viewer';
+        const pages = document.getElementById('us-pages');
+        pages.replaceChildren();
+        data.pages.forEach(function (p) {
+            const wrap = el('div', null, 'form-check');
+            const box = el('input', null, 'form-check-input'); box.type = 'checkbox'; box.value = p.id; box.id = 'us-p-' + p.id;
+            box.checked = u ? u.pages.indexOf(p.id) !== -1 : (p.id === 'repeater');
+            const lab = el('label', p.label, 'form-check-label'); lab.htmlFor = box.id;
+            wrap.append(box, lab); pages.appendChild(wrap);
+        });
+        fillSelect('us-reps', data.repeaters.map(function (r) { return { value: r.key, label: r.name }; }), u ? u.repeaters : []);
+        fillSelect('us-groups', data.groups.map(function (g) { return { value: g.name, label: g.name }; }), u ? u.groups : []);
+        roleChanged();
+        if (u) document.getElementById('us-form').scrollIntoView({ behavior: 'smooth' });
+    }
+    function roleChanged() {
+        document.getElementById('us-viewer-part').classList.toggle('d-none', document.getElementById('us-role').value === 'admin');
+    }
+
+    document.getElementById('us-role').addEventListener('change', roleChanged);
+    document.getElementById('us-new').addEventListener('click', function () { openForm(null); });
+    document.getElementById('us-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const body = {
+            name: document.getElementById('us-name').value,
+            password: document.getElementById('us-pass').value,
+            role: document.getElementById('us-role').value,
+            pages: Array.prototype.filter.call(document.querySelectorAll('#us-pages input'), function (b) { return b.checked; }).map(function (b) { return b.value; }),
+            repeaters: selected('us-reps'),
+            groups: selected('us-groups'),
+        };
+        post('/api/users/save', body).then(function () { say('Saved.', true); openForm(null); load(); }).catch(function (err) { say(err.message); });
+    });
+    document.getElementById('us-group-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        post('/api/users/group', { name: document.getElementById('us-gname').value, repeaters: selected('us-greps') })
+            .then(function () { say('Group saved.', true); document.getElementById('us-gname').value = ''; load(); })
+            .catch(function (err) { say(err.message); });
+    });
+
+    function load() {
+        fetch('/api/users', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status)); return b; }); })
+            .then(function (b) {
+                data = b;
+                document.getElementById('us-auth').textContent = b.password_set
+                    ? 'The add-on password is set: it logs in as admin with the name left empty.'
+                    : 'No add-on password is set. As long as there are no accounts the dashboard is open to everyone who can reach it; make an admin account first.';
+                renderList(); renderGroups();
+                fillSelect('us-greps', data.repeaters.map(function (r) { return { value: r.key, label: r.name }; }), []);
+                if (!document.getElementById('us-name').readOnly) openForm(null);
+            })
+            .catch(function (e) { say('Could not load the accounts: ' + e.message); });
+    }
+    load();
+})();
+</script>
+{% endblock %}

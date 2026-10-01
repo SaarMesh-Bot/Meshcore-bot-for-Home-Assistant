@@ -15,6 +15,7 @@ It provides:
   service passes on (see the `repeater` event there).
 """
 import asyncio
+import json
 import os
 import time
 from typing import Any, Optional
@@ -222,10 +223,14 @@ class HARepeaterService(BaseServicePlugin):
                     noise_floor REAL, last_rssi REAL, last_snr REAL, neighbor_count INTEGER,
                     stats_key TEXT, source TEXT NOT NULL DEFAULT 'ha')""")
                 cur.execute("CREATE INDEX IF NOT EXISTS idx_repeater_telemetry_key_time ON repeater_telemetry (repeater_key, recorded_at)")
+                # (2.46) other telemetry channels (ch2_current, ch2_voltage, ...) as JSON {name: value}
+                if "telemetry" not in {r[1] for r in cur.execute("PRAGMA table_info(repeater_telemetry)")}:
+                    cur.execute("ALTER TABLE repeater_telemetry ADD COLUMN telemetry TEXT")
                 cur.execute("""CREATE TABLE IF NOT EXISTS ha_repeater_neighbors (
                     id INTEGER PRIMARY KEY AUTOINCREMENT, recorded_at INTEGER NOT NULL, repeater_key TEXT NOT NULL,
                     neighbor_prefix TEXT NOT NULL, neighbor_name TEXT, snr REAL, secs_ago INTEGER, stats_key TEXT)""")
                 cur.execute("CREATE INDEX IF NOT EXISTS idx_ha_repeater_neighbors_key_time ON ha_repeater_neighbors (repeater_key, recorded_at)")
+                self._merge_short_keys(cur)
                 for key, stats_key in cur.execute(
                         "SELECT repeater_key, stats_key FROM repeater_telemetry WHERE id IN "
                         "(SELECT MAX(id) FROM repeater_telemetry GROUP BY repeater_key)").fetchall():
@@ -234,8 +239,36 @@ class HARepeaterService(BaseServicePlugin):
         except Exception as e:  # noqa: BLE001
             self.logger.warning("HARepeater: tabellen maken mislukt: %s", e)
 
+    @staticmethod
+    def _full_key(cur, key: str) -> str:
+        """Home Assistant sometimes has not given the full public key yet (just after a restart): the parser then uses the
+        10-hex prefix. Store such a reading under the full key already known for that prefix, so the Repeater page does
+        not show the repeater twice."""
+        if not key or len(key) >= 64:
+            return key
+        rows = cur.execute("SELECT DISTINCT repeater_key FROM repeater_telemetry WHERE length(repeater_key) > ? "
+                           "AND substr(repeater_key, 1, ?) = ?", (len(key), len(key), key)).fetchall()
+        return rows[0][0] if len(rows) == 1 else key
+
+    def _merge_short_keys(self, cur) -> None:
+        """Once per start: readings stored under a prefix (see _full_key) move to the full key, when exactly one matches."""
+        for (short,) in cur.execute("SELECT DISTINCT repeater_key FROM repeater_telemetry WHERE length(repeater_key) < 64").fetchall():
+            full = self._full_key(cur, short)
+            if full != short:
+                for table in ("repeater_telemetry", "ha_repeater_neighbors"):
+                    cur.execute(f"UPDATE {table} SET repeater_key = ? WHERE repeater_key = ?", (full, short))
+                self.logger.info("HARepeater: metingen onder sleutelbegin %s samengevoegd met de volledige sleutel", short)
+
     def _store(self, chosen: list) -> None:
         """One row per new status reply from a repeater (recognised by its stats_key), plus its neighbour list."""
+        if any(len(r.get("public_key") or "") < 64 for r in chosen):
+            try:
+                with self.bot.db_manager.connection() as conn:
+                    cur = conn.cursor()
+                    for r in chosen:
+                        r["public_key"] = self._full_key(cur, r.get("public_key") or "")
+            except Exception as e:  # noqa: BLE001
+                self.logger.debug("HARepeater: sleutel opzoeken mislukt: %s", e)
         fresh = [r for r in chosen if r.get("battery_mv") is not None and r.get("stats_key")
                  and self._last_key.get(r["public_key"]) != r["stats_key"]]
         if not fresh:
@@ -248,12 +281,15 @@ class HARepeaterService(BaseServicePlugin):
                     cur.execute(
                         "INSERT INTO repeater_telemetry (recorded_at, repeater_key, repeater_name, battery_mv, battery_pct, temperature, "
                         "ch1_voltage, uptime_s, airtime_s, airtime_util, nb_recv, nb_sent, noise_floor, last_rssi, last_snr, "
-                        "neighbor_count, stats_key, source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'ha')",
+                        "neighbor_count, stats_key, source, telemetry) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'ha',?)",
                         (now, r["public_key"], r["name"], r["battery_mv"], r.get("battery_pct"), r.get("temperature"), r.get("ch1_voltage"),
                          r.get("uptime_s"), r.get("airtime_s"), r.get("airtime_util"),
                          None if r.get("nb_recv") is None else int(r["nb_recv"]), None if r.get("nb_sent") is None else int(r["nb_sent"]),
                          r.get("noise_floor"), r.get("last_rssi"), r.get("last_snr"),
-                         None if r.get("neighbor_count") is None else int(r["neighbor_count"]), r["stats_key"]))
+                         None if r.get("neighbor_count") is None else int(r["neighbor_count"]), r["stats_key"],
+                         json.dumps({"values": {k: v["value"] for k, v in r["telemetry"].items()},
+                                     "units": {k: v["unit"] for k, v in r["telemetry"].items() if v.get("unit")}})
+                         if r.get("telemetry") else None))
                     for n in r["neighbors"]:
                         cur.execute("INSERT INTO ha_repeater_neighbors (recorded_at, repeater_key, neighbor_prefix, neighbor_name, snr, "
                                     "secs_ago, stats_key) VALUES (?,?,?,?,?,?,?)",

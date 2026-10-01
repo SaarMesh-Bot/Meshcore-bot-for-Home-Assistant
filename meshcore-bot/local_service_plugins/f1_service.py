@@ -62,6 +62,7 @@ class F1Service(BaseServicePlugin):
          "options": [
              {"value": "nl", "label": "Nederlands"}, {"value": "en", "label": "English"},
              {"value": "de", "label": "Deutsch"}, {"value": "fr", "label": "Français"},
+             {"value": "da", "label": "Dansk"},
          ],
          "help": ("These posts have no sender to detect a language from (unlike the f1 command, which answers in "
                   "whoever asked their own language), so this fixes the language for the channel.")},

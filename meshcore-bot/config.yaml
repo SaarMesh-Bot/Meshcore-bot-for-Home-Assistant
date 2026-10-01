@@ -1,5 +1,5 @@
 name: MeshCore Bot
-version: "1.4.0"
+version: "1.5.0"
 slug: meshcore_bot
 description: MeshCore mesh bot (agessaman/meshcore-bot) with Home Assistant integration, room server login and Dutch/Belgian extra commands
 url: https://github.com/vipje/Meshcore-bot-for-Home-Assistant
@@ -100,7 +100,7 @@ schema:
     advert_hours: "int(0,168)?"
     startup_advert: "list(off|zero-hop|flood)?"
     rate_limit_seconds: "int(1,60)?"
-    language: "list(nl|en|de|fr)?"
+    language: "list(nl|en|de|fr|da)?"
     log_level: "list(DEBUG|INFO|WARNING|ERROR)"
     timezone: "str?"
     latitude: "float(-90,90)?"

@@ -18,6 +18,9 @@
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="tab-repeaters-btn" data-bs-toggle="tab" data-bs-target="#tab-repeaters" type="button" role="tab" aria-controls="tab-repeaters" aria-selected="false"><i class="fas fa-tower-broadcast"></i> Repeater radar</button>
     </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-observers-btn" data-bs-toggle="tab" data-bs-target="#tab-observers" type="button" role="tab" aria-controls="tab-observers" aria-selected="false"><i class="fas fa-satellite"></i> Observers</button>
+    </li>
 </ul>
 <div class="tab-content">
 <div class="tab-pane fade show active" id="tab-channels" role="tabpanel" aria-labelledby="tab-channels-btn">
@@ -94,6 +97,7 @@
                     recognised from then on (and counted back through the log).
                 </p>
                 <div id="name-message" role="status" aria-live="polite"></div>
+                <div class="small text-muted mb-2" id="name-hunt"></div>
                 <table class="table table-sm mb-0 align-middle">
                     <thead><tr><th scope="col">Channel byte</th><th scope="col" class="text-end">7 days</th><th scope="col" class="text-end">30 days</th><th scope="col"></th></tr></thead>
                     <tbody id="unknown-body"></tbody>
@@ -172,6 +176,49 @@
                 </div>
                 <div class="modal-body" id="rr-modal-body"></div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="tab-pane fade" id="tab-observers" role="tabpanel" aria-labelledby="tab-observers-btn">
+    <p class="text-muted">
+        MeshCore observers on an MQTT broker (card <em>ObserverFeed</em>): radios elsewhere, often hubs with repeaters behind them,
+        that publish what they hear as <code>meshcore/{IATA}/{PUBLIC_KEY}/packets</code> and <code>/status</code>. Their group messages
+        are counted by the Channel radar too (once, also when your own radio heard them). Click an observer for its traffic per
+        hour and the nodes whose adverts it heard. Nothing is sent.
+    </p>
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Period" id="ob-period">
+            <button type="button" class="btn btn-outline-primary active" data-days="1">24 hours</button>
+            <button type="button" class="btn btn-outline-primary" data-days="7">7 days</button>
+            <button type="button" class="btn btn-outline-primary" data-days="30">30 days</button>
+        </div>
+        <span class="small text-muted" id="ob-updated"></span>
+    </div>
+    <div id="ob-message" role="status" aria-live="polite"></div>
+    <div class="row g-3 mb-3" id="ob-tiles"></div>
+    <div class="card mb-4">
+        <div class="card-header"><i class="fas fa-satellite"></i> Observers</div>
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-sm table-hover mb-0 align-middle">
+                <thead><tr><th scope="col">Name</th><th scope="col">Region</th><th scope="col">Status</th><th scope="col" class="text-end">Packets</th>
+                    <th scope="col" class="text-end">Adverts</th><th scope="col" class="text-end">Group msgs</th><th scope="col" class="text-end">Nodes</th>
+                    <th scope="col" class="text-end">RSSI / SNR</th><th scope="col">Last heard</th></tr></thead>
+                <tbody id="ob-body"></tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row g-4 mb-5">
+        <div class="col-12 col-xl-6">
+            <div class="card h-100"><div class="card-header"><i class="fas fa-chart-line"></i> Traffic per hour <small class="text-muted" id="ob-sel-name"></small></div>
+                <div class="card-body"><div style="position:relative;height:260px"><canvas id="ob-chart" role="img" aria-label="Packets per hour"></canvas></div></div></div>
+        </div>
+        <div class="col-12 col-xl-6">
+            <div class="card h-100"><div class="card-header"><i class="fas fa-tower-broadcast"></i> Nodes heard (adverts)</div>
+                <div class="card-body p-0 table-responsive" style="max-height:320px">
+                    <table class="table table-sm mb-0"><thead><tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col" class="text-end">Adverts</th>
+                        <th scope="col" class="text-end">Hops</th><th scope="col" class="text-end">SNR</th></tr></thead><tbody id="ob-heard"></tbody></table>
+                </div></div>
         </div>
     </div>
 </div>
@@ -325,6 +372,19 @@
                 });
                 chip.appendChild(x);
                 added.appendChild(chip);
+            });
+        }
+        const nh = data.name_hunt || {};
+        const hunt = document.getElementById('name-hunt');
+        hunt.replaceChildren();
+        if (nh.quiet_hours) {
+            const hours = (nh.quiet_hours || []).map(function (h) { return String(h).padStart(2, '0') + ':00'; }).join(', ');
+            hunt.appendChild(el('i', null, 'fas fa-magnifying-glass me-1'));
+            hunt.appendChild(document.createTextNode('Name hunt (card NameHunt): at the quietest hours (' + (hours || '…') + ') the bot tries millions of names. ' +
+                (nh.last_run ? 'Last run ' + new Date(nh.last_run * 1000).toLocaleString() + ', ' + Number(nh.tried_total || 0).toLocaleString() + ' names tried so far. '
+                             : 'Not run yet. ')));
+            (nh.found || []).slice(-5).forEach(function (f) {
+                hunt.appendChild(el('span', 'found ' + f.name + ' (' + f.byte + ')', 'badge text-bg-success me-1'));
             });
         }
         const watching = data.watching || [];
@@ -604,6 +664,106 @@
     });
     if (location.hash === '#repeaters' && window.bootstrap) new bootstrap.Tab(btn).show();
     setInterval(function () { if (state.loaded && !document.hidden) load(); }, 300000);
+})();
+
+(function () {
+    'use strict';
+    // Observers tab. Names come from the mesh: textContent only.
+    let days = '1', selected = null, chart = null, loaded = false;
+    function el(tag, text, cls) {
+        const n = document.createElement(tag);
+        if (text !== undefined && text !== null) n.textContent = String(text);
+        if (cls) n.className = cls;
+        return n;
+    }
+    function ago(ts, now) {
+        if (!ts) return '-';
+        const s = Math.max(0, now - ts);
+        return s < 120 ? 'just now' : s < 5400 ? Math.round(s / 60) + ' min ago' : s < 129600 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' days ago';
+    }
+    function num(n) { return Number(n || 0).toLocaleString(); }
+    function render(d) {
+        const tiles = document.getElementById('ob-tiles');
+        tiles.replaceChildren();
+        const online = d.observers.filter(function (o) { return d.generated_at - o.last_seen < 900; }).length;
+        [['Observers', d.observers.length], ['Heard in the last 15 min', online],
+         ['Packets', num(d.observers.reduce(function (a, o) { return a + o.packets; }, 0))],
+         ['Group messages', num(d.observers.reduce(function (a, o) { return a + o.group_msgs; }, 0))]].forEach(function (t) {
+            const col = el('div', null, 'col-6 col-md-3'), card = el('div', null, 'card h-100'), b = el('div', null, 'card-body py-2');
+            b.append(el('div', t[0], 'small text-muted'), el('div', t[1], 'fs-5 fw-semibold'));
+            card.appendChild(b); col.appendChild(card); tiles.appendChild(col);
+        });
+        const body = document.getElementById('ob-body');
+        body.replaceChildren();
+        if (!d.observers.length) {
+            const td = el('td', 'No observers yet. Switch on the ObserverFeed card (Plugins) and fill in your broker.', 'text-center text-muted py-3');
+            td.colSpan = 9; const tr = el('tr'); tr.appendChild(td); body.appendChild(tr);
+        }
+        d.observers.forEach(function (o) {
+            const tr = el('tr', null, o.key === d.selected ? 'table-active' : '');
+            tr.style.cursor = 'pointer'; tr.tabIndex = 0;
+            const st = el('td');
+            st.appendChild(el('span', o.status || '?', 'badge ' + (o.status === 'online' ? 'text-bg-success' : 'text-bg-secondary')));
+            if (o.model) st.appendChild(el('div', o.model + (o.firmware ? ' · ' + o.firmware : ''), 'small text-muted'));
+            tr.append(el('td', o.name, 'fw-semibold'), el('td', o.iata), st, el('td', num(o.packets), 'text-end'), el('td', num(o.adverts), 'text-end'),
+                      el('td', num(o.group_msgs), 'text-end'), el('td', num(o.nodes), 'text-end'),
+                      el('td', o.rssi === null ? '-' : o.rssi + ' / ' + o.snr, 'text-end small'), el('td', ago(o.last_seen, d.generated_at), 'small'));
+            const pick = function () { selected = o.key; load(); };
+            tr.addEventListener('click', pick);
+            tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') pick(); });
+            body.appendChild(tr);
+        });
+        const sel = d.observers.find(function (o) { return o.key === d.selected; });
+        document.getElementById('ob-sel-name').textContent = sel ? '(' + sel.name + ')' : '';
+        const pts = function (arr) { return d.series.t.map(function (t, i) { return { x: t * 1000, y: arr[i] }; }); };
+        const ink = getComputedStyle(document.body).color || '#888';
+        if (chart) chart.destroy();
+        if (window.Chart) {
+            chart = new Chart(document.getElementById('ob-chart'), {
+                type: 'line',
+                data: { datasets: [
+                    { label: 'Packets', data: pts(d.series.packets), borderColor: '#3b82f6', backgroundColor: '#3b82f6', pointRadius: 0, borderWidth: 2 },
+                    { label: 'Adverts', data: pts(d.series.adverts), borderColor: '#10b981', backgroundColor: '#10b981', pointRadius: 0, borderWidth: 2 },
+                    { label: 'Group msgs', data: pts(d.series.group_msgs), borderColor: '#f59e0b', backgroundColor: '#f59e0b', pointRadius: 0, borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, parsing: false,
+                           plugins: { legend: { labels: { color: ink } } },
+                           scales: { x: { type: 'linear', ticks: { color: ink, maxTicksLimit: 7, callback: function (v) {
+                                         const dt = new Date(v); return days === '1' ? dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                                                                    : dt.toLocaleDateString([], { day: 'numeric', month: 'short' }); } } },
+                                     y: { beginAtZero: true, ticks: { color: ink } } } }
+            });
+        }
+        const hb = document.getElementById('ob-heard');
+        hb.replaceChildren();
+        if (!d.heard.length) { const td = el('td', 'No adverts heard in this period.', 'text-center text-muted py-3'); td.colSpan = 5; const tr = el('tr'); tr.appendChild(td); hb.appendChild(tr); }
+        d.heard.forEach(function (h) {
+            const tr = el('tr');
+            tr.append(el('td', h.name), el('td', h.type, 'small'), el('td', num(h.count), 'text-end'), el('td', h.hops === null ? '-' : h.hops, 'text-end'),
+                      el('td', h.snr === null ? '-' : h.snr, 'text-end'));
+            hb.appendChild(tr);
+        });
+        document.getElementById('ob-updated').textContent = 'Updated ' + new Date(d.generated_at * 1000).toLocaleTimeString();
+    }
+    function load() {
+        const q = '/api/radar/observers?days=' + days + (selected ? '&key=' + encodeURIComponent(selected) : '');
+        fetch(q, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json().then(function (b) { if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status)); return b; }); })
+            .then(function (d) { loaded = true; document.getElementById('ob-message').replaceChildren(); render(d); })
+            .catch(function (e) { document.getElementById('ob-message').replaceChildren(el('div', 'Could not load the observers: ' + e.message, 'alert alert-danger py-2')); });
+    }
+    document.querySelectorAll('#ob-period button').forEach(function (b) {
+        b.addEventListener('click', function () {
+            document.querySelectorAll('#ob-period button').forEach(function (x) { x.classList.toggle('active', x === b); });
+            days = b.dataset.days; load();
+        });
+    });
+    const tab = document.getElementById('tab-observers-btn');
+    tab.addEventListener('shown.bs.tab', function () {
+        try { history.replaceState(null, '', '#observers'); } catch (e) { /* ignore */ }
+        load();
+    });
+    if (location.hash === '#observers' && window.bootstrap) new bootstrap.Tab(tab).show();
+    setInterval(function () { if (loaded && !document.hidden && tab.classList.contains('active')) load(); }, 60000);
 })();
 </script>
 {% endblock %}

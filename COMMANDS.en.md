@@ -4,7 +4,7 @@
 
 This is how the **Vip|HA|🤖** bot uses them; your own bot works the same, with the channels you set yourself.
 
-The bot answers in the language you write in: Dutch, English, German or French. The command words themselves stay the
+The bot answers in the language you write in: Dutch, English, German, French or Danish. The command words themselves stay the
 same in every language (many are Dutch, such as `pad`, `buien` or `herinner`).
 
 **How to use them:** type the command in `#bot` or `#test`, or send it to the bot as a DM. In the public channel

@@ -81,6 +81,21 @@ async def main():
     state["payload"] = payload(stats_key="2026-09-21T20:30:00", mv=3890)
     await s.refresh()
     with db.connection() as c: check(c.execute("SELECT COUNT(*) FROM repeater_telemetry").fetchone()[0] == 2, "nieuwe meting van de repeater geeft een nieuwe rij")
+    # HA had only the 10-hex prefix (just after a restart): stored under the full key, not as a second repeater
+    rep = dict(s.repeaters[F.PFX]); rep["public_key"] = F.PFX; rep["stats_key"] = "2026-09-21T21:30:00"
+    s._store([rep])
+    with db.connection() as c:
+        keys = [r[0] for r in c.execute("SELECT DISTINCT repeater_key FROM repeater_telemetry").fetchall()]
+    check(keys == [F.KEY], f"meting met alleen het sleutelbegin komt onder de volledige sleutel ({keys})")
+    with db.connection() as c:   # an old row under the prefix (from before this fix) is merged at the next start
+        c.execute("INSERT INTO repeater_telemetry (recorded_at, repeater_key, repeater_name, battery_mv, stats_key) VALUES (?,?,?,?,?)",
+                  (int(time.time()) - 60, F.PFX, F.NAME, 3900, "oud")); c.commit()
+    HARepeaterService(bot)._ensure_tables()
+    with db.connection() as c:
+        keys = [r[0] for r in c.execute("SELECT DISTINCT repeater_key FROM repeater_telemetry").fetchall()]
+    check(keys == [F.KEY], f"oude rij onder het sleutelbegin samengevoegd bij de start ({keys})")
+    with db.connection() as c: c.execute("DELETE FROM repeater_telemetry WHERE stats_key IN ('oud', '2026-09-21T21:30:00')"); c.commit()
+    s._last_key[F.KEY] = "2026-09-21T20:30:00"
     s2 = HARepeaterService(bot); s2._ensure_tables()
     check(s2._last_key.get(F.KEY) == "2026-09-21T20:30:00", "na een herstart weet de service wat al is opgeslagen")
     s2._session = None

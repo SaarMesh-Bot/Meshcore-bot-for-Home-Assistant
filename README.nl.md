@@ -11,7 +11,7 @@
 Home Assistant add-ons voor een MeshCore-mesh: een **bot** met ruim 80 commando's (weer, verkeer, OV, hulpnummers,
 spellen, F1, ...) en een **proxy** zodat de bot en de [meshcore-ha](https://github.com/meshcore-dev/meshcore-ha)-integratie
 dezelfde USB-radio kunnen delen. Veel extra commando's gebruiken Nederlandse en Belgische open data; de bot antwoordt in
-het Nederlands, Engels, Duits of Frans.
+het Nederlands, Engels, Duits, Frans of Deens.
 
 | Add-on | Wat het doet |
 |---|---|

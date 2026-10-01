@@ -4,7 +4,7 @@
 Upstream's ping only answers with the text of [Keywords] ping; without that keyword it sends nothing (the dashboard
 shows "Command executed / Failed"). Since 1.1.0 new installations have no ping keyword (the reply was meant to be the
 translated "Pong! More info: type test", commands.ping.response), but nothing used that text: ping stayed silent
-(found 2026-09-30, BE-CTW-MOB in #test). Now a ping keyword still wins, and without one the translated text is used, in
+(found 2026-09-30 in #test). Now a ping keyword still wins, and without one the translated text is used, in
 the sender's language when AutoLanguage is on.
 """
 import pathlib

@@ -43,7 +43,7 @@ patch(
             \"\"\"Read-only standings, bots left out, no public keys.\"\"\"
             from modules import games_admin
             try:
-                return jsonify(games_admin.standings(self.db_manager, self.config, self.logger))
+                return jsonify(games_admin.standings(self.db_manager, self.config, self.logger, cache_s=30))
             except Exception as e:
                 self.logger.error(f"Error in /api/games: {e}", exc_info=True)
                 return jsonify({'error': 'Internal error - see server logs'}), 500

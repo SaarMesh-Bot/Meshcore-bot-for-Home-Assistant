@@ -29,6 +29,7 @@ class RemindersService(BaseServicePlugin):
          "options": [
              {"value": "nl", "label": "Nederlands"}, {"value": "en", "label": "English"},
              {"value": "de", "label": "Deutsch"}, {"value": "fr", "label": "Français"},
+             {"value": "da", "label": "Dansk"},
          ],
          "help": "The reminder is sent on its own later, so there is no message to detect the language from."},
     ]

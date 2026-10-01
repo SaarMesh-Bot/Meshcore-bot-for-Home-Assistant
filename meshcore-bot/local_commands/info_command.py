@@ -37,6 +37,11 @@ TEXTS = {
         "need": "Envie du vôtre ? Il faut : Home Assistant, une radio USB MeshCore (par ex. Seeed XIAO ESP32S3) et les add-ons MeshCore Proxy + Bot.",
         "more": "Plus d'infos et téléchargement : {url}",
     },
+    "da": {
+        "what": "Jeg er en MeshCore-bot: en Home Assistant-add-on bygget på meshcore-bot af agessaman. Skriv help for mine kommandoer.",
+        "need": "Selv en bot? Kræver: Home Assistant, en MeshCore-USB-radio (f.eks. Seeed XIAO ESP32S3) og add-ons MeshCore Proxy + Bot.",
+        "more": "Mere info og download: {url}",
+    },
 }
 
 
@@ -89,6 +94,7 @@ class InfoCommand(BaseCommand):
          "options": [
              {"value": "nl", "label": "Nederlands"}, {"value": "en", "label": "English"},
              {"value": "de", "label": "Deutsch"}, {"value": "fr", "label": "Français"},
+             {"value": "da", "label": "Dansk"},
          ]},
         {"key": "extra_line", "label": "One extra line", "type": "str", "default": "",
          "help": "For example who runs this bot. Empty = nothing. Keep it short: a message holds about 130 bytes."},

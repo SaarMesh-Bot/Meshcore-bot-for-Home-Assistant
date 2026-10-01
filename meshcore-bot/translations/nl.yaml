@@ -48,13 +48,13 @@ configuration:
         description: De bot antwoordt in totaal hooguit één keer per zoveel seconden (een tweede commando binnen die tijd krijgt geen antwoord). Upstream gebruikt 10, deze add-on 4. Lager betekent meer airtime op de mesh.
       language:
         name: Taal van de antwoorden
-        description: "De taal van de antwoorden van de bot: en (Engels), nl (Nederlands), de (Duits) of fr (Frans). Geldt voor de eigen teksten van de bot en alle extra commando's van deze add-on, ook help en helpall. Nieuwe installaties beginnen in het Engels. Staat AutoLanguage aan (pagina Plugins), dan krijgt wie in een van de andere talen schrijft het antwoord in die taal."
+        description: "De taal van de antwoorden van de bot: en (Engels), nl (Nederlands), de (Duits), fr (Frans) of da (Deens). Geldt voor de eigen teksten van de bot en alle extra commando's van deze add-on, ook help en helpall. Nieuwe installaties beginnen in het Engels. Staat AutoLanguage aan (pagina Plugins), dan krijgt wie in een van de andere talen schrijft het antwoord in die taal."
       log_level:
         name: Logniveau
         description: Gebruik DEBUG als er iets stil wordt weggegooid en je wilt zien waarom.
       timezone:
         name: Tijdzone
-        description: Tijdzonenaam zoals Europe/Amsterdam, gebruikt voor geplande berichten zoals de wekelijkse aankondiging. Leeg = de systeemtijdzone.
+        description: Tijdzonenaam zoals Europe/Amsterdam, gebruikt voor geplande berichten, de nachtstand, de spellen en de rustige uren van de naamzoektocht. Leeg = de tijdzone van Home Assistant zelf (Instellingen > Systeem > Algemeen).
       latitude:
         name: Breedtegraad van de bot
         description: "Waar de bot staat, bijvoorbeeld 50.89 (twee decimalen is genoeg). Gebruikt door airplanes, wx, rain, sun, de afstanden in test en de kaart op het dashboard. Leeg laten (samen met de lengtegraad) = de thuislocatie van Home Assistant zelf (Instellingen > Systeem > Algemeen). Gaat alleen naar de weer- en vluchtdiensten die die commando's vragen."

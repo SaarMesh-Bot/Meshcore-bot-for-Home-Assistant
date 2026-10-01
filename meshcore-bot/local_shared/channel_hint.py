@@ -66,6 +66,9 @@ DEFAULT_TEXTS = {
     "fr": ("Avec plaisir dans {channels} || Pour les commandes et les tests, bienvenue dans {channels} || "
            "Ici je ne réponds pas aux commandes, dans {channels} oui ! || Astuce : essayez dans {channels}, j'y aide volontiers",
            "Cette commande ne marche pas ici. Avec plaisir dans : {channels}"),
+    "da": ("Vi hjælper dig gerne i {channels} || Til kommandoer og tests er du velkommen i {channels} || "
+           "Her svarer jeg ikke på kommandoer, i {channels} gør jeg! || Tip: prøv det i {channels}, der hjælper jeg gerne",
+           "Den kommando virker ikke her. Vi hjælper dig gerne i: {channels}"),
 }
 DEFAULT_MESSAGE, DEFAULT_RESTRICTED = DEFAULT_TEXTS["nl"]   # kept for code that imports them
 VARIANT_SEPARATOR = "||"   # several texts in one field: the bot picks one at random, not the same one twice in a row
@@ -76,6 +79,7 @@ PHRASES = {
     "en": {"dm_only": "That command does not work here (DM only).", "any_channel": "one of the command channels"},
     "de": {"dm_only": "Dieser Befehl funktioniert hier nicht (nur per DM).", "any_channel": "einem der Befehlskanäle"},
     "fr": {"dm_only": "Cette commande ne marche pas ici (DM seulement).", "any_channel": "l'un des canaux de commandes"},
+    "da": {"dm_only": "Den kommando virker ikke her (kun via DM).", "any_channel": "en af kommandokanalerne"},
 }
 
 

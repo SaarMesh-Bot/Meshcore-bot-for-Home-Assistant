@@ -45,6 +45,7 @@
             <div class="card-body"><div class="rp-chart"><canvas id="c-temp" role="img" aria-label="Temperature over time"></canvas></div></div></div></div>
         <div class="col-12 col-lg-6"><div class="card h-100"><div class="card-header"><i class="fas fa-signal"></i> Last SNR (dB)</div>
             <div class="card-body"><div class="rp-chart"><canvas id="c-snr" role="img" aria-label="Last SNR over time"></canvas></div></div></div></div>
+        <div class="col-12" id="rp-tel-wrap" hidden><div class="row g-4" id="rp-tel-charts"></div></div>
         <div class="col-12 col-lg-6"><div class="card h-100"><div class="card-header"><i class="fas fa-users"></i> Neighbours <small class="text-muted" id="rp-nb-at"></small></div>
             <div class="card-body p-0"><div class="table-responsive">
                 <table class="table table-sm table-hover mb-0">
@@ -129,7 +130,24 @@
         t.appendChild(tile('Airtime', l.airtime_util === null || l.airtime_util === undefined ? '-' : fmt(l.airtime_util, 1) + ' %'));
         t.appendChild(tile('Neighbours', l.neighbor_count === null || l.neighbor_count === undefined ? '-' : l.neighbor_count,
                            'last reply ' + ago(d.generated_at - l.ts)));
+        // other telemetry channels of the repeater's sensors (ch2 current/voltage for charging, ...)
+        Object.keys(d.telemetry || {}).sort().forEach(function (k) {
+            const v = d.telemetry[k];
+            t.appendChild(tile(telLabel(k), v === null || v === undefined ? '-' : fmt(v, telDigits(k)) + ' ' + telUnit(k)));
+        });
     }
+
+    function telLabel(k) {
+        const m = /^ch(\d+)_(.+)$/.exec(k);
+        return m ? 'Ch' + m[1] + ' ' + m[2].replace(/_/g, ' ') : k;
+    }
+    function telUnit(k) {
+        const u = (state.data.telemetry_units || {})[k];
+        if (u) return u;
+        const kind = k.replace(/^ch\d+_/, '');
+        return { voltage: 'V', current: 'A', power: 'W', temperature: '°C', humidity: '%', percentage: '%', pressure: 'hPa' }[kind] || '';
+    }
+    function telDigits(k) { return /current/.test(k) ? 3 : 2; }
 
     function tickLabel(ms) {
         const dt = new Date(ms);
@@ -139,7 +157,10 @@
 
     function chart(id, values, unit, digits) {
         const s = state.data.series;
-        const points = s.t.map(function (t, i) { return { x: t * 1000, y: values[i] === null || values[i] === undefined ? null : values[i] }; });
+        chartPoints(id, s.t.map(function (t, i) { return { x: t * 1000, y: values[i] === null || values[i] === undefined ? null : values[i] }; }), unit, digits);
+    }
+
+    function chartPoints(id, points, unit, digits) {
         const ink = getComputedStyle(document.body).color || '#888';
         const grid = 'rgba(128,128,128,0.18)';
         const cfg = {
@@ -174,6 +195,24 @@
         chart('c-airtime', s.airtime_util, '%', 1);
         chart('c-temp', s.temperature, '°C', 1);
         chart('c-snr', s.last_snr, 'dB', 1);
+        // one chart per telemetry channel (ch2_current, ch2_voltage, ...), only the ones this repeater has
+        const tel = state.data.telemetry_series || {};
+        const wrap = document.getElementById('rp-tel-wrap'), box = document.getElementById('rp-tel-charts');
+        Object.keys(charts).filter(function (id) { return id.indexOf('c-tel-') === 0; }).forEach(function (id) { charts[id].destroy(); delete charts[id]; });
+        box.replaceChildren();
+        const keys = Object.keys(tel).sort();
+        wrap.hidden = !keys.length;
+        keys.forEach(function (k) {
+            const col = el('div', null, 'col-12 col-lg-6');
+            const card = el('div', null, 'card h-100');
+            card.appendChild(el('div', telLabel(k) + (telUnit(k) ? ' (' + telUnit(k) + ')' : ''), 'card-header'));
+            const bodyc = el('div', null, 'card-body');
+            const holder = el('div', null, 'rp-chart');
+            const canvas = el('canvas'); canvas.id = 'c-tel-' + k.replace(/[^a-z0-9_]/gi, '');
+            canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', telLabel(k) + ' over time');
+            holder.appendChild(canvas); bodyc.appendChild(holder); card.appendChild(bodyc); col.appendChild(card); box.appendChild(col);
+            chartPoints(canvas.id, tel[k].t.map(function (t, i) { return { x: t * 1000, y: tel[k].v[i] }; }), telUnit(k), telDigits(k));
+        });
     }
 
     function renderNeighbours(d) {

@@ -4,7 +4,7 @@
 
 Zo gebruikt de **Vip|HA|🤖**-bot ze; een eigen bot werkt hetzelfde, met de kanalen die je zelf instelt.
 
-De bot antwoordt in de taal waarin je schrijft: Nederlands, Engels, Duits of Frans.
+De bot antwoordt in de taal waarin je schrijft: Nederlands, Engels, Duits, Frans of Deens.
 
 **Zo gebruik je ze:** typ het commando in `#bot` of `#test`, of stuur het als DM naar de bot. In Publiek (kanaal 0) reageert de bot niet op commando's. Meer uitleg over één commando: `help <commando>`, bijvoorbeeld `help dx`.
 

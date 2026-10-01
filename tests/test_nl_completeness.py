@@ -41,13 +41,16 @@ def deep_merge(base, add):
 
 en = json.load(open(f"{TREE}/translations/en.json"))
 fen = flatten(en)
-NAMES = {"nl": "Nederlandse", "de": "Duitse", "fr": "Franse"}
+NAMES = {"nl": "Nederlandse", "de": "Duitse", "fr": "Franse", "da": "Deense"}
 for lang, label in NAMES.items():
-    merged = json.load(open(f"{TREE}/translations/{lang}.json"))
+    up = _pl.Path(f"{TREE}/translations/{lang}.json")   # upstream has no da.json: only our overlay
+    merged = json.load(open(up)) if up.exists() else {}
     deep_merge(merged, json.load(open(f"{ADDON}/local_shared/local_translations/{lang}.json")))
     flat = flatten(merged)
     # keywords.* are alternate trigger words (functional, not prose) and intentionally not translated.
-    missing = sorted(k for k in fen if k not in flat and not k.startswith("keywords."))
+    # Danish: the long joke/fact lists (hacker, catfact, hello) stay English on purpose.
+    missing = sorted(k for k in fen if k not in flat and not k.startswith("keywords.")
+                     and not (lang == "da" and isinstance(fen[k], list)))
     check(
         not missing,
         f"elke upstream-tekst (op keywords.* na) heeft een {label} vertaling, in upstream's eigen "

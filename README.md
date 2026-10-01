@@ -11,7 +11,7 @@
 Home Assistant add-ons for a MeshCore mesh: a **bot** with more than 80 commands (weather, traffic, public transport,
 emergency numbers, games, F1, ...) and a **proxy** so the bot and the [meshcore-ha](https://github.com/meshcore-dev/meshcore-ha)
 integration can share the same USB radio. Many extra commands use Dutch and Belgian open data; the bot answers in
-Dutch, English, German or French.
+Dutch, English, German, French or Danish.
 
 | Add-on | What it does |
 |---|---|

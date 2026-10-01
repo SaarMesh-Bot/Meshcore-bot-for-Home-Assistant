@@ -73,16 +73,40 @@ def split_keyval(line: str, sep: str = "="):
     return key.strip(), value.strip()
 
 
+_ha_config_cache: dict = {}
+
+
+def ha_config() -> dict:
+    """Home Assistant's general settings (Settings -> System -> General), once per start; {} outside Home Assistant."""
+    if "data" in _ha_config_cache:
+        return _ha_config_cache["data"]
+    data: dict = {}
+    token = os.environ.get("SUPERVISOR_TOKEN", "")
+    if token:
+        try:
+            import urllib.request
+            req = urllib.request.Request("http://supervisor/core/api/config", headers={"Authorization": f"Bearer {token}"})
+            data = json.load(urllib.request.urlopen(req, timeout=5)) or {}
+        except Exception as exc:  # never stop the start over this
+            print(f"generate_config: Home Assistant's settings not read: {exc}", file=sys.stderr)
+            data = {}
+    _ha_config_cache["data"] = data
+    return data
+
+
+def ha_timezone() -> dict:
+    """Home Assistant's time zone when the options leave the bot's time zone empty: {timezone}, or {}."""
+    zone = str(ha_config().get("time_zone") or "").strip()
+    return {"timezone": zone} if zone else {}
+
+
 def ha_home() -> dict:
     """Home Assistant's own home location (Settings -> System -> General) when the options leave the bot's position
     empty: {bot_latitude, bot_longitude}, or {} outside Home Assistant or when it does not answer."""
-    token = os.environ.get("SUPERVISOR_TOKEN", "")
-    if not token:
+    cfg = ha_config()
+    if not cfg:
         return {}
     try:
-        import urllib.request
-        req = urllib.request.Request("http://supervisor/core/api/config", headers={"Authorization": f"Bearer {token}"})
-        cfg = json.load(urllib.request.urlopen(req, timeout=5))
         lat, lon = float(cfg.get("latitude")), float(cfg.get("longitude"))
         if lat == 0 and lon == 0:
             return {}
@@ -121,7 +145,8 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
         # non-favourite; bot = the bot adds them; false = fully manual.
         "auto_manage_contacts": str(g("contacts", "mode", "device")),
         # See local_patches/patch_contact_protection.py.
-        **({"timezone": str(g("bot", "timezone", "")).strip()} if str(g("bot", "timezone", "")).strip() else {}),
+        # The bot's time zone: the option, else Home Assistant's own (Settings -> System -> General)
+        **({"timezone": str(g("bot", "timezone", "")).strip()} if str(g("bot", "timezone", "")).strip() else ha_timezone()),
         # Where the bot is: airplanes, wx, rain, sun, distances in test and the map use it. Only when both are set.
         **({"bot_latitude": str(g("bot", "latitude")), "bot_longitude": str(g("bot", "longitude"))}
            if g("bot", "latitude") not in (None, "") and g("bot", "longitude") not in (None, "") else ha_home()),
@@ -308,6 +333,11 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
     cfg["ProblemLog"] = {"enabled": "true"}
     # Mailbox: delivers messages left with 'post' by DM when the recipient is heard again. On.
     cfg["Mailbox"] = {"enabled": "true"}
+    # NameHunt: at quiet hours, tries names against the Channel radar's unknown channels (no airtime). On.
+    cfg["NameHunt"] = {"enabled": "true", "hours": "4", "minutes": "30"}
+    # ObserverFeed: MeshCore observers on an MQTT broker (meshcore/{IATA}/{KEY}/packets). Off: needs the owner's broker.
+    cfg["ObserverFeed"] = {"enabled": "false", "host": "", "port": "1883", "tls": "false", "username": "", "password": "",
+                           "topic": "meshcore/#"}
     # RepeaterWatch: a directly heard repeater that goes silent is reported (Notifications + Home Assistant). On.
     # Setup: the first-start wizard on the dashboard (a banner until it is done). Only a new installation starts at
     # "false"; an update of an existing installation gets "true" (see merge_with_existing).
@@ -395,7 +425,7 @@ STATE_FILE = "generated_keys.json"
 # it was rewritten on every start until 2.6.1.
 MOVED_SECTIONS = {"Notifications", "ContactCleanup", "RoomServer_Login", "HomeAssistantBridge",
                   "Webhook", "ChannelHint", "Greeter_Command", "HARepeater", "F1", "F1_Command", "Heartbeat",
-                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox"}
+                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox", "NameHunt", "ObserverFeed"}
 # Never removed by the "generated last time but not now" cleanup: the moved sections, and the scheduled
 # messages (the dashboard's Schedule page owns them since 2.8.0; the old announcement option is gone).
 KEEP_SECTIONS = MOVED_SECTIONS | {"Scheduled_Messages"}

@@ -106,12 +106,30 @@ Messages longer than *Maximum message length* are split into several messages.
 ### Web viewer
 
 The dashboard. Reachable in the Home Assistant sidebar (**MeshCore Bot**, works through Nabu Casa or your own domain too) and with the
-**Open Web UI** button (port 8081). Both show the same dashboard. Set a password if port 8081 is reachable from your network. The password
-applies in the sidebar as well; if you only use the sidebar, you can leave it empty and block port 8081 in your router or firewall.
+**Open Web UI** button (port 8081). Both show the same dashboard. Set a password if port 8081 is reachable from your network. The sidebar
+needs no second login: Home Assistant already checked who you are (only requests from the Supervisor itself count as the sidebar). If you only
+use the sidebar, you can leave the password empty and block port 8081 in your router or firewall.
 **Closing port 8081:** once the sidebar works, switch **Reachable from the network** off. The port is then closed to your network and the
 dashboard is only available in the sidebar, so the password can stay empty. Switch it on again to use `http://<host>:8081` (and set a password).
 The sidebar uses a fixed port (`ingress_port: 8081`); if you change the viewer port, the sidebar entry stops working until `ingress_port`
 in the add-on's `config.yaml` matches.
+
+**Users and roles** (Settings -> Users). Besides the password above (which logs in as admin with the name left empty) you can make named
+accounts, for example for people you let in through a port forward:
+
+- **Admin**: everything, like the password.
+- **Viewer**: read-only. Only the pages you tick (Dashboard, Repeater, Radar, Games, Mesh, Bots, Bot network), nothing can be changed (the
+  server refuses every change, whatever the browser does), no live connection, and no channel keys. On the Repeater page a viewer sees only
+  the repeaters you choose for them, or the repeaters of their **groups** (a group is a named set of repeaters; a repeater added to a group
+  later is visible at once). Nothing chosen = all repeaters.
+
+As soon as there is a password or an account, the dashboard asks for a login. Without a password, make an admin account first (the page
+insists). Passwords are stored as a salted hash, never as text; after 8 wrong attempts from one address that address waits 15 minutes.
+Changing or deleting an account works at once, also for someone who is logged in. Logins (and failed ones) are in the add-on log.
+
+**Language of the dashboard.** The dashboard follows *Bot > Language of the replies*: set it to `nl`, `de`, `fr` or `da` and the menus,
+headings, buttons, messages and help texts appear in that language, also text that appears later. Names, channel names and values stay as
+they are, and charts keep their English axis labels. With `en` nothing changes.
 
 ### Home Assistant chat panel (optional)
 
@@ -198,7 +216,23 @@ add-on permission `homeassistant_api` (on by default).
 **Repeater page.** The dashboard has a *Repeater* menu item: the history of every repeater HARepeater follows, one
 point per status reply, over 24 hours, 7 or 30 days: battery (V and %), temperature, uptime, noise floor, airtime,
 last SNR, and its latest neighbour list with the place and the distance to the repeater (from the bot's Contacts; a
-neighbour meshcore-ha gives no name gets its name there too, marked *contacts*). Pick the repeater at the top. Read-only.
+neighbour meshcore-ha gives no name gets its name there too, marked *contacts*). Pick the repeater at the top. Read-only. Extra telemetry the repeater reports through meshcore-ha
+(for example `ch2_current` / `ch2_voltage` of a charge controller, or `ch1_temperature`) gets its own tile and chart, with
+the unit meshcore-ha gives; nothing appears for values a repeater does not report.
+
+### MQTT observers
+
+**ObserverFeed** (card on the Plugins page, off by default; needs a restart) listens to MeshCore *observers*: radios that
+publish every packet they hear to an MQTT broker, in the common format `meshcore/{IATA}/{PUBLIC_KEY}/packets` and
+`meshcore/{IATA}/{PUBLIC_KEY}/status` (meshcoretomqtt, LetsMesh, meshcore-ha's observer setting). Fill in the broker
+(host, port, TLS, user name and password) your observers publish to; the topic `meshcore/#` takes all of them, or narrow
+it to one region (`meshcore/AMS/#`).
+
+The dashboard's *Radar* page then has a tab **Observers**: per observer its name, region, online/offline, model and
+firmware, packets per hour (adverts, group messages, other) with a chart, average RSSI/SNR, and the nodes whose adverts
+it heard. Group messages an observer hears also count on the Channel radar; a message heard both by the bot's radio and
+by an observer counts once. The service only listens: nothing is published, nothing is sent over the radio, and message
+texts are never decrypted. Data older than 30 days is removed.
 
 ### Heartbeat: is the bot alive?
 
@@ -233,7 +267,7 @@ for the duration of that one reply, swaps in the matching translator — then sw
 
 It applies to every command, upstream's built-in ones and this add-on's own extra commands alike, and only ever answers in a language a
 translation actually exists for (upstream ships `nl`, `en`, `de`, `fr`, `es`, `pl`, `pt`, `ru`, ...; this add-on's own commands currently cover
-`nl`/`en`/`de`/`fr`, with English as the silent fallback for anything not yet translated).
+`nl`/`en`/`de`/`fr`/`da`, with English as the silent fallback for anything not yet translated).
 
 Two places keep a *fixed* language on purpose, since their message has no sender to detect a language from: the **F1** service's scheduled
 channel posts (its own `Language` setting on the Plugins card) and **info bot**'s DM reply (its own `Language` setting). The `f1` command itself
@@ -558,6 +592,19 @@ Commands for everyone on the mesh. Each has a card on the Plugins page with an o
   added (card or page) without a message in 30 days, with where they were added; those added on the page can be removed there.
 - **`ha` groups:** the *Groups* field of a row (comma-separated). `ha <group> aan/uit` switches every member that may be
   switched, `ha <group>` / `om` toggles (one on: all off, else all on), `ha <group> status` shows every member.
+- **Live connection:** only the Realtime, Logs and Mesh pages open the dashboard's live connection (socket.io); every
+  other page shows *Live: off*. In the Home Assistant sidebar that leaves the browser's few connections to Home Assistant
+  free for the page's own requests.
+- **Name hunt** (card **NameHunt**, on): in each of the *Quiet hours to use* (4) quietest hours of the day
+  (messages + 3x commands of people per local hour, averaged over the last week of stats; ties go to the hours closest
+  to 03:00; 02-06 with too little data; radio packets are not used, they are mostly repeater adverts), the bot tries
+  candidate names against the unknown channel bytes: hashtags and words from channel messages (60 days), node and place
+  names from the contacts, the radar's word lists, with prefixes, suffixes, numbers and word pairs (a few million). It
+  keeps up to 4 messages per unknown byte for 30 days (table `name_hunt_samples`) and only accepts a name when two of them
+  match (byte and check code). Portions of 100 000 names with pauses, at most *Minutes per quiet hour* (30), continuing
+  the next quiet hour; when all names were tried it waits until there are new words or a new unknown channel. Found names go to
+  the radar like 'Name it' and are logged ("Naamzoektocht: kanaal #... gevonden"); the Channel radar page shows the quiet
+  hours, the last run and what was found. Private channels (a random key) can never be found this way.
 - **Channel radar from the page:** *Add to radio* (hashtag channels only) puts the request in bot_metadata
   `radar.add_to_radio`; AutoChannels checks every minute and makes it the safe way (each slot asked from the radio, a slot
   with a name is never overwritten; when the radio is full it tries again every 15 minutes). *Name it* on an unknown
@@ -638,7 +685,7 @@ Inside the add-on, in its own data folder (`/data/config.ini` in the container),
   everything else. Restart the add-on after a change. `README.txt` there says the same.
 - To copy the file (and the database) out, or to move the bot to another Home Assistant: see *Moving the bot* below.
 
-**Translations** are built into the add-on (English, Dutch, German and French for everything this add-on adds). Pick the
+**Translations** are built into the add-on (English, Dutch, German, French and Danish for everything this add-on adds; Danish also covers the bot's own texts, except the long joke lists). Pick the
 language with *Bot > Language of the replies*. Want another language? A pull request with a translated
 `meshcore-bot/local_shared/local_translations/xx.json` is very welcome.
 

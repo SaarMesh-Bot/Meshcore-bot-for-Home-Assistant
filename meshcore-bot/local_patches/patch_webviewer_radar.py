@@ -101,6 +101,17 @@ patch(
                 self.logger.error(f"Error in /api/radar/add_to_radio: {e}", exc_info=True)
                 return jsonify({'error': 'Internal error - see server logs'}), 500
 
+        @self.app.route('/api/radar/observers')
+        def api_radar_observers():
+            \"\"\"(add-on) MQTT observers (ObserverFeed card): their numbers, and for one the hourly series and nodes heard.\"\"\"
+            from modules import observers
+            try:
+                return jsonify(observers.summary(self.db_manager, request.args.get('days', 1, type=int) or 1,
+                                                 request.args.get('key') or None))
+            except Exception as e:
+                self.logger.error(f"Error in /api/radar/observers: {e}", exc_info=True)
+                return jsonify({'error': 'Internal error - see server logs'}), 500
+
         @self.app.route('/api/radar/repeaters')
         def api_radar_repeaters():
             \"\"\"Repeater radar: the repeaters heard in the last 1, 7 or 30 days (see modules/repeater_radar.py).\"\"\"

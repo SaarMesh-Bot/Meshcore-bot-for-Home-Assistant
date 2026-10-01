@@ -210,3 +210,15 @@ patch_answer_arbitration.py
 
 # Web viewer: a stop signal is not a crash; live events only to the pages that subscribed.
 patch_webviewer_quiet.py
+
+# Dashboard: the live connection (socket.io) only starts on pages that use it (Realtime, Logs, Mesh).
+patch_webviewer_lazy_socket.py
+
+# Greeter: the delayed greeting was never sent (it took its own "greeted" mark for an earlier greeting).
+patch_greeter_delayed.py
+
+# Languages only in our own catalogue (Danish) count as available for AutoLanguage.
+patch_local_languages.py
+
+# Dashboard users (admin / read-only viewer, per-user pages and repeaters) and the dashboard in the bot language.
+patch_webviewer_users.py

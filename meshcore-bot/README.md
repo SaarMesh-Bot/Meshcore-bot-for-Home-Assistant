@@ -9,7 +9,7 @@ many extra commands for the Netherlands and Belgium.
 - Settings in the add-on options and on the bot's dashboard, which opens in the Home Assistant sidebar.
 - More than 80 commands: weather, traffic, public transport, prices, AEDs, KNMI warnings, route and signal of your message,
   and games for everyone on the mesh (DX Jacht, Mesh RPG, karma, check-in, polls, predictions).
-- Answers in the language the sender writes in (Dutch, English, German, French).
+- Answers in the language the sender writes in (Dutch, English, German, French, Danish).
 - Optional: room server login, notifications, an incoming webhook, a mirror into the MeshCore Chat panel, your repeater's status
   from meshcore-ha, an F1 channel. Everything optional is off until you switch it on.
 - Recognises other bots, and the bot name always ends in `|🤖`.

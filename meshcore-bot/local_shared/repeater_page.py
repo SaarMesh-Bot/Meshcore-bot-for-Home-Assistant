@@ -7,6 +7,7 @@ utilisation in %, uptime in seconds.
 """
 from __future__ import annotations
 
+import json
 import time
 from typing import Any, Optional
 
@@ -64,9 +65,10 @@ def _thin(rows: list, limit: int = MAX_POINTS) -> list:
     return picked + [rows[-1]]
 
 
-def summary(db: Any, key: Optional[str] = None, days: str = "7", now_ts: Optional[float] = None) -> dict:
+def summary(db: Any, key: Optional[str] = None, days: str = "7", now_ts: Optional[float] = None,
+            allowed: Optional[set] = None) -> dict:
     """{repeaters: [...], selected, days, latest, series: {...}, neighbors: [...]} for one repeater (default: the one
-    heard from last)."""
+    heard from last). allowed: the repeater keys a dashboard viewer may see (None = all)."""
     now_ts = time.time() if now_ts is None else now_ts
     span = PERIODS.get(str(days), 7)
     out: dict = {"generated_at": int(now_ts), "days": span, "repeaters": [], "selected": None, "latest": None,
@@ -79,6 +81,9 @@ def summary(db: Any, key: Optional[str] = None, days: str = "7", now_ts: Optiona
                JOIN (SELECT repeater_key, MAX(id) AS last_id, COUNT(*) AS n FROM repeater_telemetry GROUP BY repeater_key) c
                  ON t.id = c.last_id
                ORDER BY t.recorded_at DESC""").fetchall()
+        if allowed is not None:
+            ok = {a.lower() for a in allowed}
+            reps = [r for r in reps if str(r[0]).lower() in ok or any(str(r[0]).lower().startswith(a) for a in ok)]
         out["repeaters"] = [{"key": k, "name": n or k[:10], "last_ts": int(ts), "readings": int(c)} for k, n, ts, c in reps]
         if not reps:
             return out
@@ -95,6 +100,32 @@ def summary(db: Any, key: Optional[str] = None, days: str = "7", now_ts: Optiona
             out["series"]["t"].append(int(row[0]))
             for name, value in zip(SERIES, row[1:]):
                 out["series"][name].append(value)
+        # (2.46) other telemetry channels (ch2_current, ch2_voltage, ...): latest values and a series per channel
+        cols_t = {r[1] for r in conn.execute("PRAGMA table_info(repeater_telemetry)")}
+        out["telemetry"], out["telemetry_series"], out["telemetry_units"] = {}, {}, {}
+        if "telemetry" in cols_t:
+            trows = conn.execute("SELECT recorded_at, telemetry FROM repeater_telemetry WHERE repeater_key = ? AND recorded_at >= ? "
+                                 "AND telemetry IS NOT NULL ORDER BY recorded_at", (selected, int(now_ts - span * 86400))).fetchall()
+            lastt = conn.execute("SELECT telemetry FROM repeater_telemetry WHERE repeater_key = ? AND telemetry IS NOT NULL "
+                                 "ORDER BY id DESC LIMIT 1", (selected,)).fetchone()
+            if lastt:
+                try:
+                    data = json.loads(lastt[0])
+                    out["telemetry"] = data.get("values") or {}
+                    out["telemetry_units"] = data.get("units") or {}
+                except ValueError:
+                    pass
+            series: dict = {}
+            for ts, raw in _thin(trows):
+                try:
+                    values = (json.loads(raw) or {}).get("values") or {}
+                except ValueError:
+                    continue
+                for name, value in values.items():
+                    series.setdefault(name, {"t": [], "v": []})
+                    series[name]["t"].append(int(ts))
+                    series[name]["v"].append(value)
+            out["telemetry_series"] = series
         if _table_exists(conn, "ha_repeater_neighbors"):
             at = conn.execute("SELECT MAX(recorded_at) FROM ha_repeater_neighbors WHERE repeater_key = ?", (selected,)).fetchone()[0]
             if at:

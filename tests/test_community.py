@@ -668,7 +668,7 @@ async def main():
         check(text == expect and len(text.encode()) <= 130, f"help ({lang}) met link op de kaart: {text!r}")
     # the real link of the published repository must fit one mesh message in every language
     REAL = "https://github.com/vipje/Meshcore-bot-for-Home-Assistant/blob/main/COMMANDS.md"
-    for lang in ("nl", "en", "de", "fr"):
+    for lang in ("nl", "en", "de", "fr", "da"):
         b = make_bot(db, {"Help_Command": {"list_url": REAL}})
         b.translator = Translator(lang, "translations/", "local/translations")
         b.config["Localization"] = {"language": lang}

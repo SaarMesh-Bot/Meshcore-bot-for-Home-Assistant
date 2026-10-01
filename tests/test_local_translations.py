@@ -1,12 +1,12 @@
-"""Onze eigen vertaalcatalogus (local_shared/local_translations/{nl,en,de,fr}.json): elke translate()-sleutel die
-ergens in local_commands/, local_shared/ of local_service_plugins/ wordt gebruikt, bestaat in alle vier de talen."""
+"""Onze eigen vertaalcatalogus (local_shared/local_translations/{nl,en,de,fr,da}.json): elke translate()-sleutel die
+ergens in local_commands/, local_shared/ of local_service_plugins/ wordt gebruikt, bestaat in alle vijf de talen."""
 import json
 import pathlib as _pl
 import re
 import sys
 
 ADDON = _pl.Path(__file__).resolve().parent.parent / "meshcore-bot"
-LANGS = ["nl", "en", "de", "fr"]
+LANGS = ["nl", "en", "de", "fr", "da"]
 
 fails = []
 

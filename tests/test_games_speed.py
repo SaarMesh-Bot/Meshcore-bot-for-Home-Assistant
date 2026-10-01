@@ -130,5 +130,8 @@ took = time.time() - t0
 check(took < 3.0, f"Games-overzicht snel genoeg met 1500 namen ({took:.2f}s)")
 check(all(not r["name"].endswith("🤖") for r in st["xp"]["ever"]) and len(st["xp"]["ever"]) == GA.TOP, "top 15 zonder bots")
 
+t0 = time.time(); a1 = GA.standings(db, cfg, cache_s=30); t1 = time.time(); a2 = GA.standings(db, cfg, cache_s=30); t2 = time.time()
+check(a1 is a2 and (t2 - t1) < 0.01, f"tweede keer binnen 30 s: onthouden antwoord ({(t2 - t1) * 1000:.1f} ms)")
+check(GA.standings(db, cfg) is not a1, "zonder cache_s: altijd vers")
 print(f"\n{len(fails)} fouten")
 sys.exit(1 if fails else 0)

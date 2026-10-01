@@ -117,5 +117,22 @@ check(client.get("/api/repeater?key=onzin&days=99", headers=H).get_json()["selec
 own = open(os.path.join(TREE, "modules", "web_viewer", "templates", "repeater.html")).read()
 check("textContent" in own and "innerHTML" not in own and "insertAdjacentHTML" not in own, "namen van de mesh alleen als tekst op de pagina")
 
+# other telemetry channels (ch2 current/voltage for charging): stored as JSON by HARepeater, shown when present
+import json as _json
+with viewer.db_manager.connection() as conn:
+    conn.execute("ALTER TABLE repeater_telemetry ADD COLUMN telemetry TEXT")
+    for i, (cur, volt) in enumerate(((0.10, 12.9), (0.42, 13.2))):
+        conn.execute("INSERT INTO repeater_telemetry (recorded_at, repeater_key, repeater_name, battery_mv, stats_key, telemetry) VALUES (?,?,?,?,?,?)",
+                     (now - 600 + i * 300, A, "Heuvel", 4100, f"t{i}",
+                      _json.dumps({"values": {"ch2_current": cur, "ch2_voltage": volt}, "units": {"ch2_current": "A", "ch2_voltage": "V"}})))
+    conn.commit()
+dt = client.get(f"/api/repeater?key={A}&days=1", headers=H).get_json()
+check(dt["telemetry"] == {"ch2_current": 0.42, "ch2_voltage": 13.2} and dt["telemetry_units"]["ch2_current"] == "A",
+      f"laatste ch2-stroom en -spanning met eenheid ({dt['telemetry']})")
+check(dt["telemetry_series"]["ch2_current"]["v"] == [0.10, 0.42], "reeks per telemetriekanaal voor de grafiek")
+check(client.get(f"/api/repeater?key={B}&days=7", headers=H).get_json()["telemetry"] == {}, "repeater zonder ch2: niets")
+page = client.get("/repeater").get_data(as_text=True)
+check('id="rp-tel-charts"' in page, "plek voor de telemetriegrafieken op de pagina")
+
 print(f"\n{len(fails)} fouten")
 sys.exit(1 if fails else 0)

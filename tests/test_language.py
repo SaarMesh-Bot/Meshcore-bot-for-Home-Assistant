@@ -88,7 +88,7 @@ for name, (_d, _s, stem, cls_name) in cards.items():
         loaded[name] = getattr(mod, cls_name)
     except Exception as e:  # noqa: BLE001
         check(False, f"{stem} laden: {e}")
-for lang in ("en", "nl", "de", "fr"):
+for lang in ("en", "nl", "de", "fr", "da"):
     bot = make_bot(lang)
     bad, dutch = [], []
     for name, cls in loaded.items():
@@ -108,7 +108,7 @@ for lang in ("en", "nl", "de", "fr"):
 # ---------------------------------------------------------------- ping, help sample, own help text
 ping_mod = import_with_stubs("modules.commands.ping_command")
 for lang, want in (("en", "Pong! More info: type test"), ("nl", "Pong! Meer info: typ test"), ("de", "Pong! Mehr Infos: tippe test"),
-                   ("fr", "Pong ! Plus d'infos : tapez test")):
+                   ("fr", "Pong ! Plus d'infos : tapez test"), ("da", "Pong! Mere info: skriv test")):
     check(make_bot(lang).translator.translate("commands.ping.response") == want, f"ping ({lang}): {want}")
 # the command itself (found 2026-09-30: without a ping keyword it sent nothing, the text above was never used)
 pc = ping_mod.PingCommand(make_bot("nl"))
@@ -120,7 +120,7 @@ cm_mod = import_with_stubs("modules.command_manager")
 help_mod = import_with_stubs("modules.commands.help_command")
 models = import_with_stubs("modules.models")
 msg = models.MeshMessage(content="help", sender_id="Piet", channel="#test")
-for lang, tail in (("en", "helpall=all"), ("nl", "helpall=alles"), ("de", "helpall=alle"), ("fr", "helpall=tout")):
+for lang, tail in (("en", "helpall=all"), ("nl", "helpall=alles"), ("de", "helpall=alle"), ("fr", "helpall=tout"), ("da", "helpall=alle")):
     b = make_bot(lang)
     hc = help_mod.HelpCommand(b)
     fake = types.SimpleNamespace(bot=b, commands={"help": hc, **{n: c(b) for n, c in list(loaded.items())[:5]}})
@@ -143,7 +143,7 @@ check("https://example.org/mylist " in text, "een eigen link blijft zoals hij is
 
 # ---------------------------------------------------------------- standard hint texts per language
 ch = import_with_stubs("modules.channel_hint")
-for lang, word in (("en", "Happy to help"), ("nl", "We helpen"), ("de", "Gerne helfen"), ("fr", "Avec plaisir"), ("es", "Happy to help")):
+for lang, word in (("en", "Happy to help"), ("nl", "We helpen"), ("de", "Gerne helfen"), ("fr", "Avec plaisir"), ("da", "Vi hjælper"), ("es", "Happy to help")):
     cfg = configparser.ConfigParser(); cfg["Localization"] = {"language": lang}
     check(ch.default_texts(cfg)[0].startswith(word), f"standaard verwijstekst ({lang}) begint met '{word}'")
 

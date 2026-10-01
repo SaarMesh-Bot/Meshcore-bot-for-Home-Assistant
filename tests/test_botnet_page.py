@@ -268,6 +268,11 @@ check('id="tab-watching"' in gc.get("/radar").get_data(as_text=True), "tabblad '
 check(gc.post("/api/radar/name/delete", headers=H, json={"name": "Club Kanaal"}).get_json()["deleted"] is True, "weer weghalen")
 check('id="add-channel-form"' in gc.get("/radar").get_data(as_text=True), "formulier bovenaan de radarpagina")
 
+# ---------------------------------------------------------------- Radar -> Observers
+oj = gc.get("/api/radar/observers?days=7", headers=H).get_json()
+check(oj.get("days") == 7 and oj.get("observers") == [], f"/api/radar/observers antwoordt (nog leeg) ({sorted(oj)})")
+check('id="tab-observers"' in gc.get("/radar").get_data(as_text=True), "tabblad Observers op de radarpagina")
+
 # ---------------------------------------------------------------- Settings -> Problems
 pp = gc.get("/problems").get_data(as_text=True)
 check('id="pr-problems"' in pp and 'href="/problems"' in pp, "pagina Problems met menu-item")

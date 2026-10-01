@@ -48,13 +48,13 @@ configuration:
         description: The bot answers at most once per this many seconds in total (a second command within that time gets no answer). Upstream uses 10, this add-on 4. Lower means more airtime on the mesh.
       language:
         name: Language of the replies
-        description: "The language of the bot's replies: en (English), nl (Dutch), de (German) or fr (French). Covers the bot's own texts and every extra command of this add-on, including help and helpall. New installations start in English. With AutoLanguage switched on (Plugins page), someone who writes in another of these languages gets the answer in that language."
+        description: "The language of the bot's replies: en (English), nl (Dutch), de (German), fr (French) or da (Danish). Covers the bot's own texts and every extra command of this add-on, including help and helpall. New installations start in English. With AutoLanguage switched on (Plugins page), someone who writes in another of these languages gets the answer in that language."
       log_level:
         name: Log level
         description: Use DEBUG when something is dropped silently and you need to see why.
       timezone:
         name: Time zone
-        description: Time zone name such as Europe/Amsterdam, used for scheduled messages such as the weekly announcement. Empty = the system time zone.
+        description: Time zone name such as Europe/Amsterdam, used for scheduled messages, night mode, the games and the name hunt's quiet hours. Empty = Home Assistant's own time zone (Settings > System > General).
       latitude:
         name: Latitude of the bot
         description: "Where the bot is, for example 50.89 (two decimals are enough). Used by airplanes, wx, rain, sun, the distances in test and the dashboard map. Leave empty (together with longitude) to use Home Assistant's own home location (Settings > System > General). Only sent to the weather and flight services those commands ask."
