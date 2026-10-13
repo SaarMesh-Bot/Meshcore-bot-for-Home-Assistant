@@ -20,9 +20,11 @@ if [ ! -x "$WORK/venv/bin/python" ]; then
   echo "== creating the test environment"
   python3 -m venv "$WORK/venv" || exit 2
   "$WORK/venv/bin/pip" install -q flask flask-socketio "flask-compress==1.15" requests pytz python-dateutil aiosqlite \
-      geopy maidenhead aiohttp apscheduler feedparser meshcore pyyaml paho-mqtt pynacl pyserial || exit 2
+      geopy maidenhead aiohttp apscheduler feedparser meshcore pyyaml paho-mqtt pynacl pyserial langdetect || exit 2
 fi
 PY="$WORK/venv/bin/python"
+# added later (2.51.6, as in the add-on's Dockerfile): an older test environment gets it too
+"$PY" -c "import langdetect" 2>/dev/null || "$WORK/venv/bin/pip" install -q langdetect
 
 echo "== applying the add-on's patches to upstream $TAG (the build fails here if upstream moved)"
 rm -rf "$WORK/sim"; mkdir -p "$WORK/sim"; cp -r "$WORK/upstream-$TAG/." "$WORK/sim/"   # a real copy, never a link to the clean clone
@@ -64,6 +66,13 @@ run "housekeeping: room login, config keys, contact capacity" "$PY" "$HERE/test_
 run "channel radar (Kanaalradar)" "$PY" "$HERE/test_channel_radar.py" "$SIM_TREE"
 run "name hunt at quiet hours" "$PY" "$HERE/test_name_hunt.py" "$SIM_TREE"
 run "MQTT observers (packets, adverts, radar)" "$PY" "$HERE/test_observers.py" "$SIM_TREE"
+run "EU Analyzer observers (regions)" "$PY" "$HERE/test_analyzer_feed.py" "$SIM_TREE"
+run "Ping met meer info" "$PY" "$HERE/test_ping_info.py" "$SIM_TREE"
+run "Uitgeschakeld commando blijft stil" "$PY" "$HERE/test_disabled_silent.py" "$SIM_TREE"
+run "Begroeting en hint in de taal van de afzender" "$PY" "$HERE/test_sender_language.py" "$SIM_TREE"
+run "Begroeting via DM" "$PY" "$HERE/test_greeter_dm.py" "$SIM_TREE"
+run "P2000: prio 1, dagtelling, commando" "$PY" "$HERE/test_p2000.py" "$SIM_TREE"
+run "NL-Alert and siren test in a channel" "$PY" "$HERE/test_nl_alert.py" "$SIM_TREE"
 run "language: English by default, help, ping, test bytes" "$PY" "$HERE/test_language.py" "$SIM_TREE"
 run "games channel (game commands in one channel)" "$PY" "$HERE/test_games_channel.py" "$SIM_TREE"
 run "Farming Idle (farm game)"              "$PY" "$HERE/test_farm_game.py" "$SIM_TREE"

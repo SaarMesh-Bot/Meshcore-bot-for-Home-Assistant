@@ -101,8 +101,11 @@ if you like, so others can add your bot to their trusted list.
 ## Install count
 
 To know how many installations run, the bot sends **once a day one anonymous message** to the maintainer's server
-(`mqtt.vipje.nl`, the same one as the bot network): a random number made at the first start, the add-on version and the
-date. Nothing else - not your bot's name, your radio, your location or anything from the mesh - and no airtime. As with
+(`mqtt.vipje.nl`, the same one as the bot network): a random number made at the first start, the add-on version, the
+date, the bot's language, the processor type (e.g. aarch64), how the bot reaches the radio (serial, BLE or TCP) and which
+cards are switched on or off (their names as in the add-on, e.g. P2000), how many days the installation has been running,
+and how many errors and warnings the bot logged yesterday (only the two numbers). Nothing else - not your bot's name, keys, channels,
+your radio's address, your location or anything from the mesh - and no airtime. As with
 any internet connection, the server sees your IP address. It is **on by default**; switch off the **InstallCount** card
 on the dashboard's Plugins page to send nothing at all.
 

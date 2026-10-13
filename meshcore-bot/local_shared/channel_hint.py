@@ -75,11 +75,11 @@ VARIANT_SEPARATOR = "||"   # several texts in one field: the bot picks one at ra
 
 
 PHRASES = {
-    "nl": {"dm_only": "Dat commando werkt hier niet (alleen via DM).", "any_channel": "een van de commando-kanalen"},
-    "en": {"dm_only": "That command does not work here (DM only).", "any_channel": "one of the command channels"},
-    "de": {"dm_only": "Dieser Befehl funktioniert hier nicht (nur per DM).", "any_channel": "einem der Befehlskanäle"},
-    "fr": {"dm_only": "Cette commande ne marche pas ici (DM seulement).", "any_channel": "l'un des canaux de commandes"},
-    "da": {"dm_only": "Den kommando virker ikke her (kun via DM).", "any_channel": "en af kommandokanalerne"},
+    "nl": {"or": "of", "dm_only": "Dat commando werkt hier niet (alleen via DM).", "any_channel": "een van de commando-kanalen"},
+    "en": {"or": "or", "dm_only": "That command does not work here (DM only).", "any_channel": "one of the command channels"},
+    "de": {"or": "oder", "dm_only": "Dieser Befehl funktioniert hier nicht (nur per DM).", "any_channel": "einem der Befehlskanäle"},
+    "fr": {"or": "ou", "dm_only": "Cette commande ne marche pas ici (DM seulement).", "any_channel": "l'un des canaux de commandes"},
+    "da": {"or": "eller", "dm_only": "Den kommando virker ikke her (kun via DM).", "any_channel": "en af kommandokanalerne"},
 }
 
 
@@ -105,11 +105,11 @@ def _norm(name: str) -> str:
     return (name or "").strip().lower()
 
 
-def join_channels(channels: list) -> str:
-    """#a | #a of #b | #a, #b of #c"""
+def join_channels(channels: list, word: str = "of") -> str:
+    """#a | #a of #b | #a, #b of #c  (word = "or" in the language of the text)"""
     if len(channels) <= 1:
         return "".join(channels)
-    return ", ".join(channels[:-1]) + " of " + channels[-1]
+    return ", ".join(channels[:-1]) + f" {word} " + channels[-1]
 
 
 def _split(value: str) -> list:
@@ -315,6 +315,10 @@ class ChannelHint:
             section = command._derive_config_section_name()
         except Exception:  # noqa: BLE001
             section = f"{name.title()}_Command"
+        # a command switched off on the Plugins page gets no hint either (it stays silent everywhere)
+        if getattr(command, f"{name}_enabled", True) is False or (
+                self.bot.config.has_section(section) and not self.bot.config.getboolean(section, "enabled", fallback=True)):
+            return "off"
         value = self.bot.config.get(section, "hint", fallback=None) if self.bot.config.has_section(section) else None
         if value is None:
             return "word" if name in DEFAULT_WORD_COMMANDS else "off"
@@ -389,10 +393,22 @@ class ChannelHint:
         self._last_variant[key] = text
         return text
 
-    def _phrase(self, key: str) -> str:
+    def _phrase(self, key: str, lang: Optional[str] = None) -> str:
         cfg = self.bot.config
-        lang = (cfg.get("Localization", "language", fallback="en") if cfg.has_section("Localization") else "en") or "en"
+        if not lang:
+            lang = (cfg.get("Localization", "language", fallback="en") if cfg.has_section("Localization") else "en") or "en"
         return PHRASES.get(lang.strip().lower()[:2], PHRASES["en"])[key]
+
+    def _texts_for(self, lang: Optional[str]) -> tuple:
+        """(hint text, restricted text) for the sender's language: the card's own text for that language
+        (message_fr ...), else the standard text in that language. None = the bot's own language (as set)."""
+        if not lang:
+            return self.message, self.restricted_message
+        from .sender_language import own_text
+        cfg = self.bot.config
+        hint, restricted = DEFAULT_TEXTS.get(lang, DEFAULT_TEXTS["en"])
+        return (own_text(cfg, "ChannelHint", "message", lang) or hint,
+                own_text(cfg, "ChannelHint", "restricted_message", lang) or restricted)
 
     async def send_hint(self, message: Any, where: Optional[list] = None, yield_to_bots: bool = False) -> bool:
         """Send a hint unless one went out recently. `where` = channels where the command works.
@@ -413,13 +429,20 @@ class ChannelHint:
         targets = list(where) if restricted else list(self.where)
         # Never point people back at the channel they are in.
         targets = [t for t in targets if _norm(t) != channel]
-        text = self._pick_variant(self.restricted_message if restricted else self.message, (channel, restricted))
+        # in the sender's language when AutoLanguage is on and it is recognised (modules/sender_language.py)
+        try:
+            from .sender_language import detect
+            lang = detect(self.bot.config, getattr(message, "content", "") or "")
+        except Exception:  # noqa: BLE001
+            lang = None
+        hint_text, restricted_text = self._texts_for(lang)
+        text = self._pick_variant(restricted_text if restricted else hint_text, (channel, restricted, lang))
         if targets:
-            text = text.replace("{channels}", join_channels(targets))
+            text = text.replace("{channels}", join_channels(targets, self._phrase("or", lang)))
         elif restricted:
-            text = self._phrase("dm_only")
+            text = self._phrase("dm_only", lang)
         else:
-            text = text.replace("{channels}", self._phrase("any_channel"))
+            text = text.replace("{channels}", self._phrase("any_channel", lang))
 
         if yield_to_bots and self.yield_seconds > 0:
             if now - self._bot_seen.get(channel, 0.0) < self.cooldown:

@@ -222,7 +222,7 @@ async def main():
     check(svc.lock_ts() == S.ts(2026, 10, 3, 14) and svc.valid_codes() == {"VER", "NOR", "LEC", "PIA", "HAM", "RUS", "SAI", "ALO", "GAS", "TSU"}, "sluitingstijd (kwalificatie) en geldige coureurcodes")
 
     # ------------------------------------------------------------- the command
-    CLOCK = [None]   # a fixed "now" for the command (None = the real clock)
+    CLOCK = [S.ts(2026, 9, 21, 10)]   # a fixed "now" for the command (the real clock made the test fail after the race)
     import time as _real_time
     sys.modules[F1Command.__module__].time = types.SimpleNamespace(time=lambda: CLOCK[0] or _real_time.time())
 
@@ -317,7 +317,7 @@ async def main():
     CLOCK[0] = S.ts(2026, 10, 3, 12)
     r = await run("f1 nu")
     check(r[0].startswith("F1: dit kan alleen tijdens een sessie. Over 2:00 uur begint de kwalificatie"), f"korter dan 2 dagen: in uren ({r})")
-    CLOCK[0] = None
+    CLOCK[0] = S.ts(2026, 9, 21, 10)
     svc.snapshot = F.parse(S.states(S.ts(2026, 9, 21, 10)))
     r = await run("f1", service=None)
     check("staat uit" in r[0], "service niet geladen: uitleg")

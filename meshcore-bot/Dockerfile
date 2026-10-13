@@ -13,7 +13,8 @@ WORKDIR /opt/meshcore-bot
 # Pin een vaste release i.p.v. main, zodat een update van de bot niet ongemerkt
 # je add-on breekt. Werk deze tag bij wanneer je bewust wilt upgraden.
 RUN git clone --depth 1 --branch v1.1.0 https://github.com/agessaman/meshcore-bot.git . \
-    && pip3 install --no-cache-dir --break-system-packages -r requirements.txt
+    && pip3 install --no-cache-dir --break-system-packages -r requirements.txt \
+    && pip3 install --no-cache-dir --break-system-packages "langdetect>=1.0.9"
 
 
 # Build-time patches on the upstream source, all in one step. local_patches/ORDER lists them in the order they run,

@@ -693,7 +693,13 @@
     },
     "ping": {
       "response": "Pong! Mere info: skriv test",
-      "description": "Svarer på 'ping' med 'Pong!'"
+      "description": "Svarer på 'ping' med 'Pong!'",
+      "response_full": "Pong @[{sender}]! {info}",
+      "direct": "direkte",
+      "hop_one": "1 hop",
+      "hops": "{n} hop",
+      "via": "via {name}",
+      "travel": "{elapsed} undervejs"
     },
     "dm": {
       "help": "Skriv dm i en kanal: botten sender dig en DM, så du kan bruge den privat fremover (help giver listen).",
@@ -1495,6 +1501,11 @@
     "contact": {
       "help": "Vis bottens kontaktinformation",
       "unavailable": "Kontaktinfo utilgængelig: radioen har ikke rapporteret sin identitet endnu."
+    },
+    "p2000": {
+      "help": "p2000: seneste melding. p2000 3 | p2000 spoed | p2000 <sted> | p2000 vandaag (optælling 24 t). Kun her og via DM.",
+      "none": "Ingen P2000-meldinger kendt endnu.",
+      "none_place": "Ingen P2000-melding fundet for {place}."
     }
   },
   "elapsed": {
@@ -1679,6 +1690,18 @@
         "kmh": "km/t",
         "kn": "kn"
       }
+    },
+    "nlalert": {
+      "prefix": "NL-Alert",
+      "siren": "Sirenetest: første mandag i måneden kl. 12:00. Sirenerne testes, der er ingen fare.",
+      "siren_with_test": "Sirenetest + NL-Alert-testbesked: første mandag kl. 12:00. Det er en test, der er ingen fare."
+    },
+    "p2000": {
+      "summary": "P2000 24 t: brandvæsen {fire} ({fire_p1} hast), ambulance {ambu} ({ambu_p1} A1), politi {police} ({police_p1} P1)"
     }
+  },
+  "greeter_lang": {
+    "greeting": "Velkommen til meshet, @[{sender}]! 👋 |",
+    "mesh_info": "Mesh-info: {total_contacts} kontakter, {repeaters} repeatere, {companions} companions, {recent_activity_24h} aktive på 24 t"
   }
 }

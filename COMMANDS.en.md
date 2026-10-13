@@ -27,7 +27,7 @@ Signs: **DM** = direct message only · **#f1** = in the #f1 channel or by DM · 
 
 | Command | Example | What it does |
 |---|---|---|
-| `ping` | `ping` | Quick check: the bot answers 'Pong!', with a pointer to `test` for more. |
+| `ping` | `ping` | Quick check: the bot answers 'Pong!' with the hops, the repeater it came via, SNR, RSSI and travel time. |
 | `test`<br><sub>also: t</sub> | `test [phrase]` | Connection info of your message: route, bytes per hop (1, 2 or 3), SNR, RSSI and time. |
 | `hello`<br><sub>also: hi, hey, hola, bonjour, ...</sub> | `hello` | Greets you back (robot style). Note: 'hallo' is not one of them. |
 | `help` | `help  /  help 2  /  help dx` | List of commands per page, or help about one command. |
@@ -170,6 +170,7 @@ session starts, for example "The qualifying starts in 2:15 h".
 | `herinner`<br><sub>also: remind</sub> | `herinner 30m pizza  /  herinner 18:30 antenna  /  herinner lijst` | Personal reminder, you get a DM at the time you chose. **DM** |
 | `noodnummers`<br><sub>also: nood</sub> | `noodnummers` | 112 and the regional help numbers. Asked in a channel, the answer comes as a DM. |
 | `aed` | `aed Heerlen` | The nearest AEDs. Asked in a channel, the answer comes as a DM. 🌐 |
+| `p2000` | `p2000`, `p2000 3`, `p2000 spoed`, `p2000 heerlen`, `p2000 vandaag` | Dutch emergency service messages on request: the latest, a place, only urgent ones, or the 24-hour count. Only in the P2000 channel and by DM (card **P2000**). 🌐 |
 | `buien`<br><sub>also: buienradar</sub> | `buien  /  buien Weert` | Rain in the next 2 hours, per 10 minutes (Buienradar). 🌐 |
 | `weerwaarschuwing`<br><sub>also: gladheid</sub> | `weerwaarschuwing` | Current KNMI weather warning. 🌐 |
 | `beving` | `beving` | Recent earthquakes in and around the Netherlands (KNMI). 🌐 |

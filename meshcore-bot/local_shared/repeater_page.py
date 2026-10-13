@@ -134,13 +134,20 @@ def summary(db: Any, key: Optional[str] = None, days: str = "7", now_ts: Optiona
                     """SELECT neighbor_prefix, neighbor_name, snr, secs_ago FROM ha_repeater_neighbors
                        WHERE repeater_key = ? AND recorded_at = ? ORDER BY snr DESC""", (selected, at)).fetchall()
                 info = contact_info(conn, [p for p, _n, _s, _a in rows_nb] + [selected])
+                try:   # names the AnalyzerFeed looked up at the EU Meshcore Analyzer (modules/analyzer_names.py)
+                    from .analyzer_names import names_for
+                    looked = names_for(conn, [p for p, n, _s, _a in rows_nb if not n])
+                except Exception:  # noqa: BLE001
+                    looked = {}
                 home = info.get(selected.lower(), {})
                 here = (home.get("lat"), home.get("lon"))
                 out["neighbors"] = []
                 for p, n, s, a in rows_nb:
                     c = info.get(str(p).lower(), {})
+                    an = "" if (n or c.get("name")) else looked.get(str(p).lower(), "")
                     out["neighbors"].append({
-                        "prefix": p, "name": n or c.get("name", ""), "from_contacts": not n and bool(c.get("name")),
+                        "prefix": p, "name": n or c.get("name", "") or an, "from_contacts": not n and bool(c.get("name")),
+                        "from_analyzer": bool(an),
                         "place": c.get("place", ""), "km": km_between(here, (c.get("lat"), c.get("lon"))),
                         "snr": s, "secs_ago": a})
     return out

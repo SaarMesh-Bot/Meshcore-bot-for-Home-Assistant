@@ -294,6 +294,7 @@ class HARepeaterService(BaseServicePlugin):
                         cur.execute("INSERT INTO ha_repeater_neighbors (recorded_at, repeater_key, neighbor_prefix, neighbor_name, snr, "
                                     "secs_ago, stats_key) VALUES (?,?,?,?,?,?,?)",
                                     (now, r["public_key"], n["prefix"], n["name"], n["snr"], n["secs_ago"], r["stats_key"]))
+                self._merge_short_keys(cur)   # an older reading stored under a prefix joins the full key at once
                 conn.commit()
             for r in fresh:
                 self._last_key[r["public_key"]] = r["stats_key"]

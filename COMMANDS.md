@@ -25,7 +25,7 @@ Tekens: **DM** = alleen via een DM · **#f1** = in het kanaal #f1 of via DM · �
 
 | Commando | Voorbeeld | Wat het doet |
 |---|---|---|
-| `ping` | `ping` | Snelle controle: de bot antwoordt 'Pong!' met de tip dat `test` meer info geeft. |
+| `ping` | `ping` | Snelle controle: de bot antwoordt 'Pong!' met de hops, via welke repeater, SNR, RSSI en looptijd. |
 | `test`<br><sub>ook: t</sub> | `test [zin]` | Verbindingsinfo van je bericht: route, bytes per hop (1, 2 of 3), SNR, RSSI en tijd. |
 | `hello`<br><sub>ook: hi, hey, hola, bonjour, ...</sub> | `hello` | Groet terug (robotstijl). Let op: 'hallo' zit er niet bij. |
 | `help` | `help  /  help 2  /  help dx` | Lijst van commando's per pagina, of uitleg over één commando. |
@@ -168,6 +168,7 @@ volgende sessie begint, bijvoorbeeld "Over 2:15 uur begint de kwalificatie".
 | `herinner`<br><sub>ook: remind</sub> | `herinner 30m pizza  /  herinner 18:30 antenne  /  herinner lijst` | Persoonlijke herinnering, je krijgt een DM op het gekozen moment. **DM** |
 | `noodnummers`<br><sub>ook: nood</sub> | `noodnummers` | 112 en de regionale hulpnummers. In een kanaal gevraagd komt het antwoord als DM. |
 | `aed` | `aed Heerlen` | De dichtstbijzijnde AED's. In een kanaal gevraagd komt het antwoord als DM. 🌐 |
+| `p2000` | `p2000`, `p2000 3`, `p2000 spoed`, `p2000 heerlen`, `p2000 vandaag` | P2000-meldingen op verzoek: de laatste, een plaats, alleen spoed, of de telling van 24 uur. Alleen in het P2000-kanaal en via DM (kaart **P2000**). 🌐 |
 | `buien`<br><sub>ook: buienradar</sub> | `buien  /  buien Weert` | Regen de komende 2 uur, per 10 minuten (Buienradar). 🌐 |
 | `weerwaarschuwing`<br><sub>ook: gladheid</sub> | `weerwaarschuwing` | Actuele KNMI-weerwaarschuwing. 🌐 |
 | `beving` | `beving` | Recente aardbevingen in en rond Nederland (KNMI). 🌐 |

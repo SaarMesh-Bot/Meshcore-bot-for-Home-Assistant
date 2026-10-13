@@ -1070,7 +1070,13 @@
       "pointer": "Les jeux, c'est dans {channel}"
     },
     "ping": {
-      "response": "Pong ! Plus d'infos : tapez test"
+      "response": "Pong ! Plus d'infos : tapez test",
+      "response_full": "Pong @[{sender}] ! {info}",
+      "direct": "direct",
+      "hop_one": "1 saut",
+      "hops": "{n} sauts",
+      "via": "via {name}",
+      "travel": "{elapsed} en route"
     },
     "dm": {
       "help": "Tapez dm dans un canal : le bot vous envoie un DM, vous pouvez ensuite l'utiliser en privé (help donne la liste).",
@@ -1290,6 +1296,11 @@
       "ago_h": "{n} h",
       "ago_d": "{n} j",
       "error": "Un souci avec le courrier, réessaie dans un moment."
+    },
+    "p2000": {
+      "help": "p2000 : dernier message. p2000 3 | p2000 spoed | p2000 <lieu> | p2000 vandaag (bilan 24 h). Seulement ici et par MP.",
+      "none": "Aucun message P2000 connu pour l'instant.",
+      "none_place": "Aucun message P2000 trouvé pour {place}."
     }
   },
   "common": {
@@ -1389,6 +1400,18 @@
         "kmh": "km/h",
         "kn": "nd"
       }
+    },
+    "nlalert": {
+      "prefix": "NL-Alert",
+      "siren": "Test des sirènes : premier lundi du mois, 12h00. Les sirènes sont testées, il n'y a aucun danger.",
+      "siren_with_test": "Test des sirènes + message test NL-Alert : premier lundi, 12h00. C'est un test, aucun danger."
+    },
+    "p2000": {
+      "summary": "P2000 24 h : pompiers {fire} ({fire_p1} urgents), ambulance {ambu} ({ambu_p1} A1), police {police} ({police_p1} P1)"
     }
+  },
+  "greeter_lang": {
+    "greeting": "Bienvenue sur le mesh, @[{sender}] ! 👋 |",
+    "mesh_info": "Infos mesh : {total_contacts} contacts, {repeaters} répéteurs, {companions} compagnons, {recent_activity_24h} actifs en 24 h"
   }
 }

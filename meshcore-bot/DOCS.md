@@ -25,7 +25,7 @@ The original project is the reference for the bot's own commands and settings; t
    - **Bot → Admin public keys**: your own 64-character public key (from your MeshCore app).
    - The **Webhook** card on the dashboard's **Plugins** page (off on a new installation): switch it on and set a secret token, otherwise anyone
      on your network can post to the mesh. And **Web viewer → Password**, unless you close the port with *Reachable from the network*.
-4. Start the add-on and check the **Log** tab. Send `ping` on one of the channels; the bot answers `Pong!`.
+4. Start the add-on and check the **Log** tab. Send `ping` on one of the channels; the bot answers `Pong!` with how your message arrived.
 5. **Open Web UI** shows the dashboard, and so does **MeshCore Bot** in the Home Assistant sidebar.
 
 The bot name always gets `|🤖` at the end, so people can see it is a bot.
@@ -220,6 +220,37 @@ neighbour meshcore-ha gives no name gets its name there too, marked *contacts*).
 (for example `ch2_current` / `ch2_voltage` of a charge controller, or `ch1_temperature`) gets its own tile and chart, with
 the unit meshcore-ha gives; nothing appears for values a repeater does not report.
 
+### NL-Alert and the siren test
+
+**P2000** (card on the Plugins page, off by default; needs a restart) brings Dutch emergency-service call-outs (P2000) to the mesh
+with as little airtime as possible. It reads the public AlarmeringDroid API (the same source as Home Assistant's p2000_nl
+integration) for the *Regions* on the card (P2000 region numbers, e.g. `21` for Zuid-Limburg) and keeps the last days in the bot's
+database. In the card's *Channel* it posts only **priority-1** messages (P1, A1, "met spoed"), at most *At most per hour*, never one
+older than half an hour, and once a day (*Daily count at*, default 12:00) how often the fire brigade, ambulance and police were
+called out in the last 24 hours. Everything else is there on request with the `p2000` command (`p2000`, `p2000 3`, `p2000 spoed`,
+`p2000 heerlen`, `p2000 vandaag`), which works only in that channel and by DM. If you posted P2000 from a Home Assistant automation
+before, switch that automation off, or every message is posted twice.
+
+**NLAlert** (card on the Plugins page, off by default; needs a restart) posts the Dutch government's NL-Alert warnings in a
+channel, default `#nlalert`; several are possible, comma-separated (`#nlalert, #limburg`). AutoChannels makes hashtag
+channels on the radio. Which warnings:
+
+- **Provinces**: comma-separated, e.g. `Limburg` or `Limburg, Noord-Brabant`. The province of a warning is looked up once
+  from the middle of its area (OpenStreetMap, the same service the weather commands use).
+- **Also within (km)**: warnings whose area comes this close to the bot, handy near a provincial border. 0 = off.
+- Both empty/0 = every warning in the Netherlands.
+
+Only the Dutch text is posted, prefixed with "NL-Alert", at most 3 messages. When the authorities send the same text again
+(an extension) it is not posted twice; after a restart nothing old is posted. Source: the public NL-Alert feed
+(`api.public-warning.app`, the one the NL-Alert app uses), checked every 2 minutes; nothing is sent when there is no warning.
+
+**Siren test notice** (on by default on the card): every first Monday of the month at 12:00 a short message that the sirens
+are being tested and nothing is wrong. Not on New Year's Day, Easter Monday, King's Day, 4 and 5 May or Whit Monday (the
+sirens are not tested then); in June and December it also mentions NL-Alert's own test message. The sirens stop on
+1 January 2028, the notices then stop too.
+
+The mesh is an extra way to hear about a warning, not the official one: messages can be late or get lost.
+
 ### MQTT observers
 
 **ObserverFeed** (card on the Plugins page, off by default; needs a restart) listens to MeshCore *observers*: radios that
@@ -233,6 +264,20 @@ firmware, packets per hour (adverts, group messages, other) with a chart, averag
 it heard. Group messages an observer hears also count on the Channel radar; a message heard both by the bot's radio and
 by an observer counts once. The service only listens: nothing is published, nothing is sent over the radio, and message
 texts are never decrypted. Data older than 30 days is removed.
+
+**Without a broker of your own: AnalyzerFeed.** The public **EU Meshcore Analyzer** (meshcore-analyzer.eu; the same data
+on cornmeister.nl and analyzer.meshcorenetz.de) collects what thousands of observers hear from all the big brokers and
+shows it without an account. On the **AnalyzerFeed** card (off by default; needs a restart) fill in the **Regions** you
+want, the region codes (IATA) the observers use, e.g. `MST` (South Limburg), or `MST, LGG, EIN`; the codes in use are on
+the analyzer's website. Every 5 minutes the bot reads those observers (online/offline, model, firmware) and every minute
+the new packets they heard. Radar -> Observers shows the observers and one row per region (**"MST · EU Analyzer"**) with
+all of the region's traffic: packets, adverts, group messages and the nodes heard there (packet counts per single
+observer are not in the analyzer's region view). Their group messages count on the Channel radar too, once per packet.
+Only reads; nothing is published or sent over the radio. It is a free community service: keep the defaults slow.
+With **Look up unknown names** (on with the card, also without regions) neighbours in your repeaters' neighbour lists
+that only have a key prefix (`a1b2c3`) get their name from the analyzer; the Repeater page marks them *analyzer*. At most
+20 lookups an hour and each prefix once a week; prefixes shorter than 6 characters are never asked (hundreds of nodes
+share them). The **Analyzer** field takes any site of the analyzer, for example `https://cornmeister.nl`.
 
 ### Heartbeat: is the bot alive?
 
@@ -262,7 +307,7 @@ action:
 
 **AutoLanguage** (card on the Plugins page, off by default; needs a restart) makes the bot answer in the language someone actually typed,
 instead of always the one fixed language from `Bot > Language of the replies` above. It detects the language from the message itself (a short
-keyword list for greetings such as "hallo"/"hola"/"danke", and, when the optional `langdetect` package is installed, longer free text too) and,
+keyword list for greetings such as "bonjour"/"hola"/"danke", and `langdetect` (installed in the add-on) for messages of more than two words) and,
 for the duration of that one reply, swaps in the matching translator — then switches back. No extra airtime: only the text of the reply changes.
 
 It applies to every command, upstream's built-in ones and this add-on's own extra commands alike, and only ever answers in a language a
@@ -272,6 +317,13 @@ translation actually exists for (upstream ships `nl`, `en`, `de`, `fr`, `es`, `p
 Two places keep a *fixed* language on purpose, since their message has no sender to detect a language from: the **F1** service's scheduled
 channel posts (its own `Language` setting on the Plugins card) and **info bot**'s DM reply (its own `Language` setting). The `f1` command itself
 (`f1`, `f1 stand`, ...) is a normal command and does use AutoLanguage like everything else.
+
+The **greeting** (Greeter card) and the **channel hint** (ChannelHint card) follow AutoLanguage too, although no command is involved:
+someone whose message is in French gets the French greeting and hint. Each card has a field per language ("Greeting in French",
+"Hint text in French"); empty = a standard text in that language, so your own text in the bot's language stays as it is for everyone
+else. Single command words such as `test` or `ping` give no clue about the language and keep the bot's language, and a word that is
+normal in several languages ("hallo" is Dutch, German and Danish) never switches away from the bot's own language. The list of channels
+in a hint uses the matching word ("#bot or #test", "#bot of #test", "#bot ou #test").
 
 ### Formula 1 channel
 
@@ -407,6 +459,10 @@ For a busy channel where the bot should listen but not run commands, typically t
   switching it on the bot first listens for *rollout_days* (default 7) and marks everyone who is active as already greeted, so a busy
   channel is not greeted all at once. In that card's *Other config values*: `dead_air_delay_seconds` (wait before greeting, seconds) and
   `defer_to_human_greeting` (skip the greeting if someone already welcomed the newcomer by name). **The greeter never greets other bots.**
+  *Send the greeting as*: **a DM to the new person** (the default) or a message in the channel. A DM keeps the public channel
+  quiet; it goes to the contact on the radio with the newcomer's name (a channel message has no key), and the newcomer needs the bot
+  as a contact to read it. *When the DM cannot be sent*: greet in the channel after all (default) or send nothing. Either way the person
+  counts as greeted, so the bot never tries again.
   *Include mesh info* adds counts (*Mesh info format*, fields `{total_contacts}`, `{repeaters}`, `{companions}`,
   `{recent_activity_24h}`); `\n` is a new line, and a greeting that ends in `|` gives the mesh info its own part. A `|` only
   starts a new message when needed: parts that fit together (up to 130 bytes) are sent as one message, one line each.
@@ -452,7 +508,8 @@ You do not get a switch per command. Two lists do the same job:
 
 - **Extra commands to enable**: commands that are off by default (`airplanes`, `worldcup`).
 - **Commands to disable**: command names to switch off, for example `dadjoke`, `quiz`, `hangman`.
-  The bot then answers that the command is disabled. This works for commands that read an `enabled`
+  The bot then stays silent when someone uses it, as if the command did not exist (also no channel hint). This works
+  for commands that read an `enabled`
   setting in their own `[Name_Command]` section, which is the case for the standard commands and
   the extra commands below.
 
@@ -496,6 +553,11 @@ Commands for everyone on the mesh. Each has a card on the Plugins page with an o
   When the list of names changes, the days still in the packet log (about 3) are counted again. It
   never decrypts anything and sends nothing. Messages on channels it cannot name (private channels, unknown names) are
   counted by channel byte. Private channels that are not on your radio stay unknown. Add names you suspect on the **ChannelRadar** card (on by default).
+- **Channel radar, community channel list:** with *Community channel list* on (ChannelRadar card, off by default) the bot
+  fetches once a day the list of about 2000 hashtag channels seen across Europe (EU Meshcore Analyzer; the Dutch MeshCore
+  toolbox shows the same list, its address can be set on the card) and recognises them, also back through the packet log.
+  Like the generated names, such a channel shows from 2 messages: with that many names the short check code now and then
+  matches a private message by chance. Only the names are kept.
 - **Games channel** (card **GamesChannel**, off by default): fill in a channel (for example `#games`, also under *Bot >
   Channels to listen on*) and the game commands on the card's list (quiz, hangman, stem, peiling/kies, checkin, karma,
   voorspel) only run there. Elsewhere they stay silent, or answer "Games are played in #games" when *Point to the games
@@ -573,7 +635,10 @@ Commands for everyone on the mesh. Each has a card on the Plugins page with an o
   the games channel, best price first, only on days with an open order.
 - **Install count** (card **InstallCount**, **on by default**): once a day the bot sends one retained MQTT message to
   the network's server (`mqtt.vipje.nl`) under `meshcore-bot-ha/count/v1/<random id>`: `{"v": <add-on version>, "d":
-  <date>}`. The id is a random number made at the first start and kept in the bot's database; it does not come from the
+  <date>, "l": <bot language>, "a": <processor type>, "c": <serial/ble/tcp>, "p": [<cards switched on>], "o": [<cards
+  switched off>], "i": <days since installation>, "e": <errors yesterday>, "w": <warnings yesterday>}` (the two numbers
+  from the Problems page, nothing of the messages themselves). The card names are the section names from the add-on's own code (e.g. `P2000`, `F1_Command`); a section
+  you add yourself in `override.ini` is never sent, and neither are names, keys, channels or addresses. The id is a random number made at the first start and kept in the bot's database; it does not come from the
   radio, the bot's name or any key. Nothing from the mesh is sent and it uses no airtime; the server sees the IP address,
   as with any connection. Switch the card off and nothing is sent (takes effect after a restart).
 - **Problems page** (Settings -> Problems; card **ProblemLog**, on): warnings and errors of the bot, grouped per kind
@@ -660,7 +725,8 @@ Commands for everyone on the mesh. Each has a card on the Plugins page with an o
 - **Keyword replies**: one `keyword = "reply"` per entry. Placeholders: `{sender}`, `{connection_info}` (route, bytes per
   hop when known, SNR, RSSI), `{bytes_per_hop}` (1, 2 or 3), `{hops}`, `{timestamp}`, `{phrase_part}`. `help` is handled before
   keywords, so a `help` keyword is never used: set your own help text on the **help** card instead. Without a `ping` keyword,
-  `ping` answers "Pong!" with a pointer to `test`, in the bot's language.
+  `ping` answers "Pong!" with the hops, the repeater it came via, SNR, RSSI, travel time and the bot's time, in the
+  sender's language (unknown parts are left out).
 - **Extra config lines**: one `Section.key = value` per entry, applied last, so it wins over every
   other option. Any setting of the bot can be set this way, see
   [config.ini.example](https://github.com/agessaman/meshcore-bot/blob/main/config.ini.example).

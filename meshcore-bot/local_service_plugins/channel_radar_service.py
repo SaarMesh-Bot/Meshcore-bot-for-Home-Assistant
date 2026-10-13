@@ -15,7 +15,8 @@ import time
 from datetime import timedelta
 from typing import Any, Optional
 
-from ..channel_radar import (DEFAULT_NAMES, build_table, card_keys, dashboard_keys, dashboard_names, ensure_tables, generated_names, identify, names_signature, radio_channels,
+from ..channel_radar import (COMMUNITY_META, COMMUNITY_URL, DEFAULT_NAMES, build_table, card_keys, community_names, dashboard_keys,
+                             dashboard_names, ensure_tables, generated_names, identify, names_signature, parse_community, radio_channels,
                              radio_signature, record)
 from ..mesh_community import day_start_ts, local_day, table_exists
 from .base_service import BaseServicePlugin
@@ -41,6 +42,12 @@ class ChannelRadarService(BaseServicePlugin):
          "help": ("Channels without # have their own key; when it is shared openly (a forum, a website, a group) the radar can "
                   "recognise them too. One entry per channel: Name=key, the key as 32 hex characters (in the MeshCore app: "
                   "the channel's secret). They are only counted, never decrypted.")},
+        {"key": "community_list", "label": "Community channel list", "type": "bool", "default": False,
+         "help": ("Once a day fetch the list of hashtag channels seen across Europe (about 2000 names; the same list as the "
+                  "EU Meshcore Analyzer and the Dutch MeshCore toolbox show), so the radar recognises them at once. Only the "
+                  "names are kept.")},
+        {"key": "community_url", "label": "Community list address", "type": "str", "default": COMMUNITY_URL,
+         "help": "Where the list comes from (https). The Dutch MeshCore toolbox: https://toolbox.dutchmeshcore.nl/channels-data"},
     ]
 
     def __init__(self, bot: Any):
@@ -55,6 +62,11 @@ class ChannelRadarService(BaseServicePlugin):
         self.table, self.signature = build_table(self._main, self._gen), self._names_sig
         self._seen: dict = {}
         self._ready = False
+        has = cfg.has_section(self.config_section)
+        self.community = has and cfg.getboolean(self.config_section, "community_list", fallback=False)
+        url = (cfg.get(self.config_section, "community_url", fallback=COMMUNITY_URL) if has else COMMUNITY_URL) or COMMUNITY_URL
+        self.community_url = url.strip() if url.strip().startswith("https://") else COMMUNITY_URL
+        self._community_at = 0.0
         self._task: Optional[asyncio.Task] = None
 
     async def start(self) -> None:
@@ -70,8 +82,34 @@ class ChannelRadarService(BaseServicePlugin):
             self._task.cancel()
             self._task = None
 
+    async def fetch_community(self) -> int:
+        """The community channel list (names only) into bot_metadata; the next scan recognises them."""
+        import aiohttp
+        import json as _json
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60),
+                                         headers={"User-Agent": "meshcore-bot-ha ChannelRadar (names only)"}) as s:
+            async with s.get(self.community_url) as r:
+                r.raise_for_status()
+                data = await r.json(content_type=None)
+        names = parse_community(data)
+        if len(names) < 10:
+            raise ValueError(f"lijst te kort ({len(names)} namen)")
+        if names != community_names(self.bot.db_manager):
+            self.bot.db_manager.set_metadata(COMMUNITY_META, _json.dumps(names))
+        return len(names)
+
     async def _loop(self) -> None:
         while self._running:
+            if self.community and time.time() - self._community_at > 24 * 3600:
+                self._community_at = time.time()
+                try:
+                    n = await self.fetch_community()
+                    self.logger.info("Kanaalradar: kanalenlijst van de community opgehaald (%d namen)", n)
+                except asyncio.CancelledError:
+                    raise
+                except Exception as e:  # noqa: BLE001
+                    self._community_at = time.time() - 23 * 3600     # try again in an hour
+                    self.logger.info("Kanaalradar: kanalenlijst van de community niet opgehaald: %s", e)
             try:
                 await asyncio.to_thread(self.scan)
             except asyncio.CancelledError:
@@ -101,6 +139,8 @@ class ChannelRadarService(BaseServicePlugin):
         except Exception:  # noqa: BLE001
             shared = []
         shared = shared + dashboard_names(db)       # names added on the radar page ('Name it'), no restart needed
+        if self.community:
+            shared = shared + community_names(db)   # the community channel list (card option), fetched daily
         rsig = radio_signature(radio) + ("." + names_signature(shared) if shared else "")
         if rsig != self._radio_sig:
             self._radio_sig = rsig

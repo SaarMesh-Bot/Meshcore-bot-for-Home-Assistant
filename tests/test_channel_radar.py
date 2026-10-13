@@ -288,5 +288,31 @@ with db6.connection() as c:
 check(counts == {yday.isoformat(): 5, today.isoformat(): 2},
       f"opnieuw tellen: de eerste, halve dag van het logboek houdt zijn telling, hele dagen worden opnieuw geteld ({counts})")
 
+# ---------------------------------------------------------------- community channel list (names only)
+an = {"channels": [{"name": "#Hoorn-Chat", "lastMessage": "geheim", "lastSender": "Piet"}, {"name": "public"}, {"name": "#a b"},
+                   {"name": "#hoorn-chat"}]}
+tb = [{"channel": "#twente-zuid", "last_message": "x"}, {"channel": "public"}]
+check(R.parse_community(an) == ["hoorn-chat"] and R.parse_community(tb) == ["twente-zuid"], "lijst gelezen (analyzer en toolbox), alleen geldige namen")
+db10 = DB(f"{tmp}/bot10.db")
+k_comm = R.key_for_name("community-kanaal-z")
+add_packet(db10, now - 300, group_payload(k_comm, os.urandom(20)), "KKK1")
+off = ChannelRadarService(make_bot(db10))
+db10.set_metadata("radar.community_names", json.dumps(["community-kanaal-z"]))
+off.scan(now)
+check(not [c for c in R.summary(make_bot(db10), now)["channels"] if c["label"] == "#community-kanaal-z" and c["month"]], "kaartoptie uit: lijst niet gebruikt")
+on = ChannelRadarService(make_bot(db10, {"community_list": "true"}))
+check(on.community and on.community_url.startswith("https://"), "kaartoptie aan")
+on.scan(now + 60)
+got = {c["label"]: c["month"] for c in R.summary(make_bot(db10, {"community_list": "true"}), now + 60)["channels"]}
+check("#community-kanaal-z" not in got, f"één bericht kan toeval zijn: nog niet getoond ({got})")
+add_packet(db10, now + 70, group_payload(k_comm, os.urandom(20)), "KKK2")
+on.scan(now + 80)
+rows10 = {c["label"]: c for c in R.summary(make_bot(db10, {"community_list": "true"}), now + 80)["channels"]}
+check(rows10.get("#community-kanaal-z", {}).get("month") == 2 and not rows10["#community-kanaal-z"]["found"],
+      f"vanaf 2 berichten herkend (ook terug door het logboek), zonder label 'found' ({rows10.get('#community-kanaal-z')})")
+check("geheim" not in json.dumps(R.parse_community(an)), "berichten en afzenders uit de lijst worden niet bewaard")
+bad_url = ChannelRadarService(make_bot(db10, {"community_list": "true", "community_url": "http://x.example/list"}))
+check(bad_url.community_url == R.COMMUNITY_URL, "geen https: standaardadres")
+
 print(f"\n{len(fails)} fouten")
 sys.exit(1 if fails else 0)

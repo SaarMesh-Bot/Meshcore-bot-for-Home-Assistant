@@ -177,6 +177,14 @@ svc.minutes = 0
 check(asyncio.run(svc.maybe_run(now + 180)) is None, "minuten van dit uur op: wachten tot het volgende rustige uur")
 st = R.summary(make_bot(db2), now)["name_hunt"]
 check(st["found"] and st["quiet_hours"], f"status voor de radarpagina ({sorted(st)})")
+with db2.connection() as c:   # counted back through the log, as the radar does: an old first day
+    c.execute("INSERT OR REPLACE INTO channel_radar (day, label, messages, last_ts) VALUES (date('now', '-10 days'), '#nl-hrf01-chat', 2, ?)", (int(now) - 864000,))
+    c.execute("INSERT OR REPLACE INTO channel_radar (day, label, messages, last_ts) VALUES (date('now'), '#nl-hrf01-chat', 1, ?)", (int(now),))
+    c.commit()
+rows = {c["label"]: c for c in R.summary(make_bot(db2), now)["channels"]}
+check(rows.get("#nl-hrf01-chat", {}).get("hunted") is True, f"gevonden kanaal krijgt het label nieuw op de radar ({rows.get('#nl-hrf01-chat')})")
+rows_later = {c["label"]: c for c in R.summary(make_bot(db2), now + 3 * 86400)["channels"]}
+check(not rows_later.get("#nl-hrf01-chat", {}).get("hunted"), "na twee dagen niet meer nieuw")
 svc2 = S.NameHuntService(make_bot(DB()))
 svc2.hours = 1
 svc2.bot.config["NameHunt"]["hours"] = "1"

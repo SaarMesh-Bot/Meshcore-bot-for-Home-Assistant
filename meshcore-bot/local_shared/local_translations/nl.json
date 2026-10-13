@@ -1070,7 +1070,13 @@
       "pointer": "Spellen spelen we in {channel}"
     },
     "ping": {
-      "response": "Pong! Meer info: typ test"
+      "response": "Pong! Meer info: typ test",
+      "response_full": "Pong @[{sender}]! {info}",
+      "direct": "direct",
+      "hop_one": "1 hop",
+      "hops": "{n} hops",
+      "via": "via {name}",
+      "travel": "{elapsed} onderweg"
     },
     "dm": {
       "help": "Typ dm in een kanaal: de bot stuurt je een DM, dan kun je hem daarna privé gebruiken (help geeft de lijst).",
@@ -1290,6 +1296,11 @@
       "ago_h": "{n} u",
       "ago_d": "{n} d",
       "error": "Er ging iets mis met de post, probeer het zo nog eens."
+    },
+    "p2000": {
+      "help": "p2000: laatste melding. p2000 3 | p2000 spoed | p2000 <plaats> | p2000 vandaag (telling 24 u). Alleen hier en via DM.",
+      "none": "Nog geen P2000-meldingen bekend.",
+      "none_place": "Geen P2000-melding gevonden voor {place}."
     }
   },
   "common": {
@@ -1389,6 +1400,18 @@
         "kmh": "km/u",
         "kn": "kn"
       }
+    },
+    "nlalert": {
+      "prefix": "NL-Alert",
+      "siren": "Sirenetest: het is de eerste maandag van de maand, 12:00. De sirenes worden getest, er is niets aan de hand.",
+      "siren_with_test": "Sirenetest + NL-Alert-controlebericht: eerste maandag, 12:00. Dit is een test, er is niets aan de hand."
+    },
+    "p2000": {
+      "summary": "P2000 24 u: brandweer {fire} ({fire_p1} spoed), ambulance {ambu} ({ambu_p1} A1), politie {police} ({police_p1} P1)"
     }
+  },
+  "greeter_lang": {
+    "greeting": "Welkom op de mesh, @[{sender}]! 👋 |",
+    "mesh_info": "Mesh info: {total_contacts} contacten, {repeaters} repeaters, {companions} companions, {recent_activity_24h} actief in 24 u"
   }
 }

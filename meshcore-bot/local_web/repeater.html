@@ -149,10 +149,13 @@
     }
     function telDigits(k) { return /current/.test(k) ? 3 : 2; }
 
+    // dates and times in the bot's language (the dashboard sets <html lang>), else the browser's
+    function loc() { return document.documentElement.getAttribute('lang') || undefined; }
+
     function tickLabel(ms) {
         const dt = new Date(ms);
-        if (state.days === '1') return dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        return dt.toLocaleDateString([], { day: 'numeric', month: 'short' });
+        if (state.days === '1') return dt.toLocaleTimeString(loc(), { hour: '2-digit', minute: '2-digit' });
+        return dt.toLocaleDateString(loc(), { day: 'numeric', month: 'short' });
     }
 
     function chart(id, values, unit, digits) {
@@ -163,9 +166,11 @@
     function chartPoints(id, points, unit, digits) {
         const ink = getComputedStyle(document.body).color || '#888';
         const grid = 'rgba(128,128,128,0.18)';
+        // with only a few readings a line alone shows nothing (one point): draw the points too
+        const few = points.filter(function (p) { return p.y !== null && p.y !== undefined; }).length < 30;
         const cfg = {
             type: 'line',
-            data: { datasets: [{ data: points, borderColor: LINE, backgroundColor: LINE, borderWidth: 2, pointRadius: 0,
+            data: { datasets: [{ data: points, borderColor: LINE, backgroundColor: LINE, borderWidth: 2, pointRadius: few ? 3 : 0,
                                  pointHoverRadius: 5, pointHitRadius: 12, spanGaps: false, tension: 0.2 }] },
             options: {
                 responsive: true, maintainAspectRatio: false, animation: false, parsing: false,
@@ -173,7 +178,7 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: { callbacks: {
-                        title: function (items) { return items.length ? new Date(items[0].parsed.x).toLocaleString() : ''; },
+                        title: function (items) { return items.length ? new Date(items[0].parsed.x).toLocaleString(loc()) : ''; },
                         label: function (item) { return item.parsed.y === null ? 'no value' : Number(item.parsed.y).toFixed(digits) + ' ' + unit; }
                     } }
                 },
@@ -230,6 +235,10 @@
                 const tag = el('span', 'contacts', 'badge bg-secondary ms-2');
                 tag.title = 'meshcore-ha gives no name; found in the bot\'s Contacts by key prefix';
                 nameCell.appendChild(tag);
+            } else if (n.from_analyzer) {
+                const tag = el('span', 'analyzer', 'badge bg-secondary ms-2');
+                tag.title = 'Name looked up at the EU Meshcore Analyzer (card AnalyzerFeed)';
+                nameCell.appendChild(tag);
             }
             tr.appendChild(nameCell);
             const where = [n.place || '', (n.km === null || n.km === undefined) ? '' : n.km.toFixed(1) + ' km'].filter(Boolean).join(' · ');
@@ -270,8 +279,13 @@
             renderTiles(d);
             renderCharts();
             renderNeighbours(d);
-            document.getElementById('rp-updated').textContent = 'Updated ' + new Date(d.generated_at * 1000).toLocaleTimeString() +
-                ' · ' + d.series.t.length + ' readings in this period';
+            const upd = document.getElementById('rp-updated');
+            upd.replaceChildren();
+            const a = document.createElement('span');
+            a.textContent = 'Updated ' + new Date(d.generated_at * 1000).toLocaleTimeString(loc());
+            const b = document.createElement('span');
+            b.textContent = ' · ' + d.series.t.length + ' readings in this period';
+            upd.append(a, b);
         }).catch(function (e) {
             say('Could not load the repeater data: ' + e.message);
         });

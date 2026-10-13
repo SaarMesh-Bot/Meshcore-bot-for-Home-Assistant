@@ -94,7 +94,15 @@ async def main():
     with db.connection() as c:
         keys = [r[0] for r in c.execute("SELECT DISTINCT repeater_key FROM repeater_telemetry").fetchall()]
     check(keys == [F.KEY], f"oude rij onder het sleutelbegin samengevoegd bij de start ({keys})")
-    with db.connection() as c: c.execute("DELETE FROM repeater_telemetry WHERE stats_key IN ('oud', '2026-09-21T21:30:00')"); c.commit()
+    with db.connection() as c:   # a row under the prefix while the bot runs: merged with the next stored reading, no restart
+        c.execute("INSERT INTO repeater_telemetry (recorded_at, repeater_key, repeater_name, battery_mv, stats_key) VALUES (?,?,?,?,?)",
+                  (int(time.time()) - 30, F.PFX, F.NAME, 3900, "oud2")); c.commit()
+    rep2 = dict(s.repeaters[F.PFX]); rep2["stats_key"] = "2026-09-21T22:30:00"
+    s._store([rep2])
+    with db.connection() as c:
+        keys = [r[0] for r in c.execute("SELECT DISTINCT repeater_key FROM repeater_telemetry").fetchall()]
+    check(keys == [F.KEY], f"rij onder sleutelbegin samengevoegd bij de volgende meting, zonder herstart ({keys})")
+    with db.connection() as c: c.execute("DELETE FROM repeater_telemetry WHERE stats_key IN ('oud', 'oud2', '2026-09-21T21:30:00', '2026-09-21T22:30:00')"); c.commit()
     s._last_key[F.KEY] = "2026-09-21T20:30:00"
     s2 = HARepeaterService(bot); s2._ensure_tables()
     check(s2._last_key.get(F.KEY) == "2026-09-21T20:30:00", "na een herstart weet de service wat al is opgeslagen")

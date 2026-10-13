@@ -222,3 +222,9 @@ patch_local_languages.py
 
 # Dashboard users (admin / read-only viewer, per-user pages and repeaters) and the dashboard in the bot language.
 patch_webviewer_users.py
+
+# Greeter: the greeting in the language of the person greeted (AutoLanguage on).
+patch_greeter_language.py
+
+# Greeter: the greeting as a DM to the new person (card option, default DM; fallback channel or nothing).
+patch_greeter_dm.py

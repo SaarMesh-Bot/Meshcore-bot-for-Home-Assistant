@@ -338,6 +338,16 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
     # ObserverFeed: MeshCore observers on an MQTT broker (meshcore/{IATA}/{KEY}/packets). Off: needs the owner's broker.
     cfg["ObserverFeed"] = {"enabled": "false", "host": "", "port": "1883", "tls": "false", "username": "", "password": "",
                            "topic": "meshcore/#"}
+    # AnalyzerFeed: observers of chosen regions from the public EU Meshcore Analyzer (modules/observers.py). Off, no regions.
+    cfg["AnalyzerFeed"] = {"enabled": "false", "regions": "", "url": "https://meshcore-analyzer.eu", "packets": "true",
+                           "observers_minutes": "5", "packets_seconds": "60"}
+    # P2000: only priority-1 call-outs in a channel, a daily count, the p2000 command for the rest (modules/p2000.py). Off.
+    cfg["P2000"] = {"enabled": "false", "regions": "", "channel": "#p2000", "post_priority1": "true", "max_per_hour": "4",
+                    "daily_summary": "true", "summary_time": "12:00", "poll_seconds": "60"}
+
+    # NLAlert: NL-Alert warnings and the monthly siren test in a channel (modules/nl_alert.py). Off.
+    cfg["NLAlert"] = {"enabled": "false", "channel": "#nlalert", "provinces": "", "radius_km": "0", "siren_test": "true",
+                      "poll_seconds": "120"}
     # RepeaterWatch: a directly heard repeater that goes silent is reported (Notifications + Home Assistant). On.
     # Setup: the first-start wizard on the dashboard (a banner until it is done). Only a new installation starts at
     # "false"; an update of an existing installation gets "true" (see merge_with_existing).
@@ -425,7 +435,7 @@ STATE_FILE = "generated_keys.json"
 # it was rewritten on every start until 2.6.1.
 MOVED_SECTIONS = {"Notifications", "ContactCleanup", "RoomServer_Login", "HomeAssistantBridge",
                   "Webhook", "ChannelHint", "Greeter_Command", "HARepeater", "F1", "F1_Command", "Heartbeat",
-                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox", "NameHunt", "ObserverFeed"}
+                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox", "NameHunt", "ObserverFeed", "NLAlert", "AnalyzerFeed", "P2000"}
 # Never removed by the "generated last time but not now" cleanup: the moved sections, and the scheduled
 # messages (the dashboard's Schedule page owns them since 2.8.0; the old announcement option is gone).
 KEEP_SECTIONS = MOVED_SECTIONS | {"Scheduled_Messages"}

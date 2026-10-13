@@ -117,6 +117,16 @@ async def main():
     assert cm._missing_expected_channels() == ["#bot"]
     cm._stop_channel_watchdog()
 
+    # --- F. 'Home Bot' van de radio gehaald en zijn plek (1) hergebruikt: meteen niet meer gezocht, geen waarschuwingen
+    radio_f = dict(FULL); radio_f[1] = "#nl-alert"
+    store_f = {KEY: json.dumps({str(k): v for k, v in FULL.items()}, sort_keys=True)}
+    cm, bot = make(store_f, radio_f)
+    await cm.fetch_channels()
+    print("F  plek 1 nu #nl-alert, ontbreekt:", cm._missing_expected_channels())
+    assert cm._missing_expected_channels() == []
+    assert await settle(cm, lambda: "#nl-alert" in store_f[KEY] and "Home Bot" not in store_f[KEY])
+    cm._stop_channel_watchdog()
+
     # --- E. herstart: oude taak stopt, geen dubbele taken
     cm, bot = make({}, FULL)
     await cm.fetch_channels()

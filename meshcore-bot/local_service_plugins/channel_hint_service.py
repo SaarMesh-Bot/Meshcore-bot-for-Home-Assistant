@@ -34,6 +34,21 @@ class ChannelHintService(BaseServicePlugin):
          "default": "",
          "help": ("Empty = a standard text in the bot's language. Sent when someone uses a command in a channel outside that command's own channel list. Several texts "
                   "separated by || are picked at random, like the hint text.")},
+        {"key": "message_nl", "label": "Hint text in Dutch", "type": "str", "default": "",
+         "help": ("Only with AutoLanguage on: for someone who writes in Dutch (the bot recognises greetings and sentences, "
+                  "not single command words like test). Empty = the standard Dutch text. Not used when Dutch is the bot's own language.")},
+        {"key": "message_en", "label": "Hint text in English", "type": "str", "default": "",
+         "help": ("Only with AutoLanguage on: for someone who writes in English (the bot recognises greetings and sentences, "
+                  "not single command words like test). Empty = the standard English text. Not used when English is the bot's own language.")},
+        {"key": "message_de", "label": "Hint text in German", "type": "str", "default": "",
+         "help": ("Only with AutoLanguage on: for someone who writes in German (the bot recognises greetings and sentences, "
+                  "not single command words like test). Empty = the standard German text. Not used when German is the bot's own language.")},
+        {"key": "message_fr", "label": "Hint text in French", "type": "str", "default": "",
+         "help": ("Only with AutoLanguage on: for someone who writes in French (the bot recognises greetings and sentences, "
+                  "not single command words like test). Empty = the standard French text. Not used when French is the bot's own language.")},
+        {"key": "message_da", "label": "Hint text in Danish", "type": "str", "default": "",
+         "help": ("Only with AutoLanguage on: for someone who writes in Danish (the bot recognises greetings and sentences, "
+                  "not single command words like test). Empty = the standard Danish text. Not used when Danish is the bot's own language.")},
         {"key": "ignore_words", "label": "Words that never get a hint", "type": "list", "default": ["hello", "hi", "hey"],
          "help": "Greetings that are also command words; answering them would only be noise."},
         {"key": "cooldown_seconds", "label": "At most one hint per channel every", "type": "int", "default": 120,

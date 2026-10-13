@@ -6,6 +6,9 @@ shows "Command executed / Failed"). Since 1.1.0 new installations have no ping k
 translated "Pong! More info: type test", commands.ping.response), but nothing used that text: ping stayed silent
 (found 2026-09-30 in #test). Now a ping keyword still wins, and without one the translated text is used, in
 the sender's language when AutoLanguage is on.
+
+Since 2.51.2 the reply without a keyword tells more: "Pong @[Jan]! 3 hops via <repeater> · SNR 6.5 dB · RSSI -92 dBm ·
+1.2s onderweg · 07:01" (modules/ping_info.py; unknown parts are left out).
 """
 import pathlib
 import sys
@@ -29,14 +32,10 @@ def patch(path: str, old: str, new: str) -> None:
 
 patch(
     "modules/commands/ping_command.py",
-    """        if self.bot.config.has_section('Keywords'):
-            format_str = self.bot.config.get('Keywords', 'ping', fallback=None)
-            return self._strip_quotes_from_config(format_str) if format_str else None
-        return None""",
-    """        if self.bot.config.has_section('Keywords'):
-            format_str = self.bot.config.get('Keywords', 'ping', fallback=None)
-            if format_str:
-                return self._strip_quotes_from_config(format_str)
-        # (add-on) no ping keyword: the translated standard reply ("Pong! More info: type test")
-        return self.translate('commands.ping.response')""",
+    """        return await self.handle_keyword_match(message)""",
+    """        if self.get_response_format():
+            return await self.handle_keyword_match(message)
+        # (add-on) no ping keyword: Pong with hops, the repeater it came via, SNR, RSSI, travel time (modules/ping_info.py)
+        from ..ping_info import reply
+        return await self.send_response(message, reply(self, message))""",
 )

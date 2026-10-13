@@ -1,20 +1,14 @@
 #!/usr/bin/env python3
-"""Source patch applied to the vendored meshcore-bot command manager.
+"""Source patch: a command that is switched off stays silent.
 
-Runs once during the Docker build, right after `patch_command_manager.py`
-(see patch_webviewer.py for the shared rationale/mechanics).
+Until 2.51.4 this patch made the bot answer "Sorry, '<command>' staat momenteel uit - er wordt aan gewerkt!" (always
+in Dutch) when someone used a command switched off on the Plugins page. Users would rather have no answer at all
+(issue #1, 2026-10-06): a switched-off command now behaves as if it does not exist. Also for the commands that would
+still speak up on their own (stats: "Stats command is disabled"; DM-only ones: "can only be used in DMs"). The
+trigger is not claimed, so another command with the same word (an alias) can still answer.
 
-Sixth patch: when a user triggers a command that is administratively
-disabled (e.g. [Airplanes_Command] enabled = false), execute_commands()'s
-can_execute_now() check fails and the bot stays completely silent - no
-different from a command that simply isn't loaded. It already has an
-elif-chain right there that DOES speak up for other can_execute_now()
-failures (DM-only, admin-only, cooldown), so this just adds one more
-branch to that chain for the "disabled" case. Every toggleable plugin
-exposes its own flag as `self.<name>_enabled` (confirmed across
-help/cmd/wx/aqi/airplanes/joke/stats/sports/alert/satpass/webviewer), so
-this is read generically via getattr instead of hardcoding a list of
-commands.
+Off = the command's own flag (`self.<name>_enabled`, every toggleable plugin has one) or `enabled = false` in its
+[Xxx_Command] section.
 """
 import pathlib
 import sys
@@ -37,27 +31,20 @@ def patch(path: str, old: str, new: str) -> None:
 
 patch(
     "modules/command_manager.py",
-    """                if not command.can_execute_now(message):
-                    response_sent = False
-                    # For DM-only commands in public channels, only show error if channel is allowed
-                    # (i.e., channel is in monitor_channels or command's allowed_channels)
-                    # This prevents prompting users in channels where the command shouldn't work at all
-                    if command.requires_dm and not message.is_dm:""",
-    """                if not command.can_execute_now(message):
-                    response_sent = False
-                    # Command explicitly turned off via its own '[Xxx_Command] enabled = false'
-                    # config toggle. Checked first so a disabled command reports itself as
-                    # disabled rather than falling through to the DM/admin/cooldown branches
-                    # below (which don't apply and would otherwise stay silent instead).
-                    command_enabled_flag = getattr(command, f"{command.name}_enabled", True)
-                    if command_enabled_flag is False:
-                        await self.send_response(
-                            message,
-                            f"Sorry, '{command_name}' staat momenteel uit - er wordt aan gewerkt!",
-                        )
-                        response_sent = True
-                    # For DM-only commands in public channels, only show error if channel is allowed
-                    # (i.e., channel is in monitor_channels or command's allowed_channels)
-                    # This prevents prompting users in channels where the command shouldn't work at all
-                    elif command.requires_dm and not message.is_dm:""",
+    """            if command.should_execute(message):
+                # Only execute commands that don't have a response format (they handle their own responses)""",
+    """            if command.should_execute(message):
+                # (add-on) switched off on the Plugins page: stay silent, as if the command did not exist
+                try:
+                    _off = getattr(command, f"{command.name}_enabled", True) is False
+                    if not _off:
+                        _sec = command._derive_config_section_name()
+                        _off = (self.bot.config.has_section(_sec)
+                                and not self.bot.config.getboolean(_sec, "enabled", fallback=True))
+                except Exception:  # noqa: BLE001
+                    _off = False
+                if _off:
+                    self.logger.debug(f"Command '{command_name}' is switched off; staying silent")
+                    continue
+                # Only execute commands that don't have a response format (they handle their own responses)""",
 )

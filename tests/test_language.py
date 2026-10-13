@@ -112,7 +112,9 @@ for lang, want in (("en", "Pong! More info: type test"), ("nl", "Pong! Meer info
     check(make_bot(lang).translator.translate("commands.ping.response") == want, f"ping ({lang}): {want}")
 # the command itself (found 2026-09-30: without a ping keyword it sent nothing, the text above was never used)
 pc = ping_mod.PingCommand(make_bot("nl"))
-check(pc.get_response_format() == "Pong! Meer info: typ test", f"ping zonder keyword antwoordt echt ({pc.get_response_format()!r})")
+# since 2.51.2 the reply without a keyword is built in execute (modules/ping_info.py, test_ping_info.py)
+check(pc.get_response_format() is None and "ping_info import reply" in open("modules/commands/ping_command.py").read(),
+      "ping zonder keyword antwoordt echt (uitgebreid antwoord via ping_info)")
 pk = ping_mod.PingCommand(make_bot("nl", {"Keywords": {"ping": '"Pong van mij!"'}}))
 check(pk.get_response_format() == "Pong van mij!", "een eigen ping-keyword gaat voor")
 

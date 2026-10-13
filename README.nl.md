@@ -103,8 +103,10 @@ dan kunnen anderen hem op hun lijst met vertrouwde bots zetten.
 
 Om te weten hoeveel installaties er draaien, stuurt de bot **één keer per dag één anoniem bericht** naar de server van de
 maker (`mqtt.vipje.nl`, dezelfde als het botnetwerk): een willekeurig nummer dat bij de eerste start gemaakt wordt, de
-versie van de add-on en de datum. Verder niets - niet de naam van je bot, je radio, je locatie of iets van de mesh - en
-geen zendtijd. Zoals bij elke internetverbinding ziet de server je IP-adres. Het staat **standaard aan**; zet de kaart
+versie van de add-on, de datum, de taal van de bot, het processortype (bv. aarch64), hoe de bot de radio bereikt (serieel,
+BLE of TCP), welke kaarten aan of uit staan (hun namen zoals in de add-on, bv. P2000), hoeveel dagen de installatie al
+draait en hoeveel fouten en waarschuwingen de bot gisteren had (alleen die twee getallen). Verder niets - niet de naam
+van je bot, sleutels, kanalen, het adres van je radio, je locatie of iets van de mesh - en geen zendtijd. Zoals bij elke internetverbinding ziet de server je IP-adres. Het staat **standaard aan**; zet de kaart
 **InstallCount** op de pagina *Plugins* van het dashboard uit en er gaat niets meer.
 
 ## Commando's

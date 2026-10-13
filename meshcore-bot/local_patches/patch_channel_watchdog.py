@@ -30,7 +30,9 @@ Changes:
    again, only for the slots that are not in the cache yet, without clearing
    the cache, so channels that work keep working during the scan. When nothing
    is missing the check costs no radio traffic.
-4. A channel that is only in the remembered list (not in monitor_channels) and
+4. A remembered channel whose slot now holds another channel was removed or moved on the radio: it is not
+   looked for (seen 2026-10-02: #nlalert renamed to #nl-alert in the same slot, warned after every restart).
+   A channel that is only in the remembered list (not in monitor_channels) and
    is still missing after 5 checks (the 3 startup ones and 2 hourly ones) is
    forgotten, so a channel you removed from the radio does not warn forever.
    A channel in monitor_channels is never forgotten (that is a setting).
@@ -128,8 +130,18 @@ WATCHDOG = '''    _SNAPSHOT_KEY = 'channels.last_known'
         norm = self._normalize_channel_name_for_lookup
         forgotten = getattr(self, '_forgotten_channels', set())
         wanted = list(self._monitored_channel_names())
-        wanted += [n for n in self._load_channel_snapshot().values() if norm(n) not in forgotten]
         have = {norm(c['channel_name']) for c in self._channels_cache.values() if c.get('channel_name')}
+        for idx, n in self._load_channel_snapshot().items():
+            if norm(n) in forgotten:
+                continue
+            # its slot now holds another channel: it was removed (or moved) on the radio, so it is not missing
+            try:
+                now_there = self._channels_cache.get(int(idx), {}).get('channel_name')
+            except (TypeError, ValueError):
+                now_there = None
+            if now_there and norm(now_there) != norm(n):
+                continue
+            wanted.append(n)
         missing, seen = [], set()
         for name in wanted:
             key = norm(name)

@@ -1,5 +1,87 @@
 # Changelog
 
+## 1.5.1
+
+- InstallCount (on by default, one switch to turn it off) now also sends the bot's language, the processor type, the
+  connection type (serial/BLE/TCP), which cards are switched on or off (their names as in the add-on), the number of
+  days the installation runs and how many errors and warnings it logged yesterday (just the numbers). Still no
+  names, keys, channels, addresses or anything from the mesh; the README says exactly what is sent.
+
+- New card **P2000** and command `p2000`: emergency-service call-outs with far less airtime. Only priority-1 messages
+  (P1, A1, "met spoed") are posted in the channel (at most a few an hour), plus a daily count at 12:00 of fire brigade,
+  ambulance and police call-outs. The rest on request: `p2000`, `p2000 3`, `p2000 spoed`, `p2000 <place>`,
+  `p2000 vandaag` — only in that channel and by DM. Reads the public AlarmeringDroid API itself; no Home Assistant
+  automation needed.
+
+- Greeter: new option **Send the greeting as** — a DM to the new person (now the default) or a message in the channel, as
+  before. When the DM cannot be sent (the name is not in the radio's contacts) the bot greets in the channel after all, or
+  sends nothing (option **When the DM cannot be sent**). Want the old behaviour? Set the option to *A message in the channel*.
+
+- Greeting and channel hint in the sender's language (with AutoLanguage on): a French "Bonne soirée" no longer gets a
+  Dutch welcome. New fields per language on the Greeter and ChannelHint cards ("Greeting in French", "Hint text in
+  French"); empty = a standard text in that language. Command words alone (test, ping) and words several languages
+  share ("hallo") keep the bot's language. The channel list in a hint says "or"/"oder"/"ou"/"eller" instead of always
+  the Dutch "of". The add-on now installs `langdetect`, so longer messages are recognised too (also for commands).
+
+- Dashboard froze on some pages, mostly Bot network (also in the Home Assistant app): the translation script wrote a
+  tooltip back when its translation was the same text (for example "node … · build …"), which counts as a change, so
+  it ran again for ever. Now it only writes a real change and never translates its own output again. Parts inside a
+  translated sentence are translated too ("last heard 2 days ago" -> "laatst gehoord 2 dagen geleden").
+
+- A command switched off on the Plugins page now stays silent, as if it did not exist. Before, the bot answered
+  "Sorry, '<command>' staat momenteel uit" (always in Dutch), and stats and the DM-only commands spoke up on their own
+  too. A switched-off command also gets no channel hint any more.
+
+- `ping` tells more: "Pong @[Jan]! 3 hops via Repeater Zuid · SNR 6.5 dB · RSSI -92 dBm · 1.2s in transit · 07:01" —
+  the hops, the repeater the bot heard it from (by name, when only one repeater in the contacts has that prefix),
+  signal, travel time and the bot's time, in the sender's language. Unknown parts are left out. A `ping` keyword in the
+  config still wins.
+
+- Dashboard language: the last texts with numbers (Region warnings per channel, multibyte shares, channel bytes on the
+  radar), the labels of charts (read out by screen readers), the status bar (clients, radio ok, "snapshot 1m ago") and
+  the long info tooltips (Hops, multibyte share; texts over 400 characters were skipped) are translated too.
+
+- Dashboard (dark theme): the selected observer row was unreadable until you hovered over it, and some badges (online, ERROR, WARNING, found) had no colour; they use the dashboard's Bootstrap 5.1 classes now.
+
+- Channel check: a channel you renamed or removed on the radio (its slot now holds another channel) is no longer looked for
+  (it warned "still missing" after every restart until it was forgotten). A reading stored under a key prefix joins the
+  full key right away, not only at the next start.
+
+- AnalyzerFeed card: option **Look up unknown names** (on with the card). Neighbours in your repeaters' neighbour lists
+  that have no name, only a key prefix such as `a1b2c3`, are looked up at the analyzer and shown on the Repeater page
+  with their name and the label *analyzer*. At most 20 lookups an hour, each prefix once a
+  week; works without regions too. The analyzer address can be any site of the EU Meshcore Analyzer, e.g.
+  https://cornmeister.nl.
+
+- Dashboard language, checked page by page with live data: the remaining texts translated (sentences split around
+  links, texts with numbers such as "169 readings in this period"), and dates, times and numbers follow the bot's
+  language too ("2 okt." instead of "Oct 2"). Repeater page: with only a few readings the points are drawn, so a chart
+  with one reading no longer looks empty.
+
+- Dashboard in the bot's language: now also the Plugins page (every card's description, field names, help texts and choices; about 850 texts in nl, de, fr and da).
+
+- Channel radar: option **Community channel list** on the ChannelRadar card (off by default): once a day the bot fetches
+  the list of hashtag channels seen across Europe (about 2000 names; the same list the EU Meshcore Analyzer and the Dutch
+  MeshCore toolbox show) and the radar recognises those channels (from 2 messages, like its generated names), also back through the packet log. Only the
+  names are kept, not the messages or senders in that list.
+
+- **Observers without a broker of your own** (card *AnalyzerFeed*, off by default): fill in the region codes you want
+  (e.g. `MST` for South Limburg, or `AMS`, `CGN`, `LGG`, ...) and the bot reads those observers from the public EU
+  Meshcore Analyzer (meshcore-analyzer.eu, no account needed). Radar -> Observers then lists them (online/offline, model,
+  firmware) plus one row per region with all its traffic: packets, adverts, group messages and the nodes heard there.
+  Their group messages also count on the Channel radar. Only reads, at a slow pace (observers every 5 minutes, new
+  packets every minute).
+
+- Channel radar: channels the name hunt found get the label **new** on that day and the day after (they had no label).
+
+- **NL-Alert on the mesh** (card *NLAlert*, off by default): the government's NL-Alert warnings for the provinces you
+  choose (e.g. `Limburg`) and/or within a radius of the bot, posted in one or more channels (default `#nlalert`, e.g.
+  `#nlalert, #limburg`; made on the radio by AutoChannels). Only the Dutch text, at most 3 messages; a re-sent alert with the same text is not posted again, and
+  nothing old is posted after a restart. Source: the public NL-Alert feed; the province is looked up once per alert
+  (OpenStreetMap). Plus a **siren test notice** every first Monday of the month at 12:00 (not on public holidays; in June
+  and December with NL-Alert's own test message), until the sirens stop on 1 January 2028. An extra way to hear about
+  a warning, never the official one.
+
 ## 1.5.0
 
 - Repeater page: a repeater could appear twice (once with a single reading) when Home Assistant had not yet passed on

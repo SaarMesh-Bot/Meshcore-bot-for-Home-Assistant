@@ -130,7 +130,7 @@
         data.unanswered.forEach(function (u) {
             const tr = el('tr');
             const note = el('td', null, 'small text-muted');
-            if (u.kind === 'unconfirmed') note.appendChild(el('span', 'Sent, no confirmation (ACK) came back. ', 'badge text-bg-secondary me-1'));
+            if (u.kind === 'unconfirmed') note.appendChild(el('span', 'Sent, no confirmation (ACK) came back. ', 'badge bg-secondary me-1'));
             note.appendChild(document.createTextNode(u.response || 'Nothing was sent.'));
             tr.append(el('td', when(u.time), 'text-nowrap'), el('td', u.channel), el('td', u.user), el('td', u.input, 'font-monospace small'), note,
                       doneButton({ type: 'command', key: u.key }, u.command));
@@ -146,7 +146,7 @@
             const tr = el('tr');
             tr.style.cursor = 'pointer';
             tr.tabIndex = 0;
-            const badge = el('span', p.level, 'badge ' + (p.level === 'ERROR' ? 'text-bg-danger' : 'text-bg-warning'));
+            const badge = el('span', p.level, 'badge ' + (p.level === 'ERROR' ? 'bg-danger' : 'bg-warning text-dark'));
             const tdL = el('td'); tdL.appendChild(badge);
             tr.append(tdL, el('td', p.kind, 'small'), el('td', p.count, 'text-end'), el('td', p.days, 'text-end text-muted'),
                       el('td', when(p.last), 'text-nowrap small'), doneButton({ type: 'problem', level: p.level, kind: p.kind }, p.kind));

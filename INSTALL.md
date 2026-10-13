@@ -112,7 +112,7 @@ A new installation starts quiet: everything that needs your own setup is off. Wo
 | **AutoChannels** | **On by default**: makes the hashtag channels the bot uses (#test, #games, #f1, ...) on the radio when they are missing. |
 | **HASensors** | **On by default**: the bot's numbers as Home Assistant sensors (`sensor.meshcore_bot_...`). |
 | **RepeaterWatch** | **On by default**: a message when a repeater your radio hears directly goes silent. |
-| **InstallCount** | **On by default**: once a day an anonymous message (random number, version, date) so the maintainer knows how many installations run. Switch it off to send nothing (see the README). |
+| **InstallCount** | **On by default**: once a day an anonymous message (random number, version, date, language, processor type, connection type, which cards are on/off, days running, number of errors yesterday) so the maintainer knows how many installations run. Switch it off to send nothing (see the README). |
 | **GamesChannel** | Keeps the games (quiz, hangman, stem, ...) in one channel, for example `#games`. |
 | **NightMode** | Keeps scheduled messages and feeds quiet at night (default 23:00-07:00). Answers to people always go out. |
 | Community, Reminders, ChannelRadar | Games, `herinner` (reminders) and the radar. On by default. |

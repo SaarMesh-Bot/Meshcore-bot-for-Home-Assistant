@@ -13,7 +13,7 @@
         <button class="nav-link active" id="tab-channels-btn" data-bs-toggle="tab" data-bs-target="#tab-channels" type="button" role="tab" aria-controls="tab-channels" aria-selected="true"><i class="fas fa-hashtag"></i> Channel radar</button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tab-watching-btn" data-bs-toggle="tab" data-bs-target="#tab-watching" type="button" role="tab" aria-controls="tab-watching" aria-selected="false"><i class="fas fa-ear-listen"></i> Not heard yet <span class="badge text-bg-secondary" id="watching-count"></span></button>
+        <button class="nav-link" id="tab-watching-btn" data-bs-toggle="tab" data-bs-target="#tab-watching" type="button" role="tab" aria-controls="tab-watching" aria-selected="false"><i class="fas fa-ear-listen"></i> Not heard yet <span class="badge bg-secondary" id="watching-count"></span></button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="tab-repeaters-btn" data-bs-toggle="tab" data-bs-target="#tab-repeaters" type="button" role="tab" aria-controls="tab-repeaters" aria-selected="false"><i class="fas fa-tower-broadcast"></i> Repeater radar</button>
@@ -187,6 +187,7 @@
         are counted by the Channel radar too (once, also when your own radio heard them). Click an observer for its traffic per
         hour and the nodes whose adverts it heard. Nothing is sent.
     </p>
+    <p class="text-muted small">Without a broker of your own: the AnalyzerFeed card reads the observers of the regions you choose (for example MST) from the public EU Meshcore Analyzer.</p>
     <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
         <div class="btn-group btn-group-sm" role="group" aria-label="Period" id="ob-period">
             <button type="button" class="btn btn-outline-primary active" data-days="1">24 hours</button>
@@ -303,6 +304,10 @@
                 const b = el('span', 'found', 'badge bg-info text-dark ms-2');
                 b.title = 'Just found: not on the built-in list but among the generated names (shown from 2 messages; the label stays on the first day and the day after).';
                 name.appendChild(b);
+            } else if (c.hunted && !onRadio(c.label)) {
+                const b = el('span', 'new', 'badge bg-info text-dark ms-2');
+                b.title = 'Found by the name hunt (the label stays on that day and the day after).';
+                name.appendChild(b);
             }
             tr.appendChild(name);
             tr.appendChild(el('td', c.today, 'text-end'));
@@ -363,7 +368,7 @@
         if ((data.added_names || []).length) {
             added.appendChild(el('span', 'Added here: ', 'text-muted'));
             data.added_names.forEach(function (n) {
-                const chip = el('span', n + ' ', 'badge text-bg-light border me-1');
+                const chip = el('span', n + ' ', 'badge bg-light text-dark border me-1');
                 const x = el('button', '×', 'btn btn-link btn-sm p-0 text-danger text-decoration-none');
                 x.type = 'button'; x.setAttribute('aria-label', 'Remove ' + n);
                 x.addEventListener('click', function () {
@@ -384,7 +389,7 @@
                 (nh.last_run ? 'Last run ' + new Date(nh.last_run * 1000).toLocaleString() + ', ' + Number(nh.tried_total || 0).toLocaleString() + ' names tried so far. '
                              : 'Not run yet. ')));
             (nh.found || []).slice(-5).forEach(function (f) {
-                hunt.appendChild(el('span', 'found ' + f.name + ' (' + f.byte + ')', 'badge text-bg-success me-1'));
+                hunt.appendChild(el('span', 'found ' + f.name + ' (' + f.byte + ')', 'badge bg-success me-1'));
             });
         }
         const watching = data.watching || [];
@@ -696,14 +701,16 @@
         const body = document.getElementById('ob-body');
         body.replaceChildren();
         if (!d.observers.length) {
-            const td = el('td', 'No observers yet. Switch on the ObserverFeed card (Plugins) and fill in your broker.', 'text-center text-muted py-3');
+            const td = el('td', 'No observers yet. Switch on the AnalyzerFeed card (Plugins) with your region, or the ObserverFeed card with your own broker.', 'text-center text-muted py-3');
             td.colSpan = 9; const tr = el('tr'); tr.appendChild(td); body.appendChild(tr);
         }
         d.observers.forEach(function (o) {
-            const tr = el('tr', null, o.key === d.selected ? 'table-active' : '');
+            // selected row: an accent of its own (Bootstrap 5.1's table-active turns the text dark on the dark theme)
+            const tr = el('tr', null, o.key === d.selected ? 'fw-semibold' : '');
+            if (o.key === d.selected) { tr.style.boxShadow = 'inset 4px 0 0 #0d6efd'; tr.style.background = 'rgba(13,110,253,0.12)'; }
             tr.style.cursor = 'pointer'; tr.tabIndex = 0;
             const st = el('td');
-            st.appendChild(el('span', o.status || '?', 'badge ' + (o.status === 'online' ? 'text-bg-success' : 'text-bg-secondary')));
+            st.appendChild(el('span', o.status || '?', 'badge ' + (o.status === 'online' ? 'bg-success' : 'bg-secondary')));
             if (o.model) st.appendChild(el('div', o.model + (o.firmware ? ' · ' + o.firmware : ''), 'small text-muted'));
             tr.append(el('td', o.name, 'fw-semibold'), el('td', o.iata), st, el('td', num(o.packets), 'text-end'), el('td', num(o.adverts), 'text-end'),
                       el('td', num(o.group_msgs), 'text-end'), el('td', num(o.nodes), 'text-end'),

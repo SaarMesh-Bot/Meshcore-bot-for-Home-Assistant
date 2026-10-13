@@ -685,7 +685,13 @@
       "pointer": "Games are played in {channel}"
     },
     "ping": {
-      "response": "Pong! More info: type test"
+      "response": "Pong! More info: type test",
+      "response_full": "Pong @[{sender}]! {info}",
+      "direct": "direct",
+      "hop_one": "1 hop",
+      "hops": "{n} hops",
+      "via": "via {name}",
+      "travel": "{elapsed} in transit"
     },
     "dm": {
       "help": "Type dm in a channel: the bot sends you a DM, so you can use it privately from then on (help gives the list).",
@@ -908,6 +914,25 @@
       "ago_h": "{n} h",
       "ago_d": "{n} d",
       "error": "Something went wrong with the mail, try again in a moment."
+    },
+    "p2000": {
+      "help": "p2000: latest message. p2000 3 | p2000 spoed | p2000 <place> | p2000 vandaag (24 h count). Only here and by DM.",
+      "none": "No P2000 messages known yet.",
+      "none_place": "No P2000 message found for {place}."
     }
+  },
+  "services": {
+    "nlalert": {
+      "prefix": "NL-Alert",
+      "siren": "Siren test: first Monday of the month, 12:00. The sirens are being tested, nothing is wrong.",
+      "siren_with_test": "Siren test + NL-Alert test message: first Monday, 12:00. This is a test, nothing is wrong."
+    },
+    "p2000": {
+      "summary": "P2000 24 h: fire {fire} ({fire_p1} urgent), ambulance {ambu} ({ambu_p1} A1), police {police} ({police_p1} P1)"
+    }
+  },
+  "greeter_lang": {
+    "greeting": "Welcome to the mesh, @[{sender}]! 👋 |",
+    "mesh_info": "Mesh info: {total_contacts} contacts, {repeaters} repeaters, {companions} companions, {recent_activity_24h} active in 24 h"
   }
 }

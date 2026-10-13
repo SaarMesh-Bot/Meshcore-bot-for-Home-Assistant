@@ -344,13 +344,37 @@ def counted(bot_):
     return svc
 cb = make_bot(ON)
 cb.config["InstallCount"] = {"enabled": "true"}
+cb.config["Localization"] = {"language": "nl"}
+cb.config["Connection"] = {"connection_type": "tcp", "hostname": "192.168.1.50"}
+cb.config["P2000"] = {"enabled": "true", "channel": "#p2000-zl", "regions": "21"}
+cb.config["F1_Command"] = {"enabled": "false"}
+cb.config["Mijn_Eigen_Sectie"] = {"enabled": "true"}      # typed by a user in override.ini: never sent
+cb.services = {"p2000": types.SimpleNamespace(config_section="P2000"), "count": types.SimpleNamespace(config_section="InstallCount")}
+cb.command_manager = types.SimpleNamespace(commands={"f1": types.SimpleNamespace(_derive_config_section_name=lambda: "F1_Command")},
+                                           monitor_channels=getattr(getattr(cb, "command_manager", None), "monitor_channels", []))
+import datetime as _dt
+_today = _dt.date.today()
+with cb.db_manager.connection() as _c:
+    _c.execute("CREATE TABLE IF NOT EXISTS complete_contact_tracking (public_key TEXT, name TEXT, first_heard TEXT)")
+    _c.execute("INSERT INTO complete_contact_tracking (public_key, name, first_heard) VALUES ('ab', 'X', ?)", ((_today - _dt.timedelta(days=40)).isoformat() + " 10:00:00",))
+    _c.execute("CREATE TABLE IF NOT EXISTS bot_problems (day TEXT, level TEXT, kind TEXT, example TEXT, count INTEGER, first_ts INTEGER, last_ts INTEGER)")
+    _y = (_today - _dt.timedelta(days=1)).isoformat()
+    _c.executemany("INSERT INTO bot_problems VALUES (?,?,?,?,?,0,0)", [(_y, "ERROR", "a", "x", 2), (_y, "ERROR", "b", "x", 1),
+                   (_y, "WARNING", "c", "x", 5), (_today.isoformat(), "ERROR", "d", "x", 9)])
+    _c.commit()
 cs = counted(cb); cs._due = 0
 asyncio.run(cs.tick())
 topic, body = sent_count[-1]
 iid = topic.rsplit("/", 1)[-1]
 check(topic.startswith("meshcore-bot-ha/count/v1/") and len(iid) == 16 and all(ch in "0123456789abcdef" for ch in iid),
       f"telling: willekeurig nummer van 16 tekens ({topic})")
-check(set(body) == {"v", "d"} and body["v"] == "2.24.0", f"telling: alleen versie en datum, niets anders ({body})")
+check(set(body) == {"v", "d", "l", "a", "c", "p", "o", "i", "e", "w"} and body["v"] == "2.24.0", f"telling: versie, datum, taal, arch, verbinding, kaarten ({body})")
+check(body["l"] == "nl" and body["c"] == "tcp" and body["a"] and body["p"] == ["InstallCount", "P2000"] and body["o"] == ["F1_Command"],
+      f"telling: alleen kaarten die aan staan en die de bot kent ({body})")
+check("192.168" not in json.dumps(body) and "p2000-zl" not in json.dumps(body) and "Mijn_Eigen" not in json.dumps(body),
+      "telling: geen adres, kanaal of eigen sectienaam")
+check(body["i"] == 40 and body["e"] == 3 and body["w"] == 5,
+      f"telling: dagen sinds installatie (eerste contact, 40) en fouten/waarschuwingen van gisteren (3/5) ({body})")
 pk_hex = N.signing_key(cb).verify_key.encode().hex()
 check(iid not in pk_hex and "Test" not in topic + json.dumps(body), "telling: niet afgeleid van de sleutel of de botnaam")
 check(asyncio.run(cs.tick()) is False and len(sent_count) == 1, "telling: hooguit één keer per dag (ook na een herstart: bewaard)")

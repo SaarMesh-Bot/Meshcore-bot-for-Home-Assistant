@@ -114,7 +114,7 @@ Een nieuwe installatie begint rustig: alles wat een eigen opstelling vraagt, sta
 | **AutoChannels** | **Staat standaard aan**: zet de hashtag-kanalen die de bot gebruikt (#test, #games, #f1, ...) op de radio als ze ontbreken. |
 | **HASensors** | **Staat standaard aan**: de cijfers van de bot als sensoren in Home Assistant (`sensor.meshcore_bot_...`). |
 | **RepeaterWatch** | **Staat standaard aan**: een melding als een repeater die je radio rechtstreeks hoort stil wordt. |
-| **InstallCount** | **Staat standaard aan**: één keer per dag een anoniem bericht (willekeurig nummer, versie, datum), zodat de maker weet hoeveel installaties er draaien. Zet hem uit en er gaat niets (zie de README). |
+| **InstallCount** | **Staat standaard aan**: één keer per dag een anoniem bericht (willekeurig nummer, versie, datum, taal, processortype, verbindingstype, welke kaarten aan/uit staan, dagen in gebruik, aantal fouten van gisteren), zodat de maker weet hoeveel installaties er draaien. Zet hem uit en er gaat niets (zie de README). |
 | **GamesChannel** | Houdt de spellen (quiz, hangman, stem, ...) in één kanaal, bijvoorbeeld `#games`. |
 | **NightMode** | Houdt geplande berichten en feeds 's nachts stil (standaard 23:00-07:00). Antwoorden aan mensen gaan altijd door. |
 | Community, Reminders, ChannelRadar | Spellen, `herinner` en de radar. Staan standaard aan. |

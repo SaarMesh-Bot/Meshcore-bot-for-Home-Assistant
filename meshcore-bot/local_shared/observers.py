@@ -17,10 +17,12 @@ observer counts once. Nothing is sent over the radio, and message texts are neve
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import struct
 import time
+from datetime import datetime
 from typing import Any, Optional
 
 PAYLOAD_TYPES = {0: "REQ", 1: "RESPONSE", 2: "TXT_MSG", 3: "ACK", 4: "ADVERT", 5: "GRP_TXT", 6: "GRP_DATA", 7: "ANON_REQ",
@@ -226,3 +228,85 @@ def summary(db: Any, days: int = 1, key: Optional[str] = None, now: Optional[flo
         o.pop("full_key", None)
     return {"generated_at": int(now), "days": days, "observers": obs, "selected": sel["key"] if sel else None,
             "series": series, "heard": heard_list}
+
+
+# ---------------------------------------------------------------- EU Meshcore Analyzer (public HTTP API)
+# The analyzer (meshcore-analyzer.eu and its community sites) collects what thousands of observers hear from all the
+# big brokers and publishes it without an account: /api/observers?region=X (the observers of a region) and
+# /api/packets?region=X&since=ISO (the raw packets they heard, newest first). The AnalyzerFeed service (card AnalyzerFeed)
+# stores them in the same tables as the MQTT observers: every observer of the chosen regions with its status and packets
+# per hour, plus one row per region ("all observers of the region") for the packets, so the nodes heard there and the
+# group messages (Channel radar) are counted once per packet.
+ANALYZER_ONLINE_S = 15 * 60
+REGION_RE = re.compile(r"^[A-Z0-9]{2,6}$")
+
+
+def regions_from(text: str) -> list:
+    out = []
+    for r in str(text or "").replace(";", ",").split(","):
+        r = r.strip().upper()
+        if REGION_RE.match(r) and r not in out:
+            out.append(r)
+    return out
+
+
+def region_key(region: str) -> str:
+    """A stable 16-hex key for the region row (observer keys are hex)."""
+    return hashlib.sha1(f"analyzer:{region.upper()}".encode()).hexdigest()[:16]
+
+
+def _iso(value: Any) -> Optional[float]:
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
+    except (TypeError, ValueError):
+        return None
+
+
+def store_analyzer_observers(db: Any, items: list, now: Optional[float] = None) -> int:
+    """The observers of a region from /api/observers: status, model, firmware, radio and packets this hour."""
+    now = time.time() if now is None else now
+    hour = int(now // 3600) * 3600
+    n = 0
+    with db.connection() as conn:
+        ensure(conn)
+        for o in items or []:
+            key = str(o.get("id") or "").lower()
+            if not re.fullmatch(r"[0-9a-f]{16,64}", key):
+                continue
+            last = _iso(o.get("last_seen")) or now
+            status = "online" if now - last <= ANALYZER_ONLINE_S else "offline"
+            conn.execute("INSERT INTO observer_nodes (key, name, iata, first_seen, last_seen) VALUES (?,?,?,?,?) "
+                         "ON CONFLICT(key) DO UPDATE SET last_seen = excluded.last_seen, iata = excluded.iata, "
+                         "name = COALESCE(NULLIF(excluded.name, ''), observer_nodes.name)",
+                         (key, str(o.get("name") or "")[:40], str(o.get("iata") or "")[:8].upper(),
+                          int(_iso(o.get("first_seen")) or last), int(last)))
+            conn.execute("UPDATE observer_nodes SET status = ?, model = COALESCE(?, model), firmware = COALESCE(?, firmware), "
+                         "radio = COALESCE(?, radio), last_status = ? WHERE key = ?",
+                         (status, (str(o["model"])[:40] if o.get("model") else None),
+                          (str(o["firmware"])[:40] if o.get("firmware") else None),
+                          (str(o["radio"])[:60] if o.get("radio") else None), int(now), key))
+            ph = o.get("packets_hour")
+            if isinstance(ph, (int, float)) and ph > 0:      # the region view of the API gives 0 here: not a real count
+                conn.execute("INSERT INTO observer_hourly (key, hour, packets, adverts, group_msgs, other, rssi_sum, snr_sum, sig_n) "
+                             "VALUES (?,?,?,0,0,?,0,0,0) ON CONFLICT(key, hour) DO UPDATE SET "
+                             "packets = MAX(observer_hourly.packets, excluded.packets), other = MAX(observer_hourly.other, excluded.other)",
+                             (key, hour, int(ph), int(ph)))
+            n += 1
+        conn.commit()
+    return n
+
+
+def store_analyzer_packet(db: Any, region: str, packet: dict) -> Optional[str]:
+    """One packet from /api/packets for a region, under that region's row."""
+    raw = str(packet.get("raw_hex") or "")
+    if not raw:
+        return None
+    ts = _iso(packet.get("timestamp") or packet.get("first_seen")) or time.time()
+    topic = f"meshcore/{region.upper()}/{region_key(region)}/packets"
+    done = handle(db, topic, json.dumps({"raw": raw, "origin": f"{region.upper()} · EU Analyzer"}), now=ts)
+    if done:
+        with db.connection() as conn:
+            conn.execute("UPDATE observer_nodes SET status = 'online', model = 'EU Analyzer', "
+                         "firmware = 'all observers of the region' WHERE key = ?", (region_key(region),))
+            conn.commit()
+    return done

@@ -21,7 +21,7 @@ import time
 from datetime import timedelta
 from typing import Any, Iterable, Optional
 
-from .mesh_community import local_day
+from .mesh_community import day_start_ts, local_day
 
 PUBLIC_LABEL = "Publiek (kanaal 0)"
 PUBLIC_KEY = bytes.fromhex("8b3387e9c5cdea6ac9e5edbaa115cd72")   # MeshCore's well-known public channel
@@ -165,6 +165,32 @@ def _save_list(db: Any, key: str, items: list) -> None:
 
 def dashboard_names(db: Any) -> list:
     return _json_list(db, NAMES_META)
+
+
+COMMUNITY_META = "radar.community_names"
+COMMUNITY_URL = "https://meshcore-analyzer.eu/api/channels"
+
+
+def community_names(db: Any) -> list:
+    """Hashtag names from the community channel list (EU Meshcore Analyzer / Dutch MeshCore toolbox), fetched daily by
+    the ChannelRadar service when the card asks for it. Names only: the list's messages and senders are never stored."""
+    return _json_list(db, COMMUNITY_META)
+
+
+def parse_community(data: Any) -> list:
+    """Names from the analyzer's /api/channels ({"channels": [{"name": "#x"}]}) or the toolbox's channels-data
+    ([{"channel": "#x"}]). Only hashtag names that can be a channel name; sorted, without doubles."""
+    items = data.get("channels", []) if isinstance(data, dict) else (data or [])
+    out = set()
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        raw = str(it.get("name") or it.get("channel") or "")
+        if raw.startswith("#"):
+            n = clean_name(raw)
+            if n:
+                out.add(n)
+    return sorted(out)
 
 
 def clean_name(name: str) -> str:
@@ -425,18 +451,28 @@ def summary(bot: Any, now_ts: Optional[float] = None) -> dict:
         first_other = conn.execute("SELECT MIN(day) FROM channel_radar_other").fetchone()[0]
     since = min(d for d in (first, first_other) if d) if (first or first_other) else None
     main = main_names(bot)
+    hunt = _hunt_status(bot.db_manager)
+    # found by the name hunt: also marked on that day and the day after (the hunt counts back through the log, so the
+    # channel's first day is old and the 'found' rule below would never see it as new)
+    since_ts = day_start_ts(bot, today - timedelta(days=1))
+    hunted = {str(f.get("name", "")).lower() for f in hunt.get("found", []) or [] if (f.get("ts") or 0) >= since_ts}
+    # community list names: like generated names only shown from 2 messages (with ~2000 extra names the 2-byte check code
+    # now and then matches a private message by chance), but not labelled 'found'
+    community = {"#" + n for n in community_names(bot.db_manager)}
     return {
         "generated_at": int(now_ts),
         "since": since,
         "channels": [{"label": r[0], "today": int(r[1] or 0), "week": int(r[2] or 0), "month": int(r[3] or 0),
                       "last_ts": int(r[4] or 0), "first_day": r[5],
                       # 'found' (a generated name, not on any list) only on the day it was first heard and the day after
-                      "found": r[0] not in main and (first_ever.get(r[0]) or "") >= (today - timedelta(days=1)).isoformat()}
+                      "found": r[0] not in main and r[0] not in community
+                               and (first_ever.get(r[0]) or "") >= (today - timedelta(days=1)).isoformat(),
+                      "hunted": r[0].lower() in hunted}
                      for r in rows if r[0] in main or int(r[3] or 0) >= 2],
         "unknown": [{"hash": r[0], "week": int(r[1] or 0), "month": int(r[2] or 0), "last_ts": int(r[3] or 0)} for r in other],
         "added_names": ["#" + n for n in dashboard_names(bot.db_manager)] + [n for n, _ in dashboard_keys(bot.db_manager)],
         "watching": [{"label": label, "source": source} for label, source in sorted(_watched(bot).items(), key=lambda kv: kv[0].lower())
                      if label not in {r[0] for r in rows}],
         "add_to_radio": add_to_radio_requests(bot.db_manager),
-        "name_hunt": _hunt_status(bot.db_manager),
+        "name_hunt": hunt,
     }

@@ -3,7 +3,9 @@
 on by default, one switch to turn it off; said in README, INSTALL and DOCS).
 
 Once a day the bot sends one small retained MQTT message to the network's server (the same server as the bot network,
-fixed in bot_network_service.py) under meshcore-bot-ha/count/v1/<install id>: {"v": <add-on version>, "d": <date>}.
+fixed in bot_network_service.py) under meshcore-bot-ha/count/v1/<install id>: {"v": <add-on version>, "d": <date>, "l": <bot language>,
+"a": <processor type>, "c": <serial/ble/tcp>, "p": [<cards/commands switched on>], "o": [<switched off>],
+"i": <days since installation>, "e": <errors yesterday>, "w": <warnings yesterday>} (l..o since 2.52.1, i/e/w 2.52.2).
 The install id is a random number made once and kept in the bot's database (bot_metadata "count.install_id"): it is
 not derived from the radio, the bot's name or any key, so it says nothing about who or where. Nothing from the mesh is
 sent, and no airtime is used. The connection itself shows the server an IP address, as any internet request does.
@@ -16,7 +18,9 @@ import asyncio
 import datetime
 import json
 import os
+import platform
 import random
+import re
 import ssl
 import time
 import uuid
@@ -29,6 +33,7 @@ SECTION = "InstallCount"
 TOPIC = "meshcore-bot-ha/count/v1"
 ID_KEY = "count.install_id"
 LAST_KEY = "count.last_day"
+SINCE_KEY = "count.since"      # the day this installation started (for "days since installation")
 FIRST_S = 600           # the first message 10 minutes after the start (plus a random wait)
 JITTER_S = 3600
 CHECK_EVERY_S = 3600
@@ -44,16 +49,113 @@ def install_id(bot: Any) -> str:
     return new
 
 
+# Section names that are not cards (or say nothing useful): never sent as "on".
+NOT_CARDS = {"Bot", "Connection", "Channels", "Localization", "Keywords", "Admin_ACL", "Logging", "Web_Viewer", "Channels_List"}
+_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_]{0,39}$")
+
+
+def known_sections(bot: Any) -> set:
+    """The config sections of the commands and services the bot has loaded (names from the code, never typed by a user)."""
+    out = set()
+    cm = getattr(bot, "command_manager", None)
+    for command in (getattr(cm, "commands", None) or {}).values():
+        try:
+            out.add(command._derive_config_section_name())
+        except Exception:  # noqa: BLE001
+            pass
+    services = getattr(bot, "services", None) or {}
+    for service in (services.values() if isinstance(services, dict) else services):
+        section = getattr(service, "config_section", None)
+        if isinstance(section, str):
+            out.add(section)
+    return out
+
+
+def details(bot: Any) -> dict:
+    """What else the daily message says, all fixed technical values (since 2.52.1, wish of the maintainer):
+    l = the bot's language, a = processor type, c = how the bot reaches the radio (serial/ble/tcp), p = the cards and
+    commands switched on, o = the ones switched off (their section names as written in the add-on's code, e.g. P2000,
+    NLAlert, F1_Command; commands that are simply on by default have no switch and are in neither list).
+    Never a name, key, channel, place or anything a user typed."""
+    cfg = bot.config
+    lang = (cfg.get("Localization", "language", fallback="") if cfg.has_section("Localization") else "") or ""
+    lang = lang.strip().lower()[:5]
+    conn = (cfg.get("Connection", "connection_type", fallback="") if cfg.has_section("Connection") else "").strip().lower()
+    on, off = [], []
+    known = known_sections(bot)
+    for section in cfg.sections():
+        if section not in known or section in NOT_CARDS or not _NAME.match(section) or not cfg.has_option(section, "enabled"):
+            continue
+        try:
+            (on if cfg.getboolean(section, "enabled") else off).append(section)
+        except ValueError:
+            continue
+    return {"l": lang if re.fullmatch(r"[a-z]{2}(-[a-z]{2})?", lang or "") else "?",
+            "a": (platform.machine() or "?")[:16],
+            "c": conn if conn in ("serial", "ble", "tcp") else "?",
+            "p": sorted(on)[:120], "o": sorted(off)[:120]}
+
+
+def install_day(bot: Any, today: str) -> str:
+    """The day this installation started: kept once; for an installation from before 2.52.2 the first day the bot heard
+    anyone (its contact list), else today."""
+    raw = bot.db_manager.get_metadata(SINCE_KEY)
+    if raw and re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(raw)):
+        return str(raw)
+    day = today
+    try:
+        with bot.db_manager.connection() as conn:
+            row = conn.execute("SELECT MIN(date(first_heard)) FROM complete_contact_tracking").fetchone()
+        if row and row[0] and re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(row[0])) and str(row[0]) < today:
+            day = str(row[0])
+    except Exception:  # noqa: BLE001 - no such table yet
+        pass
+    bot.db_manager.set_metadata(SINCE_KEY, day)
+    return day
+
+
+def health(bot: Any, today: str) -> dict:
+    """i = days since installation, e / w = errors and warnings of yesterday (a whole day; only numbers, from the
+    Problems page's table)."""
+    out = {}
+    try:
+        since = datetime.date.fromisoformat(install_day(bot, today))
+        out["i"] = max(0, (datetime.date.fromisoformat(today) - since).days)
+    except Exception:  # noqa: BLE001
+        pass
+    yesterday = (datetime.date.fromisoformat(today) - datetime.timedelta(days=1)).isoformat()
+    try:
+        with bot.db_manager.connection() as conn:
+            rows = dict(conn.execute("SELECT level, SUM(count) FROM bot_problems WHERE day = ? GROUP BY level",
+                                     (yesterday,)).fetchall())
+        out["e"] = int((rows.get("ERROR") or 0) + (rows.get("CRITICAL") or 0))
+        out["w"] = int(rows.get("WARNING") or 0)
+    except Exception:  # noqa: BLE001 - no Problems table (card off): leave it out
+        pass
+    return out
+
+
 def count_message(bot: Any, version: str, today: str) -> tuple:
-    """(topic, payload) of the daily message: nothing but the random id, the version and the date."""
-    return f"{TOPIC}/{install_id(bot)}", json.dumps({"v": str(version)[:20], "d": today}, separators=(",", ":"))
+    """(topic, payload) of the daily message: the random id, the version, the date and details() - nothing else."""
+    body = {"v": str(version)[:20], "d": today}
+    try:
+        body.update(details(bot))
+    except Exception:  # noqa: BLE001 - the count itself still goes
+        pass
+    try:
+        body.update(health(bot, today))
+    except Exception:  # noqa: BLE001
+        pass
+    return f"{TOPIC}/{install_id(bot)}", json.dumps(body, separators=(",", ":"))
 
 
 class InstallCountService(BaseServicePlugin):
     config_section = SECTION
     name = "installcount"
-    description = ("Counts this installation anonymously: once a day a random number and the add-on version go to the "
-                   "maintainer's server, so the maintainer knows how many installations run. Nothing about you, your radio or the mesh")
+    description = ("Counts this installation anonymously: once a day a random number, the add-on version, the bot's language, "
+                   "the processor type, the connection type, which cards are on, the days since installation and yesterday's "
+                   "number of errors go to the maintainer's server, so the maintainer knows how many installations run, what is "
+                   "used and whether a version misbehaves. No names, keys, channels, places or anything from the mesh")
 
     settings_schema: list = []
 
