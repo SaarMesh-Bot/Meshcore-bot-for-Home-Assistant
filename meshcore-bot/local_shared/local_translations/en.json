@@ -919,6 +919,23 @@
       "help": "p2000: latest message. p2000 3 | p2000 spoed | p2000 <place> | p2000 vandaag (24 h count). Only here and by DM.",
       "none": "No P2000 messages known yet.",
       "none_place": "No P2000 message found for {place}."
+    },
+    "warnung": {
+      "help": "Current DWD weather and NINA warnings for the area on the DEWarn card.",
+      "fetch_error": "DWD and NINA cannot be reached right now.",
+      "none": "✅ No warnings ({area}).",
+      "partial": "(Not every source could be reached.)",
+      "header": "🚨 Warnings ({count})",
+      "error": "Error in the warnung command: {error}"
+    },
+    "pegel": {
+      "help": "Current water level with 3 h trend. Gauges: {stations}. 'pegel ?' lists them.",
+      "list": "🌊 Gauges: {stations}",
+      "unknown": "Unknown gauge '{name}'. 'pegel ?' lists them.",
+      "fetch_error": "Gauge {station} cannot be read right now.",
+      "result": "🌊 Gauge {station}: {value} m{trend} · {time}",
+      "stale": "(stale)",
+      "error": "Error in the pegel command: {error}"
     }
   },
   "services": {
@@ -929,6 +946,14 @@
     },
     "p2000": {
       "summary": "P2000 24 h: fire {fire} ({fire_p1} urgent), ambulance {ambu} ({ambu_p1} A1), police {police} ({police_p1} P1)"
+    },
+    "dewarn": {
+      "header": "🚨 Warning ({count})",
+      "all_clear": "✅ All clear: {what}"
+    },
+    "pegelalarm": {
+      "alarm": "{icon} Gauge {station}: {value} m{trend} · stage {stage}/{of}: {label}",
+      "all_clear": "✅ All clear gauge {station}: {value} m{trend}, below every stage."
     }
   },
   "greeter_lang": {

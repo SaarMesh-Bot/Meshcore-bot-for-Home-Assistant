@@ -1301,6 +1301,23 @@
       "help": "p2000 : dernier message. p2000 3 | p2000 spoed | p2000 <lieu> | p2000 vandaag (bilan 24 h). Seulement ici et par MP.",
       "none": "Aucun message P2000 connu pour l'instant.",
       "none_place": "Aucun message P2000 trouvé pour {place}."
+    },
+    "warnung": {
+      "help": "Alertes météo DWD et alertes NINA (Allemagne) en cours pour la zone de la carte DEWarn.",
+      "fetch_error": "DWD et NINA sont injoignables pour le moment.",
+      "none": "✅ Aucune alerte ({area}).",
+      "partial": "(Toutes les sources ne sont pas joignables.)",
+      "header": "🚨 Alertes ({count})",
+      "error": "Erreur dans la commande warnung : {error}"
+    },
+    "pegel": {
+      "help": "Niveau d'eau actuel (Allemagne) avec tendance sur 3 h. Stations : {stations}. 'pegel ?' affiche la liste.",
+      "list": "🌊 Stations : {stations}",
+      "unknown": "Station inconnue '{name}'. 'pegel ?' affiche la liste.",
+      "fetch_error": "Station {station} indisponible pour le moment.",
+      "result": "🌊 Niveau {station} : {value} m{trend} · {time}",
+      "stale": "(périmé)",
+      "error": "Erreur dans la commande pegel : {error}"
     }
   },
   "common": {
@@ -1408,6 +1425,14 @@
     },
     "p2000": {
       "summary": "P2000 24 h : pompiers {fire} ({fire_p1} urgents), ambulance {ambu} ({ambu_p1} A1), police {police} ({police_p1} P1)"
+    },
+    "dewarn": {
+      "header": "🚨 Alerte ({count})",
+      "all_clear": "✅ Fin d'alerte : {what}"
+    },
+    "pegelalarm": {
+      "alarm": "{icon} Niveau {station} : {value} m{trend} · seuil {stage}/{of} : {label}",
+      "all_clear": "✅ Fin d'alerte niveau {station} : {value} m{trend}, sous tous les seuils."
     }
   },
   "greeter_lang": {

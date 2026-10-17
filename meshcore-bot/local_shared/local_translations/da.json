@@ -1506,6 +1506,23 @@
       "help": "p2000: seneste melding. p2000 3 | p2000 spoed | p2000 <sted> | p2000 vandaag (optælling 24 t). Kun her og via DM.",
       "none": "Ingen P2000-meldinger kendt endnu.",
       "none_place": "Ingen P2000-melding fundet for {place}."
+    },
+    "warnung": {
+      "help": "Aktuelle DWD-vejrvarsler og NINA-varsler (Tyskland) for området på DEWarn-kortet.",
+      "fetch_error": "DWD og NINA kan ikke nås lige nu.",
+      "none": "✅ Ingen varsler ({area}).",
+      "partial": "(Ikke alle kilder kunne nås.)",
+      "header": "🚨 Varsler ({count})",
+      "error": "Fejl i warnung-kommandoen: {error}"
+    },
+    "pegel": {
+      "help": "Aktuel vandstand (Tyskland) med 3-timers tendens. Målere: {stations}. 'pegel ?' viser listen.",
+      "list": "🌊 Målere: {stations}",
+      "unknown": "Ukendt måler '{name}'. 'pegel ?' viser listen.",
+      "fetch_error": "Måler {station} kan ikke læses lige nu.",
+      "result": "🌊 Vandstand {station}: {value} m{trend} · {time}",
+      "stale": "(forældet)",
+      "error": "Fejl i pegel-kommandoen: {error}"
     }
   },
   "elapsed": {
@@ -1698,6 +1715,14 @@
     },
     "p2000": {
       "summary": "P2000 24 t: brandvæsen {fire} ({fire_p1} hast), ambulance {ambu} ({ambu_p1} A1), politi {police} ({police_p1} P1)"
+    },
+    "dewarn": {
+      "header": "🚨 Varsel ({count})",
+      "all_clear": "✅ Afblæst: {what}"
+    },
+    "pegelalarm": {
+      "alarm": "{icon} Vandstand {station}: {value} m{trend} · trin {stage}/{of}: {label}",
+      "all_clear": "✅ Afblæst vandstand {station}: {value} m{trend}, under alle trin."
     }
   },
   "greeter_lang": {

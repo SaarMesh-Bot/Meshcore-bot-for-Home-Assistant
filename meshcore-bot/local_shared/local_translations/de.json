@@ -1301,6 +1301,23 @@
       "help": "p2000: letzte Meldung. p2000 3 | p2000 spoed | p2000 <Ort> | p2000 vandaag (Zählung 24 h). Nur hier und per DM.",
       "none": "Noch keine P2000-Meldungen bekannt.",
       "none_place": "Keine P2000-Meldung für {place} gefunden."
+    },
+    "warnung": {
+      "help": "Aktuelle DWD-Unwetter- und NINA-Warnungen für das Gebiet der DEWarn-Karte.",
+      "fetch_error": "DWD und NINA sind gerade nicht erreichbar.",
+      "none": "✅ Keine Warnungen ({area}).",
+      "partial": "(Nicht alle Quellen erreichbar.)",
+      "header": "🚨 Warnungen ({count})",
+      "error": "Fehler im warnung-Befehl: {error}"
+    },
+    "pegel": {
+      "help": "Aktueller Pegelstand mit 3-h-Trend. Pegel: {stations}. 'pegel ?' zeigt die Liste.",
+      "list": "🌊 Pegel: {stations}",
+      "unknown": "Unbekannter Pegel '{name}'. 'pegel ?' zeigt die Liste.",
+      "fetch_error": "Pegel {station} gerade nicht abrufbar.",
+      "result": "🌊 Pegel {station}: {value} m{trend} · {time}",
+      "stale": "(veraltet)",
+      "error": "Fehler im pegel-Befehl: {error}"
     }
   },
   "common": {
@@ -1395,6 +1412,14 @@
     },
     "p2000": {
       "summary": "P2000 24 h: Feuerwehr {fire} ({fire_p1} dringend), Rettungsdienst {ambu} ({ambu_p1} A1), Polizei {police} ({police_p1} P1)"
+    },
+    "dewarn": {
+      "header": "🚨 Warnung ({count})",
+      "all_clear": "✅ Entwarnung: {what}"
+    },
+    "pegelalarm": {
+      "alarm": "{icon} Pegel {station}: {value} m{trend} · Stufe {stage}/{of}: {label}",
+      "all_clear": "✅ Entwarnung Pegel {station}: {value} m{trend}, alle Stufen unterschritten."
     }
   },
   "greeter_lang": {

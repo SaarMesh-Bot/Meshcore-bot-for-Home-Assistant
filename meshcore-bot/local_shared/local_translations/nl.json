@@ -1301,6 +1301,23 @@
       "help": "p2000: laatste melding. p2000 3 | p2000 spoed | p2000 <plaats> | p2000 vandaag (telling 24 u). Alleen hier en via DM.",
       "none": "Nog geen P2000-meldingen bekend.",
       "none_place": "Geen P2000-melding gevonden voor {place}."
+    },
+    "warnung": {
+      "help": "Actuele DWD-weerwaarschuwingen en NINA-waarschuwingen (Duitsland) voor het gebied op de DEWarn-kaart.",
+      "fetch_error": "DWD en NINA zijn nu niet bereikbaar.",
+      "none": "✅ Geen waarschuwingen ({area}).",
+      "partial": "(Niet alle bronnen bereikbaar.)",
+      "header": "🚨 Waarschuwingen ({count})",
+      "error": "Fout in het warnung-commando: {error}"
+    },
+    "pegel": {
+      "help": "Actuele waterstand (Duitsland) met trend over 3 uur. Meetpunten: {stations}. 'pegel ?' toont de lijst.",
+      "list": "🌊 Meetpunten: {stations}",
+      "unknown": "Onbekend meetpunt '{name}'. 'pegel ?' toont de lijst.",
+      "fetch_error": "Meetpunt {station} is nu niet op te vragen.",
+      "result": "🌊 Waterstand {station}: {value} m{trend} · {time}",
+      "stale": "(verouderd)",
+      "error": "Fout in het pegel-commando: {error}"
     }
   },
   "common": {
@@ -1408,6 +1425,14 @@
     },
     "p2000": {
       "summary": "P2000 24 u: brandweer {fire} ({fire_p1} spoed), ambulance {ambu} ({ambu_p1} A1), politie {police} ({police_p1} P1)"
+    },
+    "dewarn": {
+      "header": "🚨 Waarschuwing ({count})",
+      "all_clear": "✅ Sein veilig: {what}"
+    },
+    "pegelalarm": {
+      "alarm": "{icon} Waterstand {station}: {value} m{trend} · fase {stage}/{of}: {label}",
+      "all_clear": "✅ Sein veilig waterstand {station}: {value} m{trend}, onder alle fasen."
     }
   },
   "greeter_lang": {

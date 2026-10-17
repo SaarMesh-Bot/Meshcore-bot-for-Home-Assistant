@@ -348,6 +348,19 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
     # NLAlert: NL-Alert warnings and the monthly siren test in a channel (modules/nl_alert.py). Off.
     cfg["NLAlert"] = {"enabled": "false", "channel": "#nlalert", "provinces": "", "radius_km": "0", "siren_test": "true",
                       "poll_seconds": "120"}
+    # DEWarn: new DWD weather warnings and NINA warnings (Germany) in a channel, with all-clears (modules/de_warn.py).
+    # Off. Default area: the Saarland (state SL, its six districts).
+    cfg["DEWarn"] = {"enabled": "false", "channel": "#warnings", "states": "SL",
+                     "districts": "10041,10042,10043,10044,10045,10046", "min_level": "2", "max_dwd": "6",
+                     "all_clear": "true", "poll_seconds": "300"}
+    # PegelAlarm: flood stages of one gauge in a channel, only rises and an all-clear (modules/de_pegel.py). Off.
+    cfg["PegelAlarm"] = {"enabled": "false", "channel": "#warnings", "station": "saar",
+                         "thresholds": "280:Meldehöhe 1, 320:Warnstufe 1, 350:Meldehöhe 2, "
+                                       "380:A620-Sperrung wahrscheinlich, 400:Meldehöhe 3, 750:Meldehöhe 4",
+                         "poll_seconds": "600"}
+    # pegel command: the gauges it knows (alias=source:id:label; ...) and the one without an alias.
+    cfg["Pegel_Command"] = {"stations": "saar=po:26400220:Saar (Sankt Arnual); blies=hmd:W1013120:Blies (Alsfassen); "
+                                        "nied=hmd:W1102220:Nied (Niedaltdorf)", "default": "saar"}
     # RepeaterWatch: a directly heard repeater that goes silent is reported (Notifications + Home Assistant). On.
     # Setup: the first-start wizard on the dashboard (a banner until it is done). Only a new installation starts at
     # "false"; an update of an existing installation gets "true" (see merge_with_existing).
@@ -435,7 +448,8 @@ STATE_FILE = "generated_keys.json"
 # it was rewritten on every start until 2.6.1.
 MOVED_SECTIONS = {"Notifications", "ContactCleanup", "RoomServer_Login", "HomeAssistantBridge",
                   "Webhook", "ChannelHint", "Greeter_Command", "HARepeater", "F1", "F1_Command", "Heartbeat",
-                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox", "NameHunt", "ObserverFeed", "NLAlert", "AnalyzerFeed", "P2000"}
+                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox", "NameHunt", "ObserverFeed", "NLAlert", "AnalyzerFeed", "P2000",
+                  "DEWarn", "PegelAlarm", "Pegel_Command"}
 # Never removed by the "generated last time but not now" cleanup: the moved sections, and the scheduled
 # messages (the dashboard's Schedule page owns them since 2.8.0; the old announcement option is gone).
 KEEP_SECTIONS = MOVED_SECTIONS | {"Scheduled_Messages"}
