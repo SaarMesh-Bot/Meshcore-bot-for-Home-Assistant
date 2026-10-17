@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """
 'feestdag' command for the MeshCore Bot.
-Reports today's (or tomorrow's) official public holidays for NL + BE, via
-the free Nager.Date API (no key required).
+Reports today's (or tomorrow's) official public holidays, via the free Nager.Date API (no key required).
+
+The countries come from the card (Feestdag_Command -> countries, default NL,BE; e.g. DE,FR,LU for SaarLorLux).
+Holidays that only hold in part of a country (the API lists them with their counties, e.g. DE-SL) are shown only
+when one of those regions is on the card (regions, e.g. DE-SL); with no regions on the card every holiday counts,
+as before.
 """
 
 import time
@@ -15,7 +19,7 @@ from ..models import MeshMessage
 from .base_command import BaseCommand
 
 _API_URL = "https://date.nager.at/api/v3/PublicHolidays/{year}/{country}"
-_COUNTRIES = ("NL", "BE")
+_DEFAULT_COUNTRIES = "NL,BE"
 _CACHE_TTL_SECONDS = 24 * 60 * 60
 
 
@@ -23,12 +27,12 @@ class FeestdagCommand(BaseCommand):
     """Reports today's/tomorrow's official BE/NL public holidays."""
 
     name = "feestdag"
-    keywords = ["feestdag", "vandaag"]
-    description = "Public holidays NL/BE (usage: feestdag, feestdag morgen)"
+    keywords = ["feestdag", "vandaag", "feiertag", "feiertage"]
+    description = "Public holidays of the countries on the card (usage: feestdag, feestdag morgen)"
     category = "general"
     requires_internet = True
 
-    short_description = "Public holidays NL/BE today/tomorrow"
+    short_description = "Public holidays today/tomorrow"
     usage = "feestdag [morgen]"
     examples = ["feestdag", "feestdag morgen"]
 
@@ -37,6 +41,10 @@ class FeestdagCommand(BaseCommand):
         self.feestdag_enabled = self.get_config_value(
             "Feestdag_Command", "enabled", fallback=True, value_type="bool"
         )
+        raw = self.get_config_value("Feestdag_Command", "countries", fallback=_DEFAULT_COUNTRIES) or _DEFAULT_COUNTRIES
+        self.countries = [c.strip().upper() for c in raw.replace(";", ",").split(",") if c.strip()] or ["NL", "BE"]
+        regions = self.get_config_value("Feestdag_Command", "regions", fallback="") or ""
+        self.regions = {r.strip().upper() for r in regions.replace(";", ",").split(",") if r.strip()}
         # (year -> {country: [holiday dicts]}) cache, refreshed once a day.
         self._cache: dict[int, dict[str, list[dict]]] = {}
         self._cache_fetched_at: dict[int, float] = {}
@@ -47,7 +55,7 @@ class FeestdagCommand(BaseCommand):
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
     def get_help_text(self) -> str:
-        return self.translate("commands.feestdag.help")
+        return self.translate("commands.feestdag.help", countries="/".join(self.countries))
 
     async def _get_holidays_for_year(self, year: int) -> dict[str, list[dict]]:
         cached_at = self._cache_fetched_at.get(year, 0)
@@ -56,7 +64,7 @@ class FeestdagCommand(BaseCommand):
 
         result: dict[str, list[dict]] = {}
         async with aiohttp.ClientSession() as session:
-            for country in _COUNTRIES:
+            for country in self.countries:
                 url = _API_URL.format(year=year, country=country)
                 try:
                     async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
@@ -73,11 +81,15 @@ class FeestdagCommand(BaseCommand):
         return result
 
     @staticmethod
-    def _holidays_on(holidays_by_country: dict[str, list[dict]], target: date) -> list[tuple[str, str]]:
+    def _holidays_on(holidays_by_country: dict[str, list[dict]], target: date,
+                     regions: set | None = None) -> list[tuple[str, str]]:
         target_str = target.isoformat()
         found = []
         for country, holidays in holidays_by_country.items():
             for holiday in holidays:
+                counties = holiday.get("counties") or []
+                if regions and counties and not holiday.get("global", True) and not regions & set(counties):
+                    continue
                 if holiday.get("date") == target_str:
                     found.append((country, holiday.get("localName") or holiday.get("name") or "?"))
         return found
@@ -92,11 +104,12 @@ class FeestdagCommand(BaseCommand):
                 label = self.translate("commands.feestdag.tomorrow")
 
             holidays_by_country = await self._get_holidays_for_year(target.year)
-            found = self._holidays_on(holidays_by_country, target)
+            found = self._holidays_on(holidays_by_country, target, self.regions)
 
-            date_str = target.strftime("%d-%m-%Y")
+            date_str = target.strftime(self.translate("commands.feestdag.date_format"))
             if not found:
-                response = self.translate("commands.feestdag.none", label=label, date=date_str)
+                response = self.translate("commands.feestdag.none", label=label, date=date_str,
+                                          countries="/".join(self.countries))
             else:
                 # Dedupe identical holiday names shared by both countries.
                 by_name: dict[str, list[str]] = {}

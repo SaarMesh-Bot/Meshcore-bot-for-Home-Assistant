@@ -57,6 +57,7 @@ run "heartbeat service"                "$PY" "$HERE/test_heartbeat.py" "$SIM_TRE
 run "repeater alerts, accu history, rptr accu" "$PY" "$HERE/test_ha_alerts.py" "$SIM_TREE"
 run "translations (nl/en, all options)"  "$PY" "$HERE/test_translations.py"
 run "German data: DWD/NINA warnings, Pegel, Pegel alarm" "$PY" "$HERE/test_de_data.py" "$SIM_TREE"
+run "German data 2: odl, holidays per country, per-country commands" "$PY" "$HERE/test_de_pack2.py" "$SIM_TREE"
 run "our own translations (nl/en/de/fr/da)" "$PY" "$HERE/test_local_translations.py"
 run "Dutch, German, French, Danish coverage of upstream texts" "$PY" "$HERE/test_nl_completeness.py" "$SIM_TREE"
 run "F1: data, texts and posting plan" "$PY" "$HERE/test_f1_data.py"

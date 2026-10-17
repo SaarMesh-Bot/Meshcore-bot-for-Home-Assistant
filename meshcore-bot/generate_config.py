@@ -44,6 +44,13 @@ def bot_name(name: str) -> str:
 # Commands that stay off unless listed in commands.enable (they need internet
 # services or are rarely wanted).
 DEFAULT_OFF = ("airplanes", "worldcup")
+# Commands that only make sense in one country (their data source covers only that country). They start off on an
+# installation whose weather.default_country is another country; the card can still switch them on.
+COUNTRY_ONLY = {
+    "NL": ("beving", "buien", "energieprijs", "file", "kenteken", "ov", "p2000", "storing", "tanken", "waterstand",
+           "weerwaarschuwing", "wegwerk"),
+    "DE": ("odl", "pegel", "warnung"),
+}
 
 
 def command_section(name: str) -> str:
@@ -358,6 +365,8 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
                          "thresholds": "280:Meldehöhe 1, 320:Warnstufe 1, 350:Meldehöhe 2, "
                                        "380:A620-Sperrung wahrscheinlich, 400:Meldehöhe 3, 750:Meldehöhe 4",
                          "poll_seconds": "600"}
+    # odl command: the BfS stations in this box (lat_min,lon_min,lat_max,lon_max) and what to call the area.
+    cfg["Odl_Command"] = {"bbox": "49.1,6.3,49.65,7.45", "area": "Saarland"}
     # pegel command: the gauges it knows (alias=source:id:label; ...) and the one without an alias.
     cfg["Pegel_Command"] = {"stations": "saar=po:26400220:Saar (Sankt Arnual); blies=hmd:W1013120:Blies (Alsfassen); "
                                         "nied=hmd:W1102220:Nied (Niedaltdorf)", "default": "saar"}
@@ -372,6 +381,14 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
 
     for name in DEFAULT_OFF:
         set_option(cfg, command_section(name), "enabled", "false")
+    country = str(g("weather", "default_country", "NL") or "NL").strip().upper()
+    for land, names in COUNTRY_ONLY.items():
+        if land != country:
+            for name in names:
+                set_option(cfg, command_section(name), "enabled", "false")
+    if country != "NL":
+        # feestdag: the holidays of this country instead of NL/BE (a starting value; the card owns it)
+        set_option(cfg, "Feestdag_Command", "countries", country)
     forced = set()
     for name in g("commands", "enable", []):
         set_option(cfg, command_section(name), "enabled", "true")
@@ -449,7 +466,7 @@ STATE_FILE = "generated_keys.json"
 MOVED_SECTIONS = {"Notifications", "ContactCleanup", "RoomServer_Login", "HomeAssistantBridge",
                   "Webhook", "ChannelHint", "Greeter_Command", "HARepeater", "F1", "F1_Command", "Heartbeat",
                   "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox", "NameHunt", "ObserverFeed", "NLAlert", "AnalyzerFeed", "P2000",
-                  "DEWarn", "PegelAlarm", "Pegel_Command"}
+                  "DEWarn", "PegelAlarm", "Pegel_Command", "Odl_Command"}
 # Never removed by the "generated last time but not now" cleanup: the moved sections, and the scheduled
 # messages (the dashboard's Schedule page owns them since 2.8.0; the old announcement option is gone).
 KEEP_SECTIONS = MOVED_SECTIONS | {"Scheduled_Messages"}
@@ -457,7 +474,9 @@ KEEP_SECTIONS = MOVED_SECTIONS | {"Scheduled_Messages"}
 # Keys that are only a starting value: written when missing, never over a value that is there (set on a card).
 # airplanes/worldcup start off, but switching them on on their card must survive a restart (GitHub issue #1: the
 # generator used to switch airplanes off again at every start).
-SEED_KEYS = {(command_section(name), "enabled") for name in DEFAULT_OFF}
+SEED_KEYS = ({(command_section(name), "enabled") for name in DEFAULT_OFF}
+             | {(command_section(name), "enabled") for names in COUNTRY_ONLY.values() for name in names}
+             | {("Feestdag_Command", "countries")})
 
 
 # Keys an earlier version put on a card and that no longer exist: removed at the start, so the card does not show them

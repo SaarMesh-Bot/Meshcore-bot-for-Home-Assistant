@@ -168,10 +168,11 @@
     "feestdag": {
       "today": "Aujourd'hui",
       "tomorrow": "Demain",
-      "none": "{label} ({date}) : aucun jour férié officiel aux Pays-Bas ou en Belgique.",
+      "none": "{label} ({date}) : pas de jour férié officiel ({countries}).",
       "header": "{label} ({date}) :",
       "error": "Erreur dans la commande feestdag : {error}",
-      "help": "Affiche les jours fériés officiels aux Pays-Bas et en Belgique aujourd'hui (ou 'feestdag morgen' pour demain)."
+      "help": "Jours fériés officiels ({countries}) aujourd'hui, 'feestdag morgen' pour demain.",
+      "date_format": "%d/%m/%Y"
     },
     "morse": {
       "usage": "Utilisation : morse <texte> ou morse <.... .- .-..>",
@@ -1318,6 +1319,16 @@
       "result": "🌊 Niveau {station} : {value} m{trend} · {time}",
       "stale": "(périmé)",
       "error": "Erreur dans la commande pegel : {error}"
+    },
+    "odl": {
+      "help": "Débit de dose gamma (réseau allemand BfS) dans la zone de la carte. 'odl <lieu>' pour une station.",
+      "summary": "☢️ ODL {area} : {count} stations, médiane {median} µSv/h, max {max} ({max_name}) · {time}",
+      "stations": "☢️ ODL {stations} µSv/h · {time}",
+      "unknown": "Aucune station '{name}' dans la zone.",
+      "none": "Aucune valeur ODL actuelle dans la zone.",
+      "fetch_error": "Réseau BfS injoignable pour le moment.",
+      "area_default": "zone",
+      "error": "Erreur dans la commande odl : {error}"
     }
   },
   "common": {

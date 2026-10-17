@@ -168,10 +168,11 @@
     "feestdag": {
       "today": "Heute",
       "tomorrow": "Morgen",
-      "none": "{label} ({date}): kein offizieller Feiertag in NL oder BE.",
+      "none": "{label} ({date}): kein offizieller Feiertag ({countries}).",
       "header": "{label} ({date}):",
       "error": "Fehler im feestdag-Befehl: {error}",
-      "help": "Zeigt offizielle Feiertage in NL und BE für heute (oder 'feestdag morgen' für morgen)."
+      "help": "Offizielle Feiertage ({countries}) für heute, 'feiertag morgen' für morgen.",
+      "date_format": "%d.%m.%Y"
     },
     "morse": {
       "usage": "Verwendung: morse <Text> oder morse <.... .- .-..>",
@@ -1318,6 +1319,16 @@
       "result": "🌊 Pegel {station}: {value} m{trend} · {time}",
       "stale": "(veraltet)",
       "error": "Fehler im pegel-Befehl: {error}"
+    },
+    "odl": {
+      "help": "Gamma-Ortsdosisleistung (BfS-Messnetz) im Gebiet der Karte. 'odl <Ort>' für einzelne Messstellen.",
+      "summary": "☢️ ODL {area}: {count} Messstellen, Median {median} µSv/h, max {max} ({max_name}) · {time}",
+      "stations": "☢️ ODL {stations} µSv/h · {time}",
+      "unknown": "Keine Messstelle '{name}' im Gebiet.",
+      "none": "Keine aktuellen ODL-Werte im Gebiet.",
+      "fetch_error": "BfS-Messnetz gerade nicht erreichbar.",
+      "area_default": "Gebiet",
+      "error": "Fehler im odl-Befehl: {error}"
     }
   },
   "common": {

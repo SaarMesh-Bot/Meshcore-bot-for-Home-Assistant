@@ -168,10 +168,11 @@
     "feestdag": {
       "today": "Vandaag",
       "tomorrow": "Morgen",
-      "none": "{label} ({date}): geen officiële feestdag in NL of BE.",
+      "none": "{label} ({date}): geen officiële feestdag ({countries}).",
       "header": "{label} ({date}):",
       "error": "Fout bij feestdag-commando: {error}",
-      "help": "Toont officiële feestdagen in NL en BE voor vandaag (of 'feestdag morgen')."
+      "help": "Officiële feestdagen ({countries}) voor vandaag, of 'feestdag morgen' voor morgen.",
+      "date_format": "%d-%m-%Y"
     },
     "morse": {
       "usage": "Gebruik: morse <tekst> of morse <.... .- .-..>",
@@ -1318,6 +1319,16 @@
       "result": "🌊 Waterstand {station}: {value} m{trend} · {time}",
       "stale": "(verouderd)",
       "error": "Fout in het pegel-commando: {error}"
+    },
+    "odl": {
+      "help": "Gamma-dosistempo (Duits BfS-meetnet) in het gebied op de kaart. 'odl <plaats>' voor losse meetpunten.",
+      "summary": "☢️ ODL {area}: {count} meetpunten, mediaan {median} µSv/h, max {max} ({max_name}) · {time}",
+      "stations": "☢️ ODL {stations} µSv/h · {time}",
+      "unknown": "Geen meetpunt '{name}' in het gebied.",
+      "none": "Geen actuele ODL-waarden in het gebied.",
+      "fetch_error": "BfS-meetnet is nu niet bereikbaar.",
+      "area_default": "gebied",
+      "error": "Fout in het odl-commando: {error}"
     }
   },
   "common": {

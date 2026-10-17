@@ -168,10 +168,11 @@
     "feestdag": {
       "today": "I dag",
       "tomorrow": "I morgen",
-      "none": "{label} ({date}): ingen officiel helligdag i NL eller BE.",
+      "none": "{label} ({date}): ingen officiel helligdag ({countries}).",
       "header": "{label} ({date}):",
       "error": "Fejl i kommandoen feestdag: {error}",
-      "help": "Viser officielle helligdage i NL og BE for i dag (eller 'feestdag morgen' for i morgen)."
+      "help": "Officielle helligdage ({countries}) i dag, 'feestdag morgen' for i morgen.",
+      "date_format": "%d-%m-%Y"
     },
     "morse": {
       "usage": "Brug: morse <tekst> eller morse <.... .- .-..>",
@@ -1523,6 +1524,16 @@
       "result": "🌊 Vandstand {station}: {value} m{trend} · {time}",
       "stale": "(forældet)",
       "error": "Fejl i pegel-kommandoen: {error}"
+    },
+    "odl": {
+      "help": "Gamma-dosishastighed (tysk BfS-målenet) i området på kortet. 'odl <sted>' for enkelte målere.",
+      "summary": "☢️ ODL {area}: {count} målere, median {median} µSv/h, maks {max} ({max_name}) · {time}",
+      "stations": "☢️ ODL {stations} µSv/h · {time}",
+      "unknown": "Ingen måler '{name}' i området.",
+      "none": "Ingen aktuelle ODL-værdier i området.",
+      "fetch_error": "BfS-målenettet kan ikke nås lige nu.",
+      "area_default": "område",
+      "error": "Fejl i odl-kommandoen: {error}"
     }
   },
   "elapsed": {

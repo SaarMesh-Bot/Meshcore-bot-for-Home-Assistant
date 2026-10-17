@@ -168,10 +168,11 @@
     "feestdag": {
       "today": "Today",
       "tomorrow": "Tomorrow",
-      "none": "{label} ({date}): no official holiday in NL or BE.",
+      "none": "{label} ({date}): no official public holiday ({countries}).",
       "header": "{label} ({date}):",
       "error": "Error in the feestdag command: {error}",
-      "help": "Shows official public holidays in NL and BE for today (or 'feestdag morgen' for tomorrow)."
+      "help": "Official public holidays ({countries}) today, 'feestdag morgen' for tomorrow.",
+      "date_format": "%d-%m-%Y"
     },
     "morse": {
       "usage": "Usage: morse <text> or morse <.... .- .-..>",
@@ -936,6 +937,16 @@
       "result": "🌊 Gauge {station}: {value} m{trend} · {time}",
       "stale": "(stale)",
       "error": "Error in the pegel command: {error}"
+    },
+    "odl": {
+      "help": "Gamma dose rate (BfS network) in the area on the card. 'odl <place>' for single stations.",
+      "summary": "☢️ ODL {area}: {count} stations, median {median} µSv/h, max {max} ({max_name}) · {time}",
+      "stations": "☢️ ODL {stations} µSv/h · {time}",
+      "unknown": "No station '{name}' in the area.",
+      "none": "No current ODL values in the area.",
+      "fetch_error": "BfS network cannot be reached right now.",
+      "area_default": "area",
+      "error": "Error in the odl command: {error}"
     }
   },
   "services": {
