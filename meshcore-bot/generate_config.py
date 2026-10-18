@@ -329,9 +329,9 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
                          "share_status": "true", "share_channels": "true", "share_bots": "true",
                          "hello_hours": "24", "info_hours": "168", "status_hours": "1", "lists_hours": "24",
                          "find_neighbours": "false", "neighbours_hours": "24"}
-    # Install count: once a day a random id + the version to the maintainer's server (anonymous; README says so). On,
+    # Install count: once a day a random id + the version to the maintainer's server (anonymous; README says so). Off
     # one switch on the card to turn it off.
-    cfg["InstallCount"] = {"enabled": "true"}
+    cfg["InstallCount"] = {"enabled": "false"}   # SaarMesh fork: off by default (no statistics to the upstream author)
     # AutoChannels: hashtag channels the bot is set to use (#test, #games, #f1) are made on the radio when missing.
     cfg["AutoChannels"] = {"enabled": "true"}
     # HASensors: the bot's numbers as Home Assistant sensors (sensor.meshcore_bot_...). On.

@@ -181,7 +181,7 @@ run(GEN, NEW, d9)
 check(read(d9)["BotNetwork"].get("enabled") == "true", "op de kaart aangezet: blijft aan na een herstart")
 
 # ---- J. install count: on by default, a card choice stays
-check(read(d9)["InstallCount"].get("enabled") == "true", "telling installaties: standaard aan")
+check(read(d9)["InstallCount"].get("enabled") == "false", "InstallCount: im SaarMesh-Fork standardmäßig aus")
 c9 = read(d9); c9["InstallCount"]["enabled"] = "false"
 with open(f"{d9}/config.ini", "w") as fh: c9.write(fh)
 run(GEN, NEW, d9)
