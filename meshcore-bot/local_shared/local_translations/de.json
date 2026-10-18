@@ -1307,7 +1307,7 @@
       "help": "Aktuelle DWD-Unwetter- und NINA-Warnungen für das Gebiet der DEWarn-Karte.",
       "fetch_error": "DWD und NINA sind gerade nicht erreichbar.",
       "none": "✅ Keine Warnungen ({area}).",
-      "partial": "(Nicht alle Quellen erreichbar.)",
+      "partial": "({sources} nicht erreichbar.)",
       "header": "🚨 Warnungen ({count})",
       "error": "Fehler im warnung-Befehl: {error}"
     },

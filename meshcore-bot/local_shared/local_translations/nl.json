@@ -1307,7 +1307,7 @@
       "help": "Actuele DWD-weerwaarschuwingen en NINA-waarschuwingen (Duitsland) voor het gebied op de DEWarn-kaart.",
       "fetch_error": "DWD en NINA zijn nu niet bereikbaar.",
       "none": "✅ Geen waarschuwingen ({area}).",
-      "partial": "(Niet alle bronnen bereikbaar.)",
+      "partial": "({sources} niet bereikbaar.)",
       "header": "🚨 Waarschuwingen ({count})",
       "error": "Fout in het warnung-commando: {error}"
     },

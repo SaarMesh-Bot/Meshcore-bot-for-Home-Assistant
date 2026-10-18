@@ -53,8 +53,13 @@ class WarnungCommand(BaseCommand):
             area = ", ".join(s["states"]) or "?"
             if not items:
                 text = self.translate("commands.warnung.none", area=area)
-                if dwd_data is None or reached < len(s["districts"]):
-                    text += " " + self.translate("commands.warnung.partial")
+                missing = []
+                if dwd_data is None:
+                    missing.append("DWD")
+                if reached < len(s["districts"]):
+                    missing.append(f"NINA {len(s['districts']) - reached}/{len(s['districts'])}")
+                if missing:
+                    text += " " + self.translate("commands.warnung.partial", sources=", ".join(missing))
                 return await self.send_response(message, text)
             header = self.translate("commands.warnung.header", count=len(items))
             max_len = min(self.get_max_message_length(message), 150)

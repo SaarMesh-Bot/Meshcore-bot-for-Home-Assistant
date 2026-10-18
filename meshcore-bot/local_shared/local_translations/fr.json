@@ -1307,7 +1307,7 @@
       "help": "Alertes météo DWD et alertes NINA (Allemagne) en cours pour la zone de la carte DEWarn.",
       "fetch_error": "DWD et NINA sont injoignables pour le moment.",
       "none": "✅ Aucune alerte ({area}).",
-      "partial": "(Toutes les sources ne sont pas joignables.)",
+      "partial": "({sources} injoignable.)",
       "header": "🚨 Alertes ({count})",
       "error": "Erreur dans la commande warnung : {error}"
     },

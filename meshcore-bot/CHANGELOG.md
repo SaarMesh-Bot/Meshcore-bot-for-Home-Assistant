@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.1-sm.2
+
+- `warnung`: DWD and NINA districts that do not answer are asked once more; when a source still fails the reply says
+  which one (DWD, or NINA with the number of districts).
+- InstallCount is off by default in this fork.
+
 ## 1.5.1-sm.1 (SaarMesh fork, based on vipje 1.5.1)
 
 - DE pack: `warnung` (DWD + NINA), card **DEWarn** (new warnings and all-clears in a channel), `pegel`

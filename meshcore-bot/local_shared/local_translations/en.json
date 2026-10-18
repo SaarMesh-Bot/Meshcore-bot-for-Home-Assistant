@@ -925,7 +925,7 @@
       "help": "Current DWD weather and NINA warnings for the area on the DEWarn card.",
       "fetch_error": "DWD and NINA cannot be reached right now.",
       "none": "✅ No warnings ({area}).",
-      "partial": "(Not every source could be reached.)",
+      "partial": "({sources} could not be reached.)",
       "header": "🚨 Warnings ({count})",
       "error": "Error in the warnung command: {error}"
     },

@@ -36,9 +36,16 @@ async def get_json(url: str, timeout: float = 15) -> Any:
 
 
 async def dwd(now) -> Optional[dict]:
+    """The DWD answer, one retry after a short pause (the first call after a start sometimes fails on DNS)."""
     from .de_warn import DWD_URL, parse_dwd_payload
-    text = await get_text(DWD_URL, timeout=20)
-    return parse_dwd_payload(text) if text else None
+    for attempt in range(2):
+        text = await get_text(DWD_URL, timeout=20)
+        data = parse_dwd_payload(text) if text else None
+        if data is not None:
+            return data
+        if not attempt:
+            await asyncio.sleep(2)
+    return None
 
 
 async def nina(districts: dict, now, region_tokens) -> tuple:
@@ -54,7 +61,14 @@ async def nina(districts: dict, now, region_tokens) -> tuple:
             data = await get_json(NINA_URL.format(ars=ars12), timeout=12)
         return None if data is None else nina_items(data, name, now, region_tokens)
 
-    results = await asyncio.gather(*(one(a, n) for a, n in districts.items()))
+    items = list(districts.items())
+    results = list(await asyncio.gather(*(one(a, n) for a, n in items)))
+    if any(r is None for r in results):
+        # one retry for the districts that did not answer, one after the other
+        await asyncio.sleep(2)
+        for i, (a, n) in enumerate(items):
+            if results[i] is None:
+                results[i] = await one(a, n)
     warns, cancels, reached, keys, ckeys = [], [], 0, set(), set()
     for r in results:
         if r is None:
