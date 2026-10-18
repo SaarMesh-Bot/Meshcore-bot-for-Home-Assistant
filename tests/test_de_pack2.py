@@ -125,5 +125,20 @@ with tempfile.TemporaryDirectory() as d:
     check(c2.get("Feestdag_Command", "countries") == "DE,FR,LU" and c2.get("Feestdag_Command", "regions") == "DE-SL",
           "Feiertags-Länder und -Regionen von der Karte bleiben")
 
+# extra_config also wins in a section the cards own (Webhook), added after the first start
+with tempfile.TemporaryDirectory() as d:
+    o = copy.deepcopy(de)
+    gen(o, d)
+    o.setdefault("advanced", {})["extra_config"] = ["Webhook.enabled = true", "Webhook.secret_token = abc"]
+    c = gen(o, d)
+    check(c.get("Webhook", "enabled") == "true" and c.get("Webhook", "secret_token") == "abc",
+          "extra_config setzt Webhook auch nach dem ersten Start")
+    o["advanced"]["extra_config"] = []
+    c.set("Webhook", "port", "9000")
+    with open(f"{d}/config.ini", "w", encoding="utf-8") as f:
+        c.write(f)
+    c = gen(o, d)
+    check(c.get("Webhook", "port") == "9000", "ohne extra_config bleibt der Kartenwert")
+
 print(f"\n{len(fails)} Fehler")
 sys.exit(1 if fails else 0)

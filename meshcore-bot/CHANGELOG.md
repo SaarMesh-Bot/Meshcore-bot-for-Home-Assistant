@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.1-sm.3
+
+- `advanced → extra_config` now also wins in the sections the dashboard cards own (Webhook, InstallCount, NightMode,
+  ...). Before, a line there was only used on the very first start, so e.g. `Webhook.enabled = true` added later did
+  nothing.
+
 ## 1.5.1-sm.2
 
 - `warnung`: DWD and NINA districts that do not answer are asked once more; when a source still fails the reply says

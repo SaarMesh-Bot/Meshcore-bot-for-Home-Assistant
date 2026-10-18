@@ -533,8 +533,8 @@ def merge_with_existing(generated: configparser.ConfigParser, config_path: str, 
         if not merged.has_section(section):
             merged.add_section(section)
         for key, value in generated[section].items():
-            if section in MOVED_SECTIONS and merged.has_option(section, key):
-                continue   # set on the dashboard (or by an earlier run): keep it
+            if section in MOVED_SECTIONS and merged.has_option(section, key) and (section, key) not in forced:
+                continue   # set on the dashboard (or by an earlier run): keep it - unless extra_config sets it
             if (section, key) in SEED_KEYS and merged.has_option(section, key) and (section, key) not in forced:
                 continue   # a starting value only (for example airplanes off): the card's choice stays
             merged[section][key] = value
