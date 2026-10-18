@@ -59,7 +59,7 @@ for f in sorted((ADDON / "local_commands").glob("*.py")):
         fn = next((n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == "get_help_text"), None)
         helps[vals["name"]] = ast.get_source_segment(src, fn) if fn else ""
 dutch_cards = {n: d for n, (d, s, _f, _c) in cards.items() if DUTCH.search(d) or DUTCH.search(s)}
-check(len(cards) >= 46 and not dutch_cards, f"kaartteksten van alle {len(cards)} eigen commando's in het Engels ({dutch_cards})")
+check(len(cards) >= 40 and not dutch_cards, f"kaartteksten van alle {len(cards)} eigen commando's in het Engels ({dutch_cards})")
 untranslated = [n for n, h in helps.items() if "self.translate(" not in h]
 check(not untranslated, f"elke eigen help-tekst gaat via translate ({untranslated})")
 

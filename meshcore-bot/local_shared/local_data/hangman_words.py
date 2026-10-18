@@ -1,33 +1,38 @@
-"""Word list for the 'hangman' command, grouped by category. Kept accent-free
-so letter-by-letter guessing stays simple."""
+"""Word list for the 'hangman' command, grouped by category (German, SaarMesh fork). Kept free of umlauts and ß
+(ae/oe/ue/ss) so letter-by-letter guessing stays simple."""
 
 HANGMAN_WORDS = {
-    "dieren": [
-        "olifant", "giraffe", "krokodil", "pinguin", "kangoeroe", "vlinder",
-        "egel", "eekhoorn", "dolfijn", "walvis", "zebra", "luipaard",
-        "koala", "panda", "flamingo", "struisvogel", "spin", "mier",
-        "kameel", "neushoorn",
+    "tiere": [
+        "elefant", "giraffe", "krokodil", "pinguin", "kaenguru", "schmetterling",
+        "igel", "eichhoernchen", "delfin", "wal", "zebra", "leopard",
+        "koala", "panda", "flamingo", "strauss", "spinne", "ameise",
+        "kamel", "nashorn",
     ],
-    "landen": [
-        "belgie", "nederland", "duitsland", "frankrijk", "spanje", "italie",
-        "portugal", "zweden", "noorwegen", "finland", "polen", "griekenland",
-        "turkije", "marokko", "egypte", "canada", "brazilie", "japan",
-        "australie", "ierland",
+    "laender": [
+        "belgien", "niederlande", "deutschland", "frankreich", "spanien", "italien",
+        "portugal", "schweden", "norwegen", "finnland", "polen", "griechenland",
+        "tuerkei", "marokko", "aegypten", "kanada", "brasilien", "japan",
+        "australien", "luxemburg",
     ],
-    "eten": [
-        "frietjes", "wafel", "chocolade", "stoofvlees", "kroket", "pizza",
-        "pasta", "hamburger", "sushi", "pannenkoek", "appeltaart", "soep",
-        "salade", "kaas", "brood", "taart", "spaghetti", "curry",
-        "pistolet", "vlaai",
+    "essen": [
+        "lyoner", "schwenker", "dibbelabbes", "hoorische", "gefillde", "pizza",
+        "nudeln", "hamburger", "sushi", "pfannkuchen", "apfelkuchen", "suppe",
+        "salat", "kaese", "brot", "kuchen", "spaghetti", "currywurst",
+        "brezel", "flammkuchen",
     ],
     "sport": [
-        "voetbal", "wielrennen", "tennis", "zwemmen", "atletiek", "hockey",
-        "basketbal", "volleybal", "boksen", "judo", "golf", "badminton",
-        "handbal", "schaatsen", "klimmen", "roeien", "darts", "snooker",
+        "fussball", "radfahren", "tennis", "schwimmen", "leichtathletik", "hockey",
+        "basketball", "volleyball", "boxen", "judo", "golf", "badminton",
+        "handball", "eislaufen", "klettern", "rudern", "darts", "billard",
     ],
-    "beroepen": [
-        "loodgieter", "elektricien", "bakker", "slager", "leraar",
-        "verpleger", "brandweerman", "timmerman", "kapper", "boer",
-        "chauffeur", "advocaat", "dierenarts", "apotheker", "monteur",
+    "berufe": [
+        "installateur", "elektriker", "baecker", "metzger", "lehrer",
+        "pfleger", "feuerwehrmann", "zimmermann", "friseur", "landwirt",
+        "fahrer", "anwalt", "tierarzt", "apotheker", "mechaniker",
+    ],
+    "funk": [
+        "antenne", "repeater", "frequenz", "reichweite", "rauschen",
+        "akku", "funkgeraet", "kanal", "wellenlaenge", "verstaerker",
+        "koaxkabel", "mesh", "sender", "empfaenger", "solarpanel",
     ],
 }

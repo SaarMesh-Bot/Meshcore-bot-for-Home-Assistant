@@ -19,8 +19,8 @@ class WeetjeCommand(BaseCommand):
     """A random Dutch did-you-know."""
 
     name = "weetje"
-    keywords = ["weetje", "wistje"]
-    description = "A random fun fact (in Dutch)"
+    keywords = ["weetje", "wistje", "fakt", "wusstest"]
+    description = "A random fun fact (German: Saarland, radio, nature, space)"
     category = "fun"
 
     short_description = "Random fun fact"

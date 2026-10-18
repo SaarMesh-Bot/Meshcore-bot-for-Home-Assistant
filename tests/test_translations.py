@@ -30,7 +30,7 @@ for group, fields in cfg["schema"].items():
             if not (tree.get(group) or {}).get("name"): missing.append(f"{t}:{group}")
 check(not missing, f"elke optie in config.yaml heeft naam en uitleg in nl en en {missing[:8]}")
 opt = cfg["options"]; sch = cfg["schema"]
-check(opt["bot"]["language"] == "en" and sch["bot"]["language"] == "list(nl|en|de|fr|da)?" and opt["bot"]["rate_limit_seconds"] == 4,
-      "opties: taal standaard en (nieuwe installaties), keuze nl/en/de/fr/da, zendgrens 4 seconden")
+check(opt["bot"]["language"] == "de" and sch["bot"]["language"] == "list(nl|en|de|fr|da)?" and opt["bot"]["rate_limit_seconds"] == 4,
+      "opties: Sprache standardmäßig de (SaarMesh-Fork), keuze nl/en/de/fr/da, zendgrens 4 seconden")
 check(not any(k.strip().lower().startswith("ping") for k in opt["advanced"]["keywords"]), "geen vast ping-trefwoord: ping antwoordt vertaald met de tip over test")
 print(f"\n{len(fails)} fouten"); sys.exit(1 if fails else 0)

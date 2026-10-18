@@ -2,7 +2,7 @@
 
 1. Channels: which channels on the radio the bot answers in (the add-on option Bot > Channels, written through the
    Supervisor), and which busy public channel only gets a pointer (ChannelHint) and a welcome (greeter).
-2. Command groups: games, Netherlands/Belgium lookups, weather and space, fun, Formula 1 - each on or off at once.
+2. Command groups: games, Germany lookups, weather and space, fun, Formula 1 - each on or off at once.
 3. Extras: games channel, night mode, bot network, repeater watch, Home Assistant sensors.
 
 A new installation shows a banner on every dashboard page until the wizard is finished ([Setup] done = false, seeded by
@@ -16,8 +16,7 @@ from typing import Any, Optional
 GROUPS = {
     "games": ["dx", "xp", "badge", "karma", "checkin", "voorspel", "peiling", "poll", "quiz", "hangman", "farm", "dice",
               "roll", "magic8", "prikbord"],
-    "nlbe": ["noodnummers", "aed", "buien", "weerwaarschuwing", "beving", "storing", "file", "wegwerk", "ov", "tanken",
-             "laadpaal", "energieprijs", "waterstand", "straling", "kenteken", "feestdag"],
+    "nlbe": ["noodnummers", "aed", "warnung", "pegel", "odl", "laadpaal", "feestdag"],
     "weather": ["wx", "rain", "aqi", "sun", "moon", "aurora", "solar", "hfcond", "solarforecast", "satpass", "alert", "airplanes"],
     "fun": ["weetje", "quote", "joke", "dadjoke", "morse", "hacker", "catfact", "sports"],
     "f1": ["f1"],

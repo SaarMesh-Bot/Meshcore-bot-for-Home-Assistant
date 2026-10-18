@@ -1,6 +1,6 @@
 """Community commands and games (2.14.0) against the real patched upstream classes:
 topu without bots, dx (DX Jacht), pad, sig, meshkaart, karma, checkin, prikbord, noodnummers, weetje, peiling,
-herinner + Reminders service, voorspel, buien, xp + badge (Mesh RPG), the archive and the Community service."""
+herinner + Reminders service, voorspel, xp + badge (Mesh RPG), the archive and the Community service."""
 import asyncio
 import configparser
 import contextlib
@@ -51,12 +51,10 @@ def _imp():
     from modules.commands.prikbord_command import PrikbordCommand
     from modules.commands.noodnummers_command import NoodnummersCommand
     from modules.commands.aed_command import AedCommand
-    from modules.commands.kenteken_command import KentekenCommand
     from modules.commands.weetje_command import WeetjeCommand
     from modules.commands.peiling_command import PeilingCommand, parse_poll
     from modules.commands.herinner_command import HerinnerCommand
     from modules.commands.voorspel_command import VoorspelCommand
-    from modules.commands.buien_command import BuienCommand, parse_raintext, timeline
     from modules.commands.xp_command import XpCommand
     from modules.commands.badge_command import BadgeCommand
     from modules.service_plugins.reminders_service import RemindersService
@@ -506,17 +504,6 @@ async def main():
     r = await run(vs, "voorspel nieuw Volgende? | a | b", name="Klaas", is_dm=True, pubkey=B)
     check(r and r[0].startswith("Vraag #2 staat open."), "voorspel: na de uitslag kan een nieuwe vraag")
 
-    # ------------------------------------------------------------------ buien
-    raw = "\n".join(f"{v:03d}|{14 + (5 + i * 5) // 60:02d}:{(5 + i * 5) % 60:02d}" for i, v in enumerate([0, 0, 0, 0, 77, 90, 120, 140, 100, 0] + [0] * 14))
-    rows = C.parse_raintext(raw)
-    check(len(rows) == 24 and rows[0] == ("14:05", 0.0) and rows[4][1] == 0.1 and rows[7][1] == 9.31, f"buien: Buienradar-waarden naar mm/u ({rows[4]}, {rows[7]})")
-    marks, start, end, peak, at_ = C.timeline(rows)
-    check(len(marks) == 12 and marks.startswith("··▂") and marks[3] == "█" and start == "14:05" and end == "16:00" and at_ == "14:40", f"buien: tijdlijn per 10 min ({marks} {start}-{end} max om {at_})")
-    bu = C.BuienCommand(bot)
-    text = bu.render(rows, "Weert", 130)
-    check(text == f"Buien Weert 14:05-16:00: {marks} max 9,3 mm/u om 14:40" and len(text.encode()) <= 130, f"buien antwoord: {text}")
-    check(bu.render(C.parse_raintext("000|14:05\n000|14:10"), "Weert", 130) == "Droog in Weert tot 14:10 (Buienradar).", "buien: droog")
-
     # ------------------------------------------------------------------ xp + badge
     with db.connection() as c:
         c.execute("INSERT INTO community_activity (name, day, messages, commands) VALUES ('Piet', '2026-01-01', 50, 30)")
@@ -749,17 +736,6 @@ async def main():
     check(len(DEFAULT_MESSAGE.split("||")) == 4 and all(len(v.strip().replace("{channels}", "#bot, #test").encode()) <= 130 for v in DEFAULT_MESSAGE.split("||")),
           "standaard hint-tekst: 4 varianten, elk past in een bericht")
 
-    # ------------------------------------------------------------------ kenteken: Belgian and German plates
-    from modules.commands.kenteken_command import foreign_country, looks_german
-    check(foreign_country("1-ABC-234") == "be" and foreign_country("1abc234") == "be" and foreign_country("be 1-ABC-23") == "be", "kenteken: Belgisch herkend (1-ABC-234, of met 'be' ervoor)")
-    check(foreign_country("d M-AB 1234") == "de" and looks_german("M-AB 1234") and looks_german("B AB 123E"), "kenteken: Duits herkend (M-AB 1234, of met 'd' ervoor)")
-    check(foreign_country("HDJ-60-R") == "" and foreign_country("1-ABC-23") == "" and not looks_german("12-AB-34") and not looks_german("X-999-XX"), "kenteken: Nederlandse kentekens niet als buitenlands gezien")
-    ken = C.KentekenCommand(bot)
-    r = await run(ken, "kenteken 1-ABC-234")
-    check(r == ["Belgisch kenteken: daar is geen gratis open bron voor (de DIV deelt niets), alleen Nederlandse kentekens via de RDW."], f"kenteken Belgisch: antwoord zonder opzoeken ({r})")
-    r = await run(ken, "kenteken d M-AB 1234")
-    check(r and r[0].startswith("Duits kenteken:"), "kenteken Duits met landwoord")
-
     # ------------------------------------------------------------------ rptr / f1 follow their service (1.0.0: nothing of someone else's setup)
     from modules.commands.rptr_command import RptrCommand
     from modules.commands.f1_command import F1Command
@@ -771,7 +747,7 @@ async def main():
 
     # ------------------------------------------------------------------ switches, keywords
     for cls, section in ((C.DxCommand, "Dx_Command"), (C.PadCommand, "Pad_Command"), (C.SigCommand, "Sig_Command"), (C.KarmaCommand, "Karma_Command"),
-                         (C.PrikbordCommand, "Prikbord_Command"), (C.XpCommand, "Xp_Command"), (C.BuienCommand, "Buien_Command")):
+                         (C.PrikbordCommand, "Prikbord_Command"), (C.XpCommand, "Xp_Command")):
         b = make_bot(db, {section: {"enabled": "false"}})
         cmd = cls(b)
         check(not cmd.can_execute(MeshMessage(content=cls.keywords[0], sender_id="Piet", channel="#test")), f"{cls.__name__}: schakelaar uit = geen antwoord")
@@ -786,7 +762,7 @@ async def main():
                 for k in obj.keywords:
                     all_kw.setdefault(k.lower(), set()).add(obj.name)
     new = ["dx", "pad", "sig", "signaal", "meshkaart", "nodes", "karma", "topkarma", "checkin", "meld", "inchecken", "prikbord", "noodnummers", "nood",
-           "weetje", "wistje", "peiling", "kies", "herinner", "remind", "voorspel", "buien", "buienradar", "xp", "level", "badge", "badges"]
+           "weetje", "wistje", "peiling", "kies", "herinner", "remind", "voorspel", "fakt", "wusstest", "zitat", "xp", "level", "badge", "badges"]
     clashes = {k: sorted(all_kw.get(k, ())) for k in new if len(all_kw.get(k, ())) != 1}
     check(not clashes, f"nieuwe trefwoorden botsen niet met bestaande commando's {clashes}")
 

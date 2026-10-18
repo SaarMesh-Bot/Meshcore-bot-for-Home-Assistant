@@ -100,28 +100,23 @@ with tempfile.TemporaryDirectory() as d:
     c = gen(nl, d)
     check(enabled(c, "Pegel_Command") == "false" and enabled(c, "Warnung_Command") == "false"
           and enabled(c, "Odl_Command") == "false", "NL: pegel/warnung/odl aus")
-    check(enabled(c, "Waterstand_Command") == "(none)" and enabled(c, "Beving_Command") == "(none)",
-          "NL: NL-Befehle unverändert (kein Schalter geschrieben)")
     check(not c.has_option("Feestdag_Command", "countries"), "NL: feestdag wie bisher (NL/BE)")
 
 de = copy.deepcopy(OPTS)
 de.setdefault("weather", {})["default_country"] = "DE"
 with tempfile.TemporaryDirectory() as d:
     c = gen(de, d)
-    off = [n for n in ("Beving", "Buien", "Energieprijs", "File", "Kenteken", "Ov", "P2000", "Storing", "Tanken",
-                       "Waterstand", "Weerwaarschuwing", "Wegwerk") if enabled(c, f"{n}_Command") != "false"]
-    check(not off, f"DE: alle NL-only-Befehle aus ({off})")
     check(enabled(c, "Pegel_Command") == "(none)" and enabled(c, "Odl_Command") == "(none)", "DE: DE-Befehle an (Standard)")
     check(c.get("Feestdag_Command", "countries", fallback="") == "DE", "DE: Feiertage DE")
     check(c.get("Odl_Command", "bbox", fallback="") == "49.1,6.3,49.65,7.45", "odl-Karte mit Standard-Box")
-    # the card switches buien back on and sets SaarLorLux holidays: a restart keeps both
-    c.set("Buien_Command", "enabled", "true")
+    # the card switches odl off and sets SaarLorLux holidays: a restart keeps both
+    c.set("Odl_Command", "enabled", "false")
     c.set("Feestdag_Command", "countries", "DE,FR,LU")
     c.set("Feestdag_Command", "regions", "DE-SL")
     with open(f"{d}/config.ini", "w", encoding="utf-8") as f:
         c.write(f)
     c2 = gen(de, d)
-    check(enabled(c2, "Buien_Command") == "true", "auf der Karte eingeschaltet: bleibt nach Neustart an")
+    check(enabled(c2, "Odl_Command") == "false", "auf der Karte ausgeschaltet: bleibt nach Neustart aus")
     check(c2.get("Feestdag_Command", "countries") == "DE,FR,LU" and c2.get("Feestdag_Command", "regions") == "DE-SL",
           "Feiertags-Länder und -Regionen von der Karte bleiben")
 
@@ -139,6 +134,25 @@ with tempfile.TemporaryDirectory() as d:
         c.write(f)
     c = gen(o, d)
     check(c.get("Webhook", "port") == "9000", "ohne extra_config bleibt der Kartenwert")
+
+# the NL-only commands and services are gone from the fork
+ADDON = TESTS.parent / "meshcore-bot"
+left = [n for n in ("beving", "buien", "energieprijs", "file", "kenteken", "ov", "p2000", "storing", "tanken", "waterstand",
+                    "weerwaarschuwing", "wegwerk", "straling") if (ADDON / "local_commands" / f"{n}_command.py").exists()]
+left += [n for n in ("p2000_service", "nl_alert_service") if (ADDON / "local_service_plugins" / f"{n}.py").exists()]
+check(not left, f"NL-Befehle/Dienste entfernt ({left})")
+import importlib.util as _iu  # noqa: E402
+for name in ("weetjes", "quotes", "hangman_words"):
+    spec = _iu.spec_from_file_location(name, ADDON / "local_shared" / "local_data" / f"{name}.py")
+    mod = _iu.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    data = getattr(mod, {"weetjes": "WEETJES", "quotes": "QUOTES", "hangman_words": "HANGMAN_WORDS"}[name])
+    text = json.dumps(data, ensure_ascii=False).lower()
+    check(not any(w in text for w in (" het ", " een ", "weetje:", "spreekwoord", "nederland ")), f"{name}: kein Niederländisch mehr")
+from modules.local_data.weetjes import WEETJES as _W  # noqa: E402
+check(all(len(w.encode()) <= 125 for w in _W), "weetjes: jede Zeile passt in eine Nachricht")
+from modules.local_data.hangman_words import HANGMAN_WORDS as _H  # noqa: E402
+check(all(w.isascii() and w.isalpha() and w.islower() for ws in _H.values() for w in ws), "hangman: nur a-z (ae/oe/ue/ss)")
 
 print(f"\n{len(fails)} Fehler")
 sys.exit(1 if fails else 0)

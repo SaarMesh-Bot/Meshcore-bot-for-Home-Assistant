@@ -47,8 +47,7 @@ DEFAULT_OFF = ("airplanes", "worldcup")
 # Commands that only make sense in one country (their data source covers only that country). They start off on an
 # installation whose weather.default_country is another country; the card can still switch them on.
 COUNTRY_ONLY = {
-    "NL": ("beving", "buien", "energieprijs", "file", "kenteken", "ov", "p2000", "storing", "tanken", "waterstand",
-           "weerwaarschuwing", "wegwerk"),
+    # The NL-only commands (KNMI, Buienradar, RDW, NS, P2000, NL-Alert, ...) are removed from the SaarMesh fork.
     "DE": ("odl", "pegel", "warnung"),
 }
 
@@ -247,7 +246,7 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
     temperature = g("weather", "temperature_unit", "celsius")
     wind = g("weather", "wind_speed_unit", "kmh")
     cfg["Weather"] = {
-        "default_country": g("weather", "default_country", "NL"),
+        "default_country": g("weather", "default_country", "DE"),
         "weather_provider": g("weather", "provider", "openmeteo"),
         # gwx reads its units from [Weather], the plain wx command from [Wx_Command].
         "temperature_unit": temperature,
@@ -348,13 +347,7 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
     # AnalyzerFeed: observers of chosen regions from the public EU Meshcore Analyzer (modules/observers.py). Off, no regions.
     cfg["AnalyzerFeed"] = {"enabled": "false", "regions": "", "url": "https://meshcore-analyzer.eu", "packets": "true",
                            "observers_minutes": "5", "packets_seconds": "60"}
-    # P2000: only priority-1 call-outs in a channel, a daily count, the p2000 command for the rest (modules/p2000.py). Off.
-    cfg["P2000"] = {"enabled": "false", "regions": "", "channel": "#p2000", "post_priority1": "true", "max_per_hour": "4",
-                    "daily_summary": "true", "summary_time": "12:00", "poll_seconds": "60"}
 
-    # NLAlert: NL-Alert warnings and the monthly siren test in a channel (modules/nl_alert.py). Off.
-    cfg["NLAlert"] = {"enabled": "false", "channel": "#nlalert", "provinces": "", "radius_km": "0", "siren_test": "true",
-                      "poll_seconds": "120"}
     # DEWarn: new DWD weather warnings and NINA warnings (Germany) in a channel, with all-clears (modules/de_warn.py).
     # Off. Default area: the Saarland (state SL, its six districts).
     cfg["DEWarn"] = {"enabled": "false", "channel": "#warnings", "states": "SL",
@@ -381,7 +374,7 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
 
     for name in DEFAULT_OFF:
         set_option(cfg, command_section(name), "enabled", "false")
-    country = str(g("weather", "default_country", "NL") or "NL").strip().upper()
+    country = str(g("weather", "default_country", "DE") or "DE").strip().upper()
     for land, names in COUNTRY_ONLY.items():
         if land != country:
             for name in names:
@@ -465,7 +458,7 @@ STATE_FILE = "generated_keys.json"
 # it was rewritten on every start until 2.6.1.
 MOVED_SECTIONS = {"Notifications", "ContactCleanup", "RoomServer_Login", "HomeAssistantBridge",
                   "Webhook", "ChannelHint", "Greeter_Command", "HARepeater", "F1", "F1_Command", "Heartbeat",
-                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox", "NameHunt", "ObserverFeed", "NLAlert", "AnalyzerFeed", "P2000",
+                  "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox", "NameHunt", "ObserverFeed", "AnalyzerFeed",
                   "DEWarn", "PegelAlarm", "Pegel_Command", "Odl_Command"}
 # Never removed by the "generated last time but not now" cleanup: the moved sections, and the scheduled
 # messages (the dashboard's Schedule page owns them since 2.8.0; the old announcement option is gone).

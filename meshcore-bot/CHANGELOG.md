@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.1-sm.4
+
+- NL-only commands and services removed: beving, buien, energieprijs, file, kenteken, ov, p2000 (+ card P2000),
+  storing, straling (replaced by `odl`), tanken, waterstand (replaced by `pegel`), weerwaarschuwing (replaced by
+  `warnung`), wegwerk, card NLAlert (replaced by DEWarn).
+- `weetje`, `quote` and `hangman` in German (facts about the Saarland, radio, nature; German quotes and sayings;
+  hangman categories tiere, laender, essen, sport, berufe, funk). New keywords: fakt, wusstest, zitat, spruch.
+- New installations start in German with default_country DE.
+
 ## 1.5.1-sm.3
 
 - `advanced → extra_config` now also wins in the sections the dashboard cards own (Webhook, InstallCount, NightMode,
