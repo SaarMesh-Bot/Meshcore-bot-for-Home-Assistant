@@ -2,7 +2,7 @@ name: MeshCore Proxy
 version: "1.2.0"
 slug: meshcore_proxy
 description: Shares one physical MeshCore radio over TCP between several clients (meshcore-ha, MeshCore Bot, ...)
-url: https://github.com/vipje/Meshcore-bot-for-Home-Assistant
+url: https://github.com/SaarMesh-Bot/Meshcore-bot-for-Home-Assistant
 stage: stable
 arch:
   - aarch64

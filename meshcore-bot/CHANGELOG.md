@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.1-sm.1 (SaarMesh fork, based on vipje 1.5.1)
+
+- DE pack: `warnung` (DWD + NINA), card **DEWarn** (new warnings and all-clears in a channel), `pegel`
+  (PEGELONLINE + Saarland HMD), card **PegelAlarm** (flood stages), `odl` (BfS gamma dose rate), `feestdag`/`feiertag`
+  with countries and regions from the card.
+- Commands whose data covers one country start off on an installation set to another country
+  (weather → default_country).
+
 ## 1.5.1
 
 - InstallCount (on by default, one switch to turn it off) now also sends the bot's language, the processor type, the
