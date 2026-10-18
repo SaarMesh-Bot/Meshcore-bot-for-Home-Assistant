@@ -275,7 +275,8 @@
 
     // Names and questions come from the mesh and are not trusted: everything below is built with textContent and
     // DOM nodes, so nothing from the mesh is ever interpreted as HTML.
-    const TITLES = ['Nieuwkomer', 'Luisteraar', 'Babbelaar', 'Meshganger', 'Relaisjager', 'Mesh-veteraan', 'Mesh-legende'];
+    // English source like the rest of the page; webui.js translates (ui_i18n.json). Same titles as commands.xp.title.
+    const TITLES = ['Newcomer', 'Listener', 'Chatter', 'Mesh regular', 'Relay hunter', 'Mesh veteran', 'Mesh legend'];
     const BADGES = {
         msg100: '💬 100 messages', msg1000: '💬 1000 messages', days30: '📅 30 active days', days100: '📅 100 active days',
         hops3: '📡 3 hops', hops6: '📡 6 hops', streak7: '🔥 7-day streak', streak30: '🔥 30-day streak',

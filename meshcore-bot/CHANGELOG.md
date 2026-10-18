@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.1-sm.5
+
+- Games page: the Mesh RPG titles were fixed Dutch words (Nieuwkomer, Luisteraar, ...); they now follow the dashboard
+  language like the rest of the page (German: Neuling, Zuhörer, Plauderer, Mesh-Stammgast, Relaisjäger, Mesh-Veteran,
+  Mesh-Legende). "DX Jacht" reads "DX-Jagd" in German.
+
 ## 1.5.1-sm.4
 
 - NL-only commands and services removed: beving, buien, energieprijs, file, kenteken, ov, p2000 (+ card P2000),
