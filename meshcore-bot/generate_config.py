@@ -52,6 +52,25 @@ COUNTRY_ONLY = {
 }
 
 
+# Fixed answers of the old SaarMesh bot (keyword = reply, exact match; the "/" prefix is stripped before matching).
+# Only on a German installation; a line in advanced -> keywords replaces one of them, "key=" with nothing removes it.
+SAARMESH_KEYWORDS = {
+    "info": '"ℹ️ SaarMesh-Bot · saarmesh.de · Telegram t.me/saarmesh · info@saarmesh.de"',
+    "regions": '"Infos zu Regions im Saarland: saarmesh.de/regions/ - Standard ist saarlorlux"',
+    "1-byte": '"Profis nutzen 2 oder sogar 3 Bytes"',
+    "bier": '"Hol\' mir mal \'ne Flasche Bier, sonst streik\' ich hier und schreibe nicht weiter! 🍺"',
+    "💙🖤": '"Hier regiert der FCS"',
+}
+
+
+def prefix_option(value) -> str:
+    """The command prefix: "/" when the option is unset, none ("") when it is "-" or empty."""
+    if value is None:
+        return "/"
+    v = str(value).strip()
+    return "" if v in ("", "-") else v
+
+
 def command_section(name: str) -> str:
     base = CAMEL_CASE.get(name.lower()) or name.strip().title()
     return f"{base}_Command"
@@ -156,10 +175,12 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
         # Where the bot is: airplanes, wx, rain, sun, distances in test and the map use it. Only when both are set.
         **({"bot_latitude": str(g("bot", "latitude")), "bot_longitude": str(g("bot", "longitude"))}
            if g("bot", "latitude") not in (None, "") and g("bot", "longitude") not in (None, "") else ha_home()),
-        # Optional prefix before commands ("/" for /test). Not required by default, so "test" keeps working too.
-        **({"command_prefix": str(g("bot", "command_prefix", "")).strip(),
+        # Optional prefix before commands. SaarMesh fork: "/" unless the option says otherwise, so the /wetter, /pegel ...
+        # people know from the old SaarMesh bot work; never required, so plain "test" keeps working too. An option
+        # set to "-" turns the prefix off (legacy: a leading "!" is then stripped instead).
+        **({"command_prefix": prefix_option(g("bot", "command_prefix", None)),
             "require_command_prefix": bool_str(g("bot", "require_command_prefix", False))}
-           if str(g("bot", "command_prefix", "") or "").strip() else {}),
+           if prefix_option(g("bot", "command_prefix", None)) else {}),
         # Advert like a repeater: a flood advert every N hours (0 = off; at least 3, the repeater firmware's minimum),
         # so people far away keep the bot in their contacts and on the map. And one when the bot starts.
         "advert_interval_hours": str(advert_hours(g("bot", "advert_hours", 12))),
@@ -187,11 +208,14 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
         "respond_to_dms": bool_str(g("bot", "respond_to_dms", True)),
     }
 
-    cfg["Keywords"] = {}
+    # Fixed answers: the SaarMesh ones first (ported from the old SaarMesh bot), the option's lines win over them.
+    cfg["Keywords"] = dict(SAARMESH_KEYWORDS) if str(g("weather", "default_country", "DE")).upper() == "DE" else {}
     for line in g("advanced", "keywords", []):
         kv = split_keyval(line)
-        if kv:
-            cfg["Keywords"][kv[0]] = kv[1]
+        if kv and kv[1]:
+            cfg["Keywords"][kv[0].lower()] = kv[1]
+        elif kv:
+            cfg["Keywords"].pop(kv[0].lower(), None)
 
     # Only honoured for real DMs (which carry a verified public key); channel
     # messages have no cryptographic sender verification.

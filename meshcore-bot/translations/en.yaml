@@ -63,7 +63,7 @@ configuration:
         description: For example 5.98. Only used together with the latitude above.
       command_prefix:
         name: Command prefix
-        description: "Optional character(s) before commands, for example / so that /test works. Several separated by commas (/, !). Empty = no prefix (the legacy ! always works)."
+        description: "Character(s) before commands. Not set = / (SaarMesh fork), so /test and /wetter work. Several separated by commas (/, !). - = no prefix (then a leading ! is stripped)."
       require_command_prefix:
         name: Require the prefix
         description: "Off (default): /test and test both work. On: only commands with the prefix are answered."

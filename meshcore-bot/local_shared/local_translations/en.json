@@ -936,7 +936,11 @@
       "fetch_error": "Gauge {station} cannot be read right now.",
       "result": "🌊 Gauge {station}: {value} m{trend} · {time}",
       "stale": "(stale)",
-      "error": "Error in the pegel command: {error}"
+      "error": "Error in the pegel command: {error}",
+      "trend": "🌊 {station} {days} d: {value} m ({days} d ago {then} m, {arrow} {diff} cm) · min {min} · max {max} · avg {avg} m",
+      "alarm_normal": "🌊 Gauge alarm {station}: {value} m, no warning stage.",
+      "alarm_stage": "⚠️ Gauge alarm {station}: {value} m, stage {stage}/{of}: {label}.",
+      "alarm_next": "Next: {cm} cm ({label})."
     },
     "odl": {
       "help": "Gamma dose rate (BfS network) in the area on the card. 'odl <place>' for single stations.",
@@ -947,6 +951,24 @@
       "fetch_error": "BfS network cannot be reached right now.",
       "area_default": "area",
       "error": "Error in the odl command: {error}"
+    },
+    "vorhersage": {
+      "help": "Hourly forecast (Open-Meteo). vorhersage [place|postcode] [hours 1-48], without a place for your position.",
+      "head": "🗓️ {place} {hours}h",
+      "here": "your position",
+      "bot_location": "bot location",
+      "not_found": "Place '{place}' not found.",
+      "fetch_error": "Forecast cannot be fetched right now.",
+      "error": "Error in the vorhersage command: {error}"
+    },
+    "zeit": {
+      "help": "The bot's date and time.",
+      "result": "⏰ {date} {time} {tz}"
+    },
+    "echo": {
+      "help": "Sends your text back: echo <text>",
+      "result": "🗣️ {text}",
+      "empty": "(empty)"
     }
   },
   "services": {

@@ -168,6 +168,54 @@ def hmd_current(series: list) -> Optional[dict]:
     return {"value_cm": now_cm, "time": now_dt, "trend_cm": (now_cm - prev) if prev is not None else None}
 
 
+# ---------------------------------------------------------------- longer spans (pegel trend)
+MAX_DAYS = {"po": 30, "hmd": 7}   # PEGELONLINE keeps 30 days, the HMD text series one week
+
+
+def po_series(history: Any, tz: tzinfo) -> list:
+    """[(datetime, cm)] sorted, from a PEGELONLINE measurements answer."""
+    out = []
+    for m in history if isinstance(history, list) else []:
+        try:
+            v = float(m.get("value"))
+        except (TypeError, ValueError, AttributeError):
+            continue
+        t = _iso(m.get("timestamp"), tz)
+        if t is not None:
+            out.append((t, v))
+    out.sort(key=lambda x: x[0])
+    return out
+
+
+def span(series: list, days: int) -> Optional[dict]:
+    """{now, then, diff, min, max, avg, then_time, now_time} over the last `days` days of a series, None when it has
+    fewer than two values in that window."""
+    if not series:
+        return None
+    end = series[-1][0]
+    window = [(t, v) for t, v in series if t >= end - timedelta(days=days)]
+    if len(window) < 2:
+        return None
+    vals = [v for _, v in window]
+    return {"now": window[-1][1], "then": window[0][1], "diff": window[-1][1] - window[0][1],
+            "min": min(vals), "max": max(vals), "avg": sum(vals) / len(vals),
+            "then_time": window[0][0], "now_time": window[-1][0]}
+
+
+def span_arrow(diff: float) -> str:
+    return "↗️" if diff > 5 else ("↘️" if diff < -5 else "→")
+
+
+def parse_days(token: str) -> Optional[int]:
+    """'7d', '7t', '7' -> 7; anything else None."""
+    m = re.fullmatch(r"(\d{1,2})\s*[dt]?", (token or "").strip().lower())
+    return int(m.group(1)) if m else None
+
+
+def next_threshold(value_cm: float, thresholds: list) -> Optional[tuple]:
+    return next(((cm, label) for cm, label in thresholds if value_cm < cm), None)
+
+
 # ---------------------------------------------------------------- wording
 def trend_text(delta: Optional[float]) -> str:
     """' (↗️ +12 cm/3h)', ' (→ 0 cm/3h)' or ''."""

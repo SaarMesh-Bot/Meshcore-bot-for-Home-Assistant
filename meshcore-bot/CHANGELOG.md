@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.5.1-sm.6
+
+Command parity with the old SaarMesh bot (saarmesh-bot-mc):
+- New `vorhersage` (also forecast, prognose): hourly forecast from Open-Meteo for a place, a postcode or the sender's
+  advert position (else the bot's location); `vorhersage Trier 12`, `vorhersage 66117`. Up to 48 h, at most 8 lines.
+- `pegel trend [alias] [Nd]` and the old keywords pegeltrend, pegel3d, pegel7d, pegel10d: level now and N days ago,
+  min / max / average. `pegel alarm` / pegelalarm: the alarm gauge against its thresholds, stage now and the next one.
+- New `zeit` (uhrzeit, time) and `echo`. `warnung` also answers to dwdwarnings and ninawarnings.
+- Command prefix `/` by default (not required), so /wetter, /pegel ... work as before. Option `-` turns it off.
+- Fixed answers of the old bot as keywords on a German installation: info, regions, 1-byte, bier, 💙🖤
+  (advanced -> keywords replaces or removes them).
+
 ## 1.5.1-sm.5
 
 - Games page: the Mesh RPG titles were fixed Dutch words (Nieuwkomer, Luisteraar, ...); they now follow the dashboard

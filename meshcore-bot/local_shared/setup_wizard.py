@@ -17,7 +17,7 @@ GROUPS = {
     "games": ["dx", "xp", "badge", "karma", "checkin", "voorspel", "peiling", "poll", "quiz", "hangman", "farm", "dice",
               "roll", "magic8", "prikbord"],
     "nlbe": ["noodnummers", "aed", "warnung", "pegel", "odl", "laadpaal", "feestdag"],
-    "weather": ["wx", "rain", "aqi", "sun", "moon", "aurora", "solar", "hfcond", "solarforecast", "satpass", "alert", "airplanes"],
+    "weather": ["wx", "vorhersage", "rain", "aqi", "sun", "moon", "aurora", "solar", "hfcond", "solarforecast", "satpass", "alert", "airplanes"],
     "fun": ["weetje", "quote", "joke", "dadjoke", "morse", "hacker", "catfact", "sports"],
     "f1": ["f1"],
 }

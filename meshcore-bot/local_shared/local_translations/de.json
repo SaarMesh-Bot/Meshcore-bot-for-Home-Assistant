@@ -1318,7 +1318,11 @@
       "fetch_error": "Pegel {station} gerade nicht abrufbar.",
       "result": "🌊 Pegel {station}: {value} m{trend} · {time}",
       "stale": "(veraltet)",
-      "error": "Fehler im pegel-Befehl: {error}"
+      "error": "Fehler im pegel-Befehl: {error}",
+      "trend": "🌊 {station} {days} T: {value} m (vor {days} T {then} m, {arrow} {diff} cm) · Min {min} · Max {max} · Ø {avg} m",
+      "alarm_normal": "🌊 Pegelalarm {station}: {value} m, keine Warnstufe.",
+      "alarm_stage": "⚠️ Pegelalarm {station}: {value} m, Stufe {stage}/{of}: {label}.",
+      "alarm_next": "Nächste: {cm} cm ({label})."
     },
     "odl": {
       "help": "Gamma-Ortsdosisleistung (BfS-Messnetz) im Gebiet der Karte. 'odl <Ort>' für einzelne Messstellen.",
@@ -1329,6 +1333,24 @@
       "fetch_error": "BfS-Messnetz gerade nicht erreichbar.",
       "area_default": "Gebiet",
       "error": "Fehler im odl-Befehl: {error}"
+    },
+    "vorhersage": {
+      "help": "Stündliche Vorhersage (Open-Meteo). vorhersage [Ort|PLZ] [Stunden 1-48], ohne Ort für deinen Standort.",
+      "head": "🗓️ {place} {hours}h",
+      "here": "dein Standort",
+      "bot_location": "Bot-Standort",
+      "not_found": "Ort '{place}' nicht gefunden.",
+      "fetch_error": "Vorhersage gerade nicht abrufbar.",
+      "error": "Fehler im vorhersage-Befehl: {error}"
+    },
+    "zeit": {
+      "help": "Datum und Uhrzeit des Bots.",
+      "result": "⏰ {date} {time} {tz}"
+    },
+    "echo": {
+      "help": "Schickt deinen Text zurück: echo <Text>",
+      "result": "🗣️ {text}",
+      "empty": "(leer)"
     }
   },
   "common": {

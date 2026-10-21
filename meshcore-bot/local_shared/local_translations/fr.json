@@ -1318,7 +1318,11 @@
       "fetch_error": "Station {station} indisponible pour le moment.",
       "result": "🌊 Niveau {station} : {value} m{trend} · {time}",
       "stale": "(périmé)",
-      "error": "Erreur dans la commande pegel : {error}"
+      "error": "Erreur dans la commande pegel : {error}",
+      "trend": "🌊 {station} {days} j : {value} m (il y a {days} j {then} m, {arrow} {diff} cm) · min {min} · max {max} · moy. {avg} m",
+      "alarm_normal": "🌊 Alerte niveau {station} : {value} m, aucun seuil.",
+      "alarm_stage": "⚠️ Alerte niveau {station} : {value} m, seuil {stage}/{of} : {label}.",
+      "alarm_next": "Suivant : {cm} cm ({label})."
     },
     "odl": {
       "help": "Débit de dose gamma (réseau allemand BfS) dans la zone de la carte. 'odl <lieu>' pour une station.",
@@ -1329,6 +1333,24 @@
       "fetch_error": "Réseau BfS injoignable pour le moment.",
       "area_default": "zone",
       "error": "Erreur dans la commande odl : {error}"
+    },
+    "vorhersage": {
+      "help": "Prévisions horaires (Open-Meteo). vorhersage [lieu|code postal] [heures 1-48], sans lieu pour votre position.",
+      "head": "🗓️ {place} {hours}h",
+      "here": "votre position",
+      "bot_location": "position du bot",
+      "not_found": "Lieu '{place}' introuvable.",
+      "fetch_error": "Prévisions indisponibles pour le moment.",
+      "error": "Erreur dans la commande vorhersage : {error}"
+    },
+    "zeit": {
+      "help": "Date et heure du bot.",
+      "result": "⏰ {date} {time} {tz}"
+    },
+    "echo": {
+      "help": "Renvoie votre texte : echo <texte>",
+      "result": "🗣️ {text}",
+      "empty": "(vide)"
     }
   },
   "common": {

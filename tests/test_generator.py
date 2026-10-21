@@ -55,7 +55,10 @@ B = read(d)
 check(sections(B, MOVED_SECTIONS) == moved_a, "verhuisde secties zijn na de update identiek (geen enkele waarde verloren)")
 others = [s for s in A.sections() if s not in MOVED_SECTIONS]
 def _strip(sec): return {k: v for k, v in sec.items() if k not in ("rate_limit_seconds", "advert_interval_hours", "startup_advert",
-                                                                  "dm_max_retries", "dm_flood_after", "dm_max_flood_attempts")}
+                                                                  "dm_max_retries", "dm_flood_after", "dm_max_flood_attempts",
+                                                                  # SaarMesh fork 1.5.1-sm.6: prefix / and the old bot's fixed answers
+                                                                  "command_prefix", "require_command_prefix",
+                                                                  "info", "regions", "1-byte", "bier", "💙🖤")}
 check({s: _strip(dict(A[s])) for s in others} == {s: _strip(dict(B[s])) for s in others}, "alle andere secties zijn ook identiek (alleen de nieuwe zendgrens-sleutel in [Bot] komt erbij)")
 check(set(B.sections()) - set(A.sections()) == {"HARepeater", "F1", "F1_Command", "Heartbeat", "Localization", "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox", "NameHunt", "ObserverFeed", "AnalyzerFeed", "DEWarn", "PegelAlarm", "Pegel_Command", "Odl_Command", "Warnung_Command"} and set(A.sections()) <= set(B.sections()), "alleen de nieuwe secties HARepeater, F1, F1_Command, Heartbeat, Localization, AutoLanguage, Reminders, Community, ChannelRadar, NightMode, GamesChannel, BotNetwork, InstallCount, AutoChannels, HASensors, RepeaterWatch, Setup en FarmDaily komen erbij, geen enkele sectie is weg")
 check(B["Reminders"]["enabled"] == "true" and B["Reminders"]["language"] == B["Localization"]["language"] and B["Community"]["enabled"] == "true", "Reminders en Community staan na de update aan (anders werken herinner en dx/xp maar half)")

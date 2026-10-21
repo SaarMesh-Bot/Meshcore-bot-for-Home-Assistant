@@ -1318,7 +1318,11 @@
       "fetch_error": "Meetpunt {station} is nu niet op te vragen.",
       "result": "🌊 Waterstand {station}: {value} m{trend} · {time}",
       "stale": "(verouderd)",
-      "error": "Fout in het pegel-commando: {error}"
+      "error": "Fout in het pegel-commando: {error}",
+      "trend": "🌊 {station} {days} d: {value} m ({days} d geleden {then} m, {arrow} {diff} cm) · min {min} · max {max} · gem. {avg} m",
+      "alarm_normal": "🌊 Pegelalarm {station}: {value} m, geen waarschuwingsniveau.",
+      "alarm_stage": "⚠️ Pegelalarm {station}: {value} m, niveau {stage}/{of}: {label}.",
+      "alarm_next": "Volgende: {cm} cm ({label})."
     },
     "odl": {
       "help": "Gamma-dosistempo (Duits BfS-meetnet) in het gebied op de kaart. 'odl <plaats>' voor losse meetpunten.",
@@ -1329,6 +1333,24 @@
       "fetch_error": "BfS-meetnet is nu niet bereikbaar.",
       "area_default": "gebied",
       "error": "Fout in het odl-commando: {error}"
+    },
+    "vorhersage": {
+      "help": "Verwachting per uur (Open-Meteo). vorhersage [plaats|postcode] [uren 1-48], zonder plaats voor jouw positie.",
+      "head": "🗓️ {place} {hours}u",
+      "here": "jouw positie",
+      "bot_location": "locatie bot",
+      "not_found": "Plaats '{place}' niet gevonden.",
+      "fetch_error": "Verwachting nu niet op te vragen.",
+      "error": "Fout in het vorhersage-commando: {error}"
+    },
+    "zeit": {
+      "help": "Datum en tijd van de bot.",
+      "result": "⏰ {date} {time} {tz}"
+    },
+    "echo": {
+      "help": "Stuurt je tekst terug: echo <tekst>",
+      "result": "🗣️ {text}",
+      "empty": "(leeg)"
     }
   },
   "common": {

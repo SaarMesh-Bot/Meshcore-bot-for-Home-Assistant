@@ -17,7 +17,7 @@ class WarnungCommand(BaseCommand):
     """Current DWD and NINA warnings for the configured German area."""
 
     name = "warnung"
-    keywords = ["warnung", "warnungen", "warnlage"]
+    keywords = ["warnung", "warnungen", "warnlage", "dwdwarnings", "ninawarnings"]
     description = "Current DWD weather and NINA warnings for the area on the DEWarn card (usage: warnung)"
     category = "general"
     requires_internet = True

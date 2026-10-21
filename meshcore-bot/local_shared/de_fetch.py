@@ -106,3 +106,15 @@ async def hmd_series(number: str, tz) -> list:
         if series and (not best or series[-1][0] > best[-1][0]):
             best = series
     return best
+
+
+async def open_meteo_hourly(lat: float, lon: float, hours: int, tz: str = "Europe/Berlin") -> Optional[dict]:
+    """Open-Meteo hourly forecast (temperature, weather code, precipitation), one retry after a short pause."""
+    from .de_forecast import url
+    for attempt in range(2):
+        data = await get_json(url(lat, lon, hours, tz), timeout=12)
+        if isinstance(data, dict) and isinstance(data.get("hourly"), dict):
+            return data
+        if attempt == 0:
+            await asyncio.sleep(2)
+    return None

@@ -1523,7 +1523,11 @@
       "fetch_error": "Måler {station} kan ikke læses lige nu.",
       "result": "🌊 Vandstand {station}: {value} m{trend} · {time}",
       "stale": "(forældet)",
-      "error": "Fejl i pegel-kommandoen: {error}"
+      "error": "Fejl i pegel-kommandoen: {error}",
+      "trend": "🌊 {station} {days} d: {value} m (for {days} d siden {then} m, {arrow} {diff} cm) · min {min} · maks {max} · gns. {avg} m",
+      "alarm_normal": "🌊 Vandstandsalarm {station}: {value} m, intet varselsniveau.",
+      "alarm_stage": "⚠️ Vandstandsalarm {station}: {value} m, niveau {stage}/{of}: {label}.",
+      "alarm_next": "Næste: {cm} cm ({label})."
     },
     "odl": {
       "help": "Gamma-dosishastighed (tysk BfS-målenet) i området på kortet. 'odl <sted>' for enkelte målere.",
@@ -1534,6 +1538,24 @@
       "fetch_error": "BfS-målenettet kan ikke nås lige nu.",
       "area_default": "område",
       "error": "Fejl i odl-kommandoen: {error}"
+    },
+    "vorhersage": {
+      "help": "Timeprognose (Open-Meteo). vorhersage [sted|postnummer] [timer 1-48], uden sted for din position.",
+      "head": "🗓️ {place} {hours}t",
+      "here": "din position",
+      "bot_location": "bottens position",
+      "not_found": "Stedet '{place}' blev ikke fundet.",
+      "fetch_error": "Prognosen kan ikke hentes lige nu.",
+      "error": "Fejl i vorhersage-kommandoen: {error}"
+    },
+    "zeit": {
+      "help": "Bottens dato og klokkeslæt.",
+      "result": "⏰ {date} {time} {tz}"
+    },
+    "echo": {
+      "help": "Sender din tekst tilbage: echo <tekst>",
+      "result": "🗣️ {text}",
+      "empty": "(tom)"
     }
   },
   "elapsed": {
