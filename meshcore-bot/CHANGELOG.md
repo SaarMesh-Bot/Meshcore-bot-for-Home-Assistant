@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.1-sm.7
+
+- `vorhersage`: at most 6 lines and trimmed to the message budget, so it always goes out as one message (with a
+  regional flood scope a channel message is 10 bytes shorter). Starts at the next full hour after half past;
+  12 h every 2 h, 24 h every 4 h.
+
 ## 1.5.1-sm.6
 
 Command parity with the old SaarMesh bot (saarmesh-bot-mc):

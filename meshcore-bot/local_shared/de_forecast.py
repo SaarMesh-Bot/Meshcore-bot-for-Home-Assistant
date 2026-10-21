@@ -6,7 +6,8 @@ OpenWeather (needs a key) to Open-Meteo (no key).
   vorhersage 66117           a postcode (Saarland postcodes are named, others are shown as the number)
   vorhersage Trier 12        a place and hours, in any order; the last 1-2 digit number is the hours
 
-At most MAX_LINES lines: longer spans are shown in steps (12 h -> every 2 h, 24 h -> every 3 h). One line per step:
+At most MAX_LINES lines (header + 6 lines fit one scoped channel message): longer spans are shown in steps
+(12 h -> every 2 h, 24 h -> every 4 h). From the current hour, or the next one after half past. One line per step:
 'HH:MM <emoji> <temp>°' plus the precipitation of that hour when there is any; the emoji carries the condition, so
 no words (airtime).
 
@@ -16,14 +17,14 @@ from __future__ import annotations
 
 import math
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Optional
 
 OPEN_METEO = ("https://api.open-meteo.com/v1/forecast?latitude={lat:.4f}&longitude={lon:.4f}"
               "&hourly=temperature_2m,weather_code,precipitation&forecast_hours={hours}&timezone={tz}")
 DEFAULT_HOURS = 6
 MAX_HOURS = 48
-MAX_LINES = 8
+MAX_LINES = 6
 
 _PLZ = re.compile(r"^\d{5}$")
 
@@ -68,7 +69,7 @@ def plz_name(plz: str) -> Optional[str]:
 
 
 def url(lat: float, lon: float, hours: int, tz: str = "Europe/Berlin") -> str:
-    return OPEN_METEO.format(lat=lat, lon=lon, hours=max(1, min(MAX_HOURS, hours)) + 1, tz=tz or "auto")
+    return OPEN_METEO.format(lat=lat, lon=lon, hours=max(1, min(MAX_HOURS, hours)) + 2, tz=tz or "auto")
 
 
 def step_for(hours: int) -> int:
@@ -85,6 +86,8 @@ def rows(data: Any, hours: int, now: datetime) -> list:
     times, temps = h.get("time") or [], h.get("temperature_2m") or []
     codes, precs = h.get("weather_code") or [], h.get("precipitation") or []
     hour0 = now.replace(minute=0, second=0, microsecond=0, tzinfo=None)
+    if now.minute >= 30:
+        hour0 += timedelta(hours=1)
     pts = []
     for i, t in enumerate(times):
         try:
@@ -96,7 +99,7 @@ def rows(data: Any, hours: int, now: datetime) -> list:
         if dt < hour0:
             continue
         pts.append((dt, _at(codes, i), _at(temps, i), _at(precs, i) or 0.0))
-    pts = pts[:hours + 1]
+    pts = pts[:hours]
     step = step_for(hours)
     out = []
     for k in range(0, len(pts), step):
@@ -127,3 +130,14 @@ def line(dt: datetime, code: Any, temp: Any, rain: float) -> str:
     if rain and rain >= 0.1:
         p = f" {'❄' if c in SNOW else ''}{rain:.1f}mm".replace(".", ",")
     return f"{dt.strftime('%H:%M')} {emo} {t}{p}"
+
+
+def fit(head: str, lines: list, budget: int) -> str:
+    """Header and lines joined; trailing lines dropped (at least one kept) until it fits `budget` UTF-8 bytes,
+    so the forecast goes out as one message."""
+    lines = list(lines)
+    text = "\n".join([head] + lines)
+    while len(text.encode("utf-8")) > budget and len(lines) > 1:
+        lines.pop()
+        text = "\n".join([head] + lines)
+    return text

@@ -120,7 +120,11 @@ class VorhersageCommand(BaseCommand):
             if not rows:
                 return await self.send_response(message, self.translate("commands.vorhersage.fetch_error"))
             head = self.translate("commands.vorhersage.head", place=name, hours=hours)
-            return await self.send_response(message, "\n".join([head] + [F.line(*r) for r in rows]))
+            try:
+                budget = int(self.get_max_message_length(message))
+            except Exception:  # noqa: BLE001
+                budget = 130
+            return await self.send_response(message, F.fit(head, [F.line(*r) for r in rows], budget))
         except Exception as e:  # noqa: BLE001
             self.logger.error(f"Error executing vorhersage command: {e}")
             return await self.send_response(message, self.translate("commands.vorhersage.error", error=str(e)))

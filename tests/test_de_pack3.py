@@ -42,9 +42,9 @@ check(F.parse_args("Sankt Ingbert 24h") == (24, "Sankt Ingbert"), "Ort mit Leerz
 check(F.parse_args("99") == (48, None) and F.parse_args("0")[0] == 1, "Stunden begrenzt auf 1..48")
 check(F.is_plz("66117") and not F.is_plz("6611") and not F.is_plz("Trier"), "PLZ erkannt")
 check(F.plz_name("66333") == "Völklingen" and F.plz_name("10115") is None, "Saarland-PLZ benannt, andere nicht")
-check(F.step_for(6) == 1 and F.step_for(12) == 2 and F.step_for(24) == 3 and F.step_for(48) == 6, "Schrittweite")
+check(F.step_for(6) == 1 and F.step_for(12) == 2 and F.step_for(24) == 4 and F.step_for(48) == 8, "Schrittweite")
 u = F.url(49.2401, 6.9969, 12, "Europe/Berlin")
-check("latitude=49.2401" in u and "forecast_hours=13" in u and "weather_code" in u and "timezone=Europe/Berlin" in u, "Open-Meteo-Adresse")
+check("latitude=49.2401" in u and "forecast_hours=14" in u and "weather_code" in u and "timezone=Europe/Berlin" in u, "Open-Meteo-Adresse")
 
 NOW = datetime(2026, 10, 21, 14, 37, tzinfo=BER)
 start = datetime(2026, 10, 21, 13, 0)
@@ -53,10 +53,18 @@ DATA = {"hourly": {"time": times, "temperature_2m": [10 + i * 0.5 for i in range
                    "weather_code": [61 if i == 3 else 3 for i in range(30)],
                    "precipitation": [0.4 if i in (3, 4) else 0.0 for i in range(30)]}}
 r = F.rows(DATA, 6, NOW)
-check(len(r) == 7 and r[0][0].hour == 14 and r[-1][0].hour == 20, f"6 h: ab der laufenden Stunde stündlich ({[x[0].hour for x in r]})")
+check([x[0].hour for x in r] == [15, 16, 17, 18, 19, 20], f"6 h: ab der nächsten Stunde (nach halb), stündlich ({[x[0].hour for x in r]})")
+r_early = F.rows(DATA, 6, NOW.replace(minute=10))
+check(r_early[0][0].hour == 14 and len(r_early) == 6, "vor halb: ab der laufenden Stunde")
 r12 = F.rows(DATA, 12, NOW)
-check([x[0].hour for x in r12] == [14, 16, 18, 20, 22, 0, 2], f"12 h: alle 2 h ({[x[0].hour for x in r12]})")
-check(r12[0][3] == 0 and abs(r12[1][3] - 0.8) < 1e-9, f"Niederschlag der ausgelassenen Stunde wird mitgezählt ({[x[3] for x in r12[:2]]})")
+check([x[0].hour for x in r12] == [15, 17, 19, 21, 23, 1], f"12 h: alle 2 h ({[x[0].hour for x in r12]})")
+check(abs(r12[0][3] - 0.4) < 1e-9 and abs(r12[1][3] - 0.4) < 1e-9, f"Niederschlag der ausgelassenen Stunde wird mitgezählt ({[x[3] for x in r12[:2]]})")
+r24 = F.rows(DATA, 24, NOW)
+check([x[0].hour for x in r24] == [15, 19, 23, 3, 7, 11], f"24 h: alle 4 h ({[x[0].hour for x in r24]})")
+lines = [F.line(datetime(2026, 10, 21, h, 0), 81, 7, 0.1) for h in range(6)]
+head = "🗓️ Saarbrücken 6h"
+check(len(F.fit(head, lines, 134).encode()) <= 134 and F.fit(head, lines, 134).startswith(head), f"passt in eine Nachricht mit Scope ({len(F.fit(head, lines, 134).encode())} B)")
+check(F.fit(head, lines, 1000).count("\n") == 6 and F.fit(head, lines, 10).count("\n") == 1, "kürzt nur bei Bedarf, mind. eine Zeile")
 check(len(F.rows(DATA, 48, NOW)) <= F.MAX_LINES, "höchstens 8 Zeilen")
 check(F.rows({"error": True}, 6, NOW) == [] and F.rows(None, 6, NOW) == [], "kaputte Antwort: leer")
 check(F.line(datetime(2026, 10, 21, 16, 0), 61, 11.6, 0.4) == "16:00 🌧️ 12° 0,4mm", f"Zeile mit Regen: {F.line(datetime(2026, 10, 21, 16, 0), 61, 11.6, 0.4)}")
