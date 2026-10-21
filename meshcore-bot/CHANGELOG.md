@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.1-sm.8
+
+- DEWarn: new setting `pointer_channels` (e.g. `Public, #saarland`). After a post with new warnings these channels get
+  one line "⚠️ Warnungen aktiv im Saarland. Infos im #warnings", at most once an hour (as the old SaarMesh bot did).
+
 ## 1.5.1-sm.7
 
 - `vorhersage`: at most 6 lines and trimmed to the message budget, so it always goes out as one message (with a

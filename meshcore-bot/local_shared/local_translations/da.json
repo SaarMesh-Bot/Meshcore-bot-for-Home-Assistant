@@ -1751,7 +1751,8 @@
     },
     "dewarn": {
       "header": "🚨 Varsel ({count})",
-      "all_clear": "✅ Afblæst: {what}"
+      "all_clear": "✅ Afblæst: {what}",
+      "pointer": "⚠️ Aktive varsler. Info i {channel}"
     },
     "pegelalarm": {
       "alarm": "{icon} Vandstand {station}: {value} m{trend} · trin {stage}/{of}: {label}",

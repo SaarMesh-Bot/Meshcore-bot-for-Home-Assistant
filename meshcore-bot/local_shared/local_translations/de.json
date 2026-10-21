@@ -1448,7 +1448,8 @@
     },
     "dewarn": {
       "header": "🚨 Warnung ({count})",
-      "all_clear": "✅ Entwarnung: {what}"
+      "all_clear": "✅ Entwarnung: {what}",
+      "pointer": "⚠️ Warnungen aktiv im Saarland. Infos im {channel}"
     },
     "pegelalarm": {
       "alarm": "{icon} Pegel {station}: {value} m{trend} · Stufe {stage}/{of}: {label}",

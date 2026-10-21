@@ -1461,7 +1461,8 @@
     },
     "dewarn": {
       "header": "🚨 Alerte ({count})",
-      "all_clear": "✅ Fin d'alerte : {what}"
+      "all_clear": "✅ Fin d'alerte : {what}",
+      "pointer": "⚠️ Alertes en cours. Infos dans {channel}"
     },
     "pegelalarm": {
       "alarm": "{icon} Niveau {station} : {value} m{trend} · seuil {stage}/{of} : {label}",

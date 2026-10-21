@@ -20,6 +20,7 @@ SEEN_KEY = "dewarn.seen"          # {key: last time it was in a feed}
 CLEARED_KEY = "dewarn.cleared"    # {cancel prefix: when the all-clear went out}
 FORGET_S = 24 * 3600
 GAP_S = 3
+POINTER_EVERY_S = 3600    # pointer channels hear about new warnings at most once an hour
 
 
 class DEWarnService(BaseServicePlugin):
@@ -41,6 +42,9 @@ class DEWarnService(BaseServicePlugin):
         {"key": "all_clear", "label": "Post all-clears", "type": "bool", "default": True,
          "help": "A NINA all-clear for a warning that was posted before goes out as 'Entwarnung'."},
         {"key": "poll_seconds", "label": "Check every (s)", "type": "int", "default": 300, "min": 120, "max": 1800},
+        {"key": "pointer_channels", "label": "Pointer channels", "type": "str", "default": "",
+         "help": "Channels that get a one-line pointer ('Warnings active ... see #warnings') when new warnings were "
+                 "posted, at most once an hour; comma-separated, e.g. Public, #saarland. Empty = no pointer."},
     ]
 
     def __init__(self, bot: Any):
@@ -56,6 +60,15 @@ class DEWarnService(BaseServicePlugin):
             self.translate = get_translator(language).translate if get_translator else bot.translator.translate
         except Exception:  # noqa: BLE001
             self.translate = bot.translator.translate
+        raw = (cfg.get(self.config_section, "pointer_channels", fallback="")
+               if cfg.has_section(self.config_section) else "") or ""
+        self.pointer_channels = []
+        for n in raw.replace(";", ",").split(","):
+            n = n.strip()
+            n = n.lower() if n.startswith("#") else n
+            if n and n not in self.pointer_channels and n not in self.channels:
+                self.pointer_channels.append(n)
+        self._last_pointer = 0.0
         self._task: Optional[asyncio.Task] = None
         self._first_run = True
         self.last_error = ""
@@ -152,6 +165,15 @@ class DEWarnService(BaseServicePlugin):
                 if await self._send(part):
                     sent += 1
             self.logger.info("DEWarn: %d neue Warnung(en) gepostet in %s", len(new), self.channel)
+            if sent and self.pointer_channels and now - self._last_pointer >= POINTER_EVERY_S:
+                self._last_pointer = now
+                text = self.translate("services.dewarn.pointer", channel=self.channels[0])
+                for ch in self.pointer_channels:
+                    await asyncio.sleep(GAP_S)
+                    try:
+                        await self.bot.command_manager.send_channel_message(ch, text, skip_user_rate_limit=True)
+                    except Exception as e:  # noqa: BLE001
+                        self.logger.info("DEWarn: Hinweis an %s fehlgeschlagen: %s", ch, e)
 
         if self.s["all_clear"] and not first:
             for prefix, label in cancels:

@@ -223,6 +223,22 @@ async def main():
     s2 = DS.DEWarnService(make_bot(db=bot.db_manager, DEWarn={"enabled": "true"}))
     n = await s2.tick(now=ts + 2700, fetched=(new_dwd, warns, [], True))
     check(n == 0, "nach Neustart: Bekanntes nicht neu")
+    # pointer channels (SaarMesh fork 1.5.1-sm.8): one line after a post with new warnings, at most once an hour
+    bp = make_bot(DEWarn={"enabled": "true", "pointer_channels": "Public, #saarland, #warnings"})
+    sp = DS.DEWarnService(bp)
+    check(sp.pointer_channels == ["Public", "#saarland"], f"Hinweis-Kanäle (ohne den Warnkanal selbst): {sp.pointer_channels}")
+    await sp.tick(now=ts, fetched=(dwd, warns, [], True))
+    await sp.tick(now=ts + 300, fetched=(new_dwd, warns, [], True))
+    ps = bp.command_manager.sent
+    check([c for c, _ in ps] == ["#warnings", "Public", "#saarland"] and ps[1][1] == "⚠️ Warnungen aktiv im Saarland. Infos im #warnings",
+          f"Hinweis nach neuer Warnung: {ps}")
+    await sp.tick(now=ts + 600, fetched=(new_dwd, warns + [gas], [], True))
+    check([c for c, _ in ps][3:] == ["#warnings"], "innerhalb einer Stunde kein zweiter Hinweis")
+    gas2 = dict(gas, key="nina::homburg::brand::x", text="🟧 Homburg · Brand")
+    await sp.tick(now=ts + 4000, fetched=(new_dwd, warns + [gas, gas2], [], True))
+    check([c for c, _ in ps][4:] == ["#warnings", "Public", "#saarland"], f"nach einer Stunde wieder: {[c for c, _ in ps]}")
+    bq = make_bot(DEWarn={"enabled": "true"})
+    check(DS.DEWarnService(bq).pointer_channels == [], "ohne Einstellung kein Hinweis")
 
     # Pegel alarm
     pb = make_bot(PegelAlarm={"enabled": "true", "channel": "#warnings"})

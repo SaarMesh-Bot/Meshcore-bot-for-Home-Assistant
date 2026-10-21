@@ -1461,7 +1461,8 @@
     },
     "dewarn": {
       "header": "🚨 Waarschuwing ({count})",
-      "all_clear": "✅ Sein veilig: {what}"
+      "all_clear": "✅ Sein veilig: {what}",
+      "pointer": "⚠️ Waarschuwingen actief. Info in {channel}"
     },
     "pegelalarm": {
       "alarm": "{icon} Waterstand {station}: {value} m{trend} · fase {stage}/{of}: {label}",

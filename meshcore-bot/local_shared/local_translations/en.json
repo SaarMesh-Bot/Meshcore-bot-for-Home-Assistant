@@ -982,7 +982,8 @@
     },
     "dewarn": {
       "header": "🚨 Warning ({count})",
-      "all_clear": "✅ All clear: {what}"
+      "all_clear": "✅ All clear: {what}",
+      "pointer": "⚠️ Warnings active. Details in {channel}"
     },
     "pegelalarm": {
       "alarm": "{icon} Gauge {station}: {value} m{trend} · stage {stage}/{of}: {label}",
