@@ -27,7 +27,7 @@ class FeestdagCommand(BaseCommand):
     """Reports today's/tomorrow's official BE/NL public holidays."""
 
     name = "feestdag"
-    keywords = ["feestdag", "vandaag", "feiertag", "feiertage"]
+    keywords = ["feiertag", "feiertage", "feestdag", "vandaag"]
     description = "Public holidays of the countries on the card (usage: feestdag, feestdag morgen)"
     category = "general"
     requires_internet = True

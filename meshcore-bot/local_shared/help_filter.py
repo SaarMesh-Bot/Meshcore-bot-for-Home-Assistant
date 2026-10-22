@@ -60,5 +60,27 @@ def display_name(name: str, cmd: Any) -> str:
     """
     keywords = getattr(cmd, "keywords", None)
     if keywords:
+        # SaarMesh fork: a bot set to German shows the German word for upstream commands whose first keyword is
+        # English (the German word is one of their keywords, an alias from generate_config's GERMAN_ALIASES).
+        german = GERMAN_DISPLAY.get(getattr(cmd, "name", name))
+        if german and german in [k.lower() for k in keywords] and _language(cmd) == "de":
+            return german
         return keywords[0]
     return getattr(cmd, "name", name)
+
+
+# Upstream command name -> the German keyword shown in help lists on a German bot (SaarMesh fork).
+GERMAN_DISPLAY = {
+    "dadjoke": "flachwitz", "joke": "witz", "catfact": "katze", "magic8": "orakel", "dice": "würfel", "roll": "zufall",
+    "moon": "mond", "sun": "sonne", "rain": "regenradar", "wx": "wetter", "gwx": "weltwetter", "aqi": "luft",
+    "stats": "statistik", "path": "pfad", "channels": "kanäle", "cmd": "befehle", "contact": "kontakt",
+    "airplanes": "flugzeuge", "aurora": "polarlicht", "help": "hilfe", "hfcond": "kurzwelle", "solar": "sonnenwetter",
+    "solarforecast": "pv", "satpass": "satellit", "neighbors": "nachbarscan",
+}
+
+
+def _language(cmd: Any) -> str:
+    try:
+        return (cmd.bot.config.get("Localization", "language", fallback="en") or "en").strip().lower()[:2]
+    except Exception:  # noqa: BLE001
+        return "en"

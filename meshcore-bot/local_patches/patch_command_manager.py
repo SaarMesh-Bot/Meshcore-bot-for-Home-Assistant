@@ -53,9 +53,14 @@ patch(
             pages = self._get_paginated_commands(message)
             page_num = int(stripped)
             total = len(pages)
+            help_cmd = self.commands.get('help')
             if 1 <= page_num <= total:
+                if help_cmd is not None and hasattr(help_cmd, 'translate'):
+                    return help_cmd.translate('commands.helpall.page', page=page_num, total=total, names=pages[page_num - 1])
                 return f"Help {page_num}/{total}: {pages[page_num - 1]}"
-            return f"Help: pagina {page_num} bestaat niet (1-{total} beschikbaar)."
+            if help_cmd is not None and hasattr(help_cmd, 'translate'):
+                return help_cmd.translate('commands.helpall.bad_page', page=page_num, total=total)
+            return f"Help: page {page_num} does not exist (1-{total})."
 
         requested_name = command_name.strip()""",
 )

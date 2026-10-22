@@ -679,7 +679,8 @@
     "help": {
       "list_link": "All commands: {url} | help <command> = details",
       "list_lang": "en",
-      "sample_suffix": " | help <cmd>=details, helpall=all"
+      "sample_suffix": " | help <cmd>=details, helpall=all",
+      "sample_prefix": "Help: "
     },
     "games": {
       "no_bots": "{name} is a bot: bots don't take part in the games.",
@@ -873,7 +874,11 @@
       "more_hops": "+{n} more hops"
     },
     "trace": {
-      "timeout": "Trace: no reply after {seconds}s over {hops} hops ({path}). Shorter works better: tracer {short}"
+      "timeout": "Trace: no reply after {seconds}s over {hops} hops ({path}). Shorter works better: tracer {short}",
+      "failed": "Trace failed: {error}",
+      "need_path": "Trace/tracer need a path (e.g. trace 01,7a,55) or a message that has a path.",
+      "not_connected": "Not connected to radio.",
+      "not_available": "Trace not available (firmware/connection)."
     },
     "discover": {
       "result": "Heard directly ({n}): {list}",
@@ -969,6 +974,19 @@
       "help": "Sends your text back: echo <text>",
       "result": "🗣️ {text}",
       "empty": "(empty)"
+    },
+    "rain": {
+      "mismatch": "No {asked}, but {actual}"
+    },
+    "cmd": {
+      "prefix": "Available commands: ",
+      "more": " ({n} more)"
+    },
+    "version": {
+      "reply": "@[{sender}] Bot version: {version}"
+    },
+    "multitest": {
+      "no_packet": "Error: Could not find packet data for this message. Please try again."
     }
   },
   "services": {

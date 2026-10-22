@@ -20,9 +20,9 @@ from ..ha_repeater_parser import battery_text, fit, neighbours_text, summary
 from ..models import MeshMessage
 from .base_command import BaseCommand
 
-NEIGHBOUR_WORDS = {"buren", "buur", "neighbours", "neighbors", "neighbour", "neighbor"}
-LIST_WORDS = {"list", "lijst"}
-ACCU_WORDS = {"accu", "batterij", "battery", "bat"}
+NEIGHBOUR_WORDS = {"nachbarn", "buren", "buur", "neighbours", "neighbors", "neighbour", "neighbor"}
+LIST_WORDS = {"list", "lijst", "liste"}
+ACCU_WORDS = {"akku", "accu", "batterij", "battery", "bat"}
 PERIOD = re.compile(r"^(\d{1,3})([uhd])$")
 MAX_BYTES = 130
 

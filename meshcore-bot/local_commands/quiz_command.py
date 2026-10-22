@@ -3,7 +3,8 @@
 'quiz' command for the MeshCore Bot.
 One multiple-choice trivia question per channel at a time, via the free
 OpenTDB API (no key required). English-only (no reliable Dutch trivia API
-found) - accepted limitation.
+found) - accepted limitation. SaarMesh fork: a German bot asks its own German
+questions instead (local_data/unterhaltung_de.py, via de_content.py).
 """
 
 import html
@@ -12,6 +13,7 @@ from typing import Any
 
 import aiohttp
 
+from .. import de_content
 from ..channel_session import ChannelSession
 from ..models import MeshMessage
 from .base_command import BaseCommand
@@ -62,6 +64,14 @@ class QuizCommand(BaseCommand):
             raise ValueError(self.translate("commands.quiz.no_question"))
         return results[0]
 
+    def _render(self, question: str, options: list) -> str:
+        option_lines = [f"{_LETTERS[i].upper()}) {opt}" for i, opt in enumerate(options)]
+        return (
+            self.translate("commands.quiz.question", question=question)
+            + " | " + " | ".join(option_lines)
+            + " | " + self.translate("commands.quiz.answer_hint")
+        )
+
     async def execute(self, message: MeshMessage) -> bool:
         try:
             content = message.content.strip().lower()
@@ -91,11 +101,22 @@ class QuizCommand(BaseCommand):
                     message, self.translate("commands.quiz.already_active")
                 )
 
-            # Starting a new question.
-            question_data = await self._fetch_question()
-            question = html.unescape(question_data["question"])
-            correct_answer = html.unescape(question_data["correct_answer"])
-            options = [html.unescape(a) for a in question_data["incorrect_answers"]] + [correct_answer]
+            # Starting a new question (German: one of our own, as long as it fits one message).
+            max_bytes = self.get_max_message_length(message)
+
+            def fits(item) -> bool:
+                q, c, w = item
+                return len(self._render(q, [c] + list(w)).encode("utf-8")) <= max_bytes
+
+            german = de_content.pick(self, "quiz", fits=fits)
+            if german:
+                question, correct_answer, wrong = german
+                options = list(wrong) + [correct_answer]
+            else:
+                question_data = await self._fetch_question()
+                question = html.unescape(question_data["question"])
+                correct_answer = html.unescape(question_data["correct_answer"])
+                options = [html.unescape(a) for a in question_data["incorrect_answers"]] + [correct_answer]
             random.shuffle(options)
             correct_letter = _LETTERS[options.index(correct_answer)]
 
@@ -105,13 +126,7 @@ class QuizCommand(BaseCommand):
                 _ANSWER_TTL_SECONDS,
             )
 
-            option_lines = [f"{_LETTERS[i].upper()}) {opt}" for i, opt in enumerate(options)]
-            response = (
-                self.translate("commands.quiz.question", question=question)
-                + " | " + " | ".join(option_lines)
-                + " | " + self.translate("commands.quiz.answer_hint")
-            )
-            return await self.send_response(message, response)
+            return await self.send_response(message, self._render(question, options))
         except Exception as e:
             self.logger.error(f"Error executing quiz command: {e}")
             return await self.send_response(message, self.translate("commands.quiz.error", error=str(e)))

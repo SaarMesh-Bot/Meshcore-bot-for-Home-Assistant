@@ -122,12 +122,14 @@ cm_mod = import_with_stubs("modules.command_manager")
 help_mod = import_with_stubs("modules.commands.help_command")
 models = import_with_stubs("modules.models")
 msg = models.MeshMessage(content="help", sender_id="Piet", channel="#test")
+# SaarMesh fork 1.5.1-sm.10: the "Help: " prefix is translated too (commands.help.sample_prefix)
+PREFIX = {"en": "Help: ", "nl": "Help: ", "de": "Hilfe: ", "fr": "Aide : ", "da": "Hjælp: "}
 for lang, tail in (("en", "helpall=all"), ("nl", "helpall=alles"), ("de", "helpall=alle"), ("fr", "helpall=tout"), ("da", "helpall=alle")):
     b = make_bot(lang)
     hc = help_mod.HelpCommand(b)
     fake = types.SimpleNamespace(bot=b, commands={"help": hc, **{n: c(b) for n, c in list(loaded.items())[:5]}})
     text = cm_mod.CommandManager.get_general_help(fake, msg)
-    check(text.startswith("Help: ") and text.endswith(tail), f"help zonder link ({lang}) eindigt op '{tail}': {text!r}")
+    check(text.startswith(PREFIX[lang]) and text.endswith(tail), f"help zonder link ({lang}) eindigt op '{tail}': {text!r}")
 b = make_bot("en", {"Help_Command": {"text": "Ask me anything, {sender}!", "list_url": "https://example.org/x"}})
 fake = types.SimpleNamespace(bot=b, commands={"help": help_mod.HelpCommand(b)},
                              format_keyword_response=lambda t, m: t.replace("{sender}", m.sender_id))

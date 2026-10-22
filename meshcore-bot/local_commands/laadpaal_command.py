@@ -22,7 +22,7 @@ class LaadpaalCommand(BaseCommand):
     """Shows the nearest EV charging stations to a place, from OpenStreetMap."""
 
     name = "laadpaal"
-    keywords = ["laadpaal"]
+    keywords = ["ladesäule", "ladesaeule", "laadpaal"]
     description = "Nearest EV charging points near a place (usage: laadpaal <place>)"
     category = "general"
     requires_internet = True
@@ -63,8 +63,10 @@ class LaadpaalCommand(BaseCommand):
     async def execute(self, message: MeshMessage) -> bool:
         try:
             content = message.content.strip()
-            if content.lower().startswith("laadpaal"):
-                content = content[len("laadpaal"):].strip()
+            for kw in sorted(self.keywords, key=len, reverse=True):
+                if content.lower() == kw or content.lower().startswith(kw + " "):
+                    content = content[len(kw):].strip()
+                    break
 
             if not content:
                 return await self.send_response(message, self.translate("commands.laadpaal.usage"))

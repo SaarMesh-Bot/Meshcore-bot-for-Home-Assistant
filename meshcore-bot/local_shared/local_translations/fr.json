@@ -679,7 +679,8 @@
     "help": {
       "list_link": "Toutes les commandes : {url} | help <commande> = aide",
       "list_lang": "en",
-      "sample_suffix": " | help <cmd>=détails, helpall=tout"
+      "sample_suffix": " | help <cmd>=détails, helpall=tout",
+      "sample_prefix": "Aide : "
     },
     "wx": {
       "subcommands": [

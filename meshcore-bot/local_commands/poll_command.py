@@ -57,7 +57,7 @@ class PollCommand(BaseCommand):
     """Quick yes/no channel poll, one active per channel at a time."""
 
     name = "poll"
-    keywords = ["stem", "poll", "ja", "nee"]
+    keywords = ["abstimmung", "stem", "poll", "ja", "nein", "nee"]
     description = "Yes/no vote in a channel (usage: stem [Nm|Nd] <question>, then ja/nee)"
     category = "fun"
 
@@ -79,7 +79,7 @@ class PollCommand(BaseCommand):
         # running on this channel - otherwise this command stays invisible
         # and doesn't clash with any other meaning those words might have.
         first_word = message.content.strip().lower().split(" ", 1)[0] if message.content else ""
-        if first_word in ("ja", "nee") and not self._sessions.is_active(message.channel):
+        if first_word in ("ja", "nee", "nein") and not self._sessions.is_active(message.channel):
             return False
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
@@ -100,7 +100,7 @@ class PollCommand(BaseCommand):
 
             first_word = lower.split(" ", 1)[0] if lower else ""
 
-            if first_word in ("ja", "nee"):
+            if first_word in ("ja", "nee", "nein"):
                 session = self._sessions.get(channel)
                 if session is None:
                     return True  # No active poll - stay silent (see can_execute).
@@ -109,7 +109,7 @@ class PollCommand(BaseCommand):
                 return await self.send_response(message, self.translate("commands.poll.vote_recorded", ja=ja, nee=nee))
 
             # 'stem'/'poll' prefix - strip it to get the sub-command/question.
-            for prefix in ("stem", "poll"):
+            for prefix in ("abstimmung", "stem", "poll"):
                 if lower.startswith(prefix):
                     rest = content[len(prefix):].strip()
                     break
@@ -117,7 +117,7 @@ class PollCommand(BaseCommand):
                 rest = content
             rest_lower = rest.lower()
 
-            if rest_lower == "uitslag":
+            if rest_lower in ("uitslag", "ergebnis", "stand"):
                 session = self._sessions.get(channel)
                 if session is None:
                     return await self.send_response(message, self.translate("commands.poll.no_active"))
@@ -126,7 +126,7 @@ class PollCommand(BaseCommand):
                     message, self.translate("commands.poll.tally", question=session["question"], ja=ja, nee=nee)
                 )
 
-            if rest_lower in ("stop", "einde"):
+            if rest_lower in ("stop", "einde", "ende"):
                 session = self._sessions.get(channel)
                 if session is None:
                     return await self.send_response(message, self.translate("commands.poll.no_active_to_stop"))

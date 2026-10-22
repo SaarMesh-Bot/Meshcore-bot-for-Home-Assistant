@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.5.1-sm.10
+
+- Everything on the mesh in German on a bot set to German (found by running every command offline with language de):
+  - German command words, shown in help lists: fakt, feiertag, notruf, ladesäule, meshkarte, hops, umfrage/wähle,
+    abstimmung (ja/nein), pinnwand, erinnere, tippspiel, nachbarn, botliste, aufräumen, laufzeit, galgen; upstream
+    commands get German aliases (flachwitz, witz, orakel, zufall, regenradar, schnee, weltwetter, kontakt, flugzeuge,
+    polarlicht, kurzwelle, sonnenwetter, pv, satellit, nachbarscan) and help shows mond, sonne, wetter, luft, ...
+    The old Dutch words keep working. German sub-words: ergebnis, liste, lösche, neu, schließe, rate, akku, ...
+  - `help`/`helpall`/`help N`: "Hilfe", page errors in German; `help <command>` has German texts for every upstream
+    command with a fixed English help (translation key `help_override.<name>`).
+  - flachwitz/dadjoke, witz/joke, orakel/magic8 and quiz: own German lists (Flachwitze, Witze, Antworten, 58 questions
+    about the Saarland, radio and general knowledge) instead of the English APIs.
+  - sun/moon/satpass: German labels, weekdays and months, 24-hour clock; solar and hfcond (gut/mäßig/schlecht); aqi
+    category; rain ("Kein Regen erwartet", place names in German); aurora time; cmd, version, trace, multitest, stats.
+  - `notruf`: German numbers (110, 116117, Giftnotruf Homburg) instead of the Dutch ones; usage examples with
+    Saarland places instead of Seattle.
+  - alert and sports (US-only sources) start off on a non-US installation.
+
 ## 1.5.1-sm.9
 
 - New card CoreScopeTelemetry (off by default): battery and temperature of the repeaters meshcore-ha follows are read

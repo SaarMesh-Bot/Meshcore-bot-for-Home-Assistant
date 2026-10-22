@@ -22,12 +22,12 @@ from ..mesh_community import is_bot_name, without_bots
 from ..models import MeshMessage
 from .base_command import BaseCommand
 
-STAND = {"stand", "wk", "rijders", "standings", "klassement"}
+STAND = {"wm", "stand", "wk", "rijders", "standings", "klassement"}
 TEAM = {"team", "teams", "constructeurs", "constructors"}
-RESULT = {"uitslag", "result", "resultaat", "race"}
-LIVE = {"nu", "live", "now"}
-PREDICT = {"voorspel", "voorspelling", "predict", "gok"}
-GAME = {"spel", "game", "punten"}
+RESULT = {"ergebnis", "uitslag", "result", "resultaat", "race"}
+LIVE = {"jetzt", "nu", "live", "now"}
+PREDICT = {"tipp", "voorspel", "voorspelling", "predict", "gok"}
+GAME = {"spiel", "spel", "game", "punten"}
 CALENDAR = {"kalender", "calendar", "agenda", "races", "kalendar"}
 WEEKEND = {"weekend", "schema", "schedule", "sessies", "sessions", "tijden", "times"}
 SPRINT = {"sprint"}

@@ -16,7 +16,7 @@ class QuoteCommand(BaseCommand):
     """Sends a random quote from a locally bundled list."""
 
     name = "quote"
-    keywords = ["quote", "citaat", "zitat", "spruch"]
+    keywords = ["zitat", "spruch", "quote", "citaat"]
     description = "Random quote"
     category = "fun"
 

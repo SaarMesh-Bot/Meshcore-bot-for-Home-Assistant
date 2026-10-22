@@ -686,7 +686,8 @@
       "specific": "Hjælp til '{command}':\n{help_text}",
       "no_help": "Ingen hjælp tilgængelig",
       "usage_examples": "\nEksempler:\n• `help @` - hjælp til @{string}-syntaks\n• `help t` - hjælp til t {string}-syntaks\n• `help advert` - hjælp til kommandoen advert\n• `help test` - hjælp til kommandoen test\n• `help ping` - hjælp til kommandoen ping",
-      "custom_syntax": "\nSærlig syntaks:\n• `t sætning` - bekræftelse med sætning (kanaler og DM)\n• `@{string}` - bekræftelse med tekst (kun DM)\n• `advert` - send flood-advert (kun DM, 1 times pause)"
+      "custom_syntax": "\nSærlig syntaks:\n• `t sætning` - bekræftelse med sætning (kanaler og DM)\n• `@{string}` - bekræftelse med tekst (kun DM)\n• `advert` - send flood-advert (kun DM, 1 times pause)",
+      "sample_prefix": "Hjælp: "
     },
     "games": {
       "no_bots": "{name} er en bot: bots deltager ikke i spillene.",

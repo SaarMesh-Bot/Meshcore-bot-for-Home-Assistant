@@ -1064,7 +1064,8 @@
     "help": {
       "list_link": "Alle commando's: {url} | help <commando> = uitleg",
       "list_lang": "nl",
-      "sample_suffix": " | help <cmd>=uitleg, helpall=alles"
+      "sample_suffix": " | help <cmd>=uitleg, helpall=alles",
+      "sample_prefix": "Help: "
     },
     "games": {
       "no_bots": "{name} is een bot: bots doen niet mee met de spellen.",

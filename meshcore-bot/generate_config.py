@@ -49,6 +49,17 @@ DEFAULT_OFF = ("airplanes", "worldcup")
 COUNTRY_ONLY = {
     # The NL-only commands (KNMI, Buienradar, RDW, NS, P2000, NL-Alert, ...) are removed from the SaarMesh fork.
     "DE": ("odl", "pegel", "warnung"),
+    # US-only sources of the upstream bot: PulsePoint incidents, mostly US leagues.
+    "US": ("alert", "sports"),
+}
+
+# German keywords for upstream commands whose own keywords are English, on a bot set to German ([<Command>] aliases).
+# The help lists then show these words (local_shared/help_filter.py GERMAN_DISPLAY).
+GERMAN_ALIASES = {
+    "dadjoke": "flachwitz", "joke": "witz", "magic8": "orakel", "roll": "zufall", "rain": "regenradar, schnee",
+    "gwx": "weltwetter", "contact": "kontakt", "airplanes": "flugzeuge", "aurora": "polarlicht",
+    "hfcond": "kurzwelle", "solar": "sonnenwetter", "solarforecast": "pv", "satpass": "satellit",
+    "neighbors": "nachbarscan",
 }
 
 
@@ -402,6 +413,11 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
 
     for name in DEFAULT_OFF:
         set_option(cfg, command_section(name), "enabled", "false")
+    if str(g("bot", "language", "en")).strip().lower().startswith("de"):
+        for name, words in GERMAN_ALIASES.items():
+            set_option(cfg, command_section(name), "aliases", words)
+        # sun, moon and satpass in 24-hour time
+        set_option(cfg, "Solar_Config", "use_zulu_time", "true")
     country = str(g("weather", "default_country", "DE") or "DE").strip().upper()
     for land, names in COUNTRY_ONLY.items():
         if land != country:

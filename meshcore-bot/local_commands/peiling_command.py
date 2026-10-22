@@ -22,8 +22,9 @@ _DURATION_RE = re.compile(r"^(\d+)(m|u|h|d)$", re.IGNORECASE)
 _UNIT_S = {"m": 60, "u": 3600, "h": 3600, "d": 86400}
 DEFAULT_S, MIN_S, MAX_S = 600, 60, 86400
 MAX_CHOICES = 5
-RESULT = {"uitslag", "stand", "result"}
-STOP = {"stop", "einde", "end"}
+VOTE_WORDS = {"kies", "wähle", "waehle"}
+RESULT = {"uitslag", "stand", "result", "ergebnis"}
+STOP = {"stop", "einde", "end", "ende"}
 
 
 def parse_poll(rest: str) -> tuple:
@@ -53,7 +54,7 @@ class PeilingCommand(BaseCommand):
     """Multiple-choice channel vote (2-5 choices), vote with 'kies <nummer>'."""
 
     name = "peiling"
-    keywords = ["peiling", "kies"]
+    keywords = ["umfrage", "wähle", "waehle", "peiling", "kies"]
     description = "Multiple-choice poll in a channel: peiling [duration] question | a | b | c, vote with kies <nr>"
     category = "fun"
 
@@ -71,7 +72,7 @@ class PeilingCommand(BaseCommand):
             return False
         # 'kies' only means something while a peiling runs on this channel; otherwise the bot stays silent.
         first = (message.content or "").strip().lstrip("!/").split(" ", 1)[0].lower()
-        if first == "kies" and not self._sessions.is_active(self._key(message)):
+        if first in VOTE_WORDS and not self._sessions.is_active(self._key(message)):
             return False
         return super().can_execute(message, skip_channel_check=skip_channel_check)
 
@@ -101,7 +102,7 @@ class PeilingCommand(BaseCommand):
             first = (message.content or "").strip().lstrip("!/").split(" ", 1)[0].lower()
             args = split_args(self, message)
 
-            if first == "kies":
+            if first in VOTE_WORDS:
                 session = self._sessions.get(key)
                 if session is None:
                     return True

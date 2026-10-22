@@ -18,8 +18,8 @@ from ..mesh_community import ensure_tables, fit_bytes, local_now, parse_when, sp
 from ..models import MeshMessage
 from .base_command import BaseCommand
 
-LIST = {"lijst", "list", "liste"}
-REMOVE = {"weg", "verwijder", "del", "delete", "remove"}
+LIST = {"lijst", "list", "liste", "zeige"}
+REMOVE = {"weg", "verwijder", "del", "delete", "remove", "lösche", "loesche", "löschen", "entferne"}
 MAX_OPEN = 3
 MAX_AHEAD_S = 7 * 86400
 MAX_TEXT_BYTES = 100
@@ -29,7 +29,7 @@ class HerinnerCommand(BaseCommand):
     """Personal reminder by direct message."""
 
     name = "herinner"
-    keywords = ["herinner", "remind"]
+    keywords = ["erinnere", "erinnerung", "herinner", "remind"]
     description = "Personal reminder by DM (herinner 30m <text>, herinner 18:30 <text>, herinner lijst)"
     category = "general"
     requires_dm = True

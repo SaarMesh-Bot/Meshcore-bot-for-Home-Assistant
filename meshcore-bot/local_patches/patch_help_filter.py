@@ -194,7 +194,10 @@ patch(
             for name, cmd in self.commands.items()
             if is_public_command(name, cmd, help_cmd, message)
         })
-        prefix = "Help: "
+        prefix = (help_cmd.translate('commands.help.sample_prefix') if help_cmd is not None and hasattr(help_cmd, 'translate')
+                  else "Help: ")
+        if prefix == 'commands.help.sample_prefix':
+            prefix = "Help: "
         sample_suffix = (help_cmd.translate('commands.help.sample_suffix') if help_cmd is not None and hasattr(help_cmd, 'translate')
                          else " | help <cmd>=details, helpall=all")
         sample_size = min(8, len(primary_names))

@@ -24,7 +24,7 @@ class CheckinCommand(BaseCommand):
     """Daily check-in with a streak counter."""
 
     name = "checkin"
-    keywords = ["checkin", "meld", "inchecken"]
+    keywords = ["checkin", "einchecken", "meld", "inchecken"]
     description = "Daily check-in with a streak counter (checkin, checkin top)"
     category = "fun"
 

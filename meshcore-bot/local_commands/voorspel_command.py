@@ -23,8 +23,8 @@ from ..models import MeshMessage
 from .base_command import BaseCommand
 
 NEW = {"nieuw", "new", "neu", "nouveau", "start"}
-CLOSE = {"sluit", "close", "dicht"}
-RESULT = {"uitslag", "result", "antwoord"}
+CLOSE = {"sluit", "close", "dicht", "schließe", "schliesse", "zu"}
+RESULT = {"uitslag", "result", "antwoord", "ergebnis", "auflösung"}
 STANDINGS = {"stand", "punten", "top", "standings"}
 MAX_CHOICES = 6
 
@@ -33,7 +33,7 @@ class VoorspelCommand(BaseCommand):
     """Prediction game for any question: ask, answer by DM, points for the right answer."""
 
     name = "voorspel"
-    keywords = ["voorspel"]
+    keywords = ["tippspiel", "voorspel"]
     description = "Prediction game for any question: voorspel nieuw <question> | a | b, answer with voorspel <nr> (DM)"
     category = "games"
 

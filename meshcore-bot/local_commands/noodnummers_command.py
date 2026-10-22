@@ -22,7 +22,7 @@ class NoodnummersCommand(BaseCommand):
     """Emergency and help numbers (112 first, then the region's own numbers from the card)."""
 
     name = "noodnummers"
-    keywords = ["noodnummers", "nood"]
+    keywords = ["notruf", "notrufnummern", "noodnummers", "nood"]
     description = "Emergency and help numbers for this region (112 first)"
     category = "emergency"
 

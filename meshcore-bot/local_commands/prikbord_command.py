@@ -21,7 +21,7 @@ from ..mesh_community import ensure_tables, fit_bytes, pack_lines, split_args
 from ..models import MeshMessage
 from .base_command import BaseCommand
 
-REMOVE = {"weg", "verwijder", "del", "delete", "remove"}
+REMOVE = {"weg", "verwijder", "del", "delete", "remove", "lösche", "loesche", "löschen", "entferne"}
 MAX_TEXT_BYTES = 90
 MAX_ON_BOARD = 20
 
@@ -30,7 +30,7 @@ class PrikbordCommand(BaseCommand):
     """A notice board: pin a short note for a few days, read the newest notes."""
 
     name = "prikbord"
-    keywords = ["prikbord"]
+    keywords = ["pinnwand", "prikbord"]
     description = "Notice board: short messages that stay for a few days (prikbord, prikbord <text>, prikbord weg <nr>)"
     category = "general"
 

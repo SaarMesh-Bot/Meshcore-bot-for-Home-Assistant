@@ -23,16 +23,16 @@ from .base_command import BaseCommand
 
 ADD_WORDS = {"add", "voeg", "toevoegen", "bot"}
 NOT_WORDS = {"not", "geen", "nobot", "mens"}
-DEL_WORDS = {"del", "delete", "rm", "remove", "weg", "verwijder"}
+DEL_WORDS = {"del", "delete", "rm", "remove", "weg", "verwijder", "lösche", "entferne"}
 CHECK_WORDS = {"check", "test", "is"}
-LIST_WORDS = {"", "list", "lijst", "show"}
+LIST_WORDS = {"", "list", "lijst", "show", "liste", "zeige"}
 
 
 class BotlistCommand(BaseCommand):
     """Mark names as bot or not a bot."""
 
     name = "botlist"
-    keywords = ["botlist", "botlijst"]
+    keywords = ["botliste", "botlist", "botlijst"]
     description = "Mark names as a bot, or as never a bot (admin)"
     category = "admin"
 

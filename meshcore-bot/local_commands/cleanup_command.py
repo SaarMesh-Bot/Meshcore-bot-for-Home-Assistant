@@ -22,7 +22,7 @@ class CleanupCommand(BaseCommand):
     """Trim the radio's contact list on demand."""
 
     name = "cleanup"
-    keywords = ["cleanup", "opschonen"]
+    keywords = ["aufräumen", "aufraeumen", "cleanup", "opschonen"]
     description = "Clean up the radio's contact list (admin)"
     category = "admin"
 

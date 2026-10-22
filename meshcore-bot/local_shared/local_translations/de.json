@@ -78,13 +78,13 @@
       "help": "Nächstgelegene AEDs (Defibrillatoren) bei einem Ort, aus OpenStreetMap."
     },
     "laadpaal": {
-      "usage": "Verwendung: laadpaal <Ort>",
+      "usage": "Verwendung: ladesäule <Ort>",
       "not_found": "'{place}' konnte nicht gefunden werden.",
       "no_data": "Keine Ladestation gefunden innerhalb von {radius}km von {place}.",
       "header": "Ladestationen in der Nähe von {place}:",
       "generic_name": "Ladestation",
       "line": "- {name}{extra}: {distance}m",
-      "error": "Fehler im laadpaal-Befehl: {error}",
+      "error": "Fehler im ladesäule-Befehl: {error}",
       "help": "Nächstgelegene E-Ladesäulen bei einem Ort, aus OpenStreetMap."
     },
     "straling": {
@@ -170,7 +170,7 @@
       "tomorrow": "Morgen",
       "none": "{label} ({date}): kein offizieller Feiertag ({countries}).",
       "header": "{label} ({date}):",
-      "error": "Fehler im feestdag-Befehl: {error}",
+      "error": "Fehler im feiertag-Befehl: {error}",
       "help": "Offizielle Feiertage ({countries}) für heute, 'feiertag morgen' für morgen.",
       "date_format": "%d.%m.%Y"
     },
@@ -270,7 +270,7 @@
       "today": "F1: heute ist der {gp}, Start {time}",
       "day_unit": "Tag",
       "days_unit": "Tage",
-      "countdown": "F1: noch {days} {unit} bis zum {gp}, {when} | Spiel: DM mir f1 voorspel <code>",
+      "countdown": "F1: noch {days} {unit} bis zum {gp}, {when} | Spiel: DM mir f1 tipp <code>",
       "raceweek": "Rennwoche: {gp}! ",
       "no_next_race": "F1: kein nächstes Rennen bekannt.",
       "next_race": "Nächstes: {gp}, {day} {time}",
@@ -304,23 +304,23 @@
       "no_team_standings": "F1: die Konstrukteurs-WM ist noch nicht verfügbar.",
       "no_result": "F1: noch kein Ergebnis verfügbar.",
       "no_session": "Keine F1-Session läuft.",
-      "usage": "F1: f1, stand, team, result, sprint, weekend, grid, fahrer <Code>, nu, wetter, pit, kalender, voorspel <Code>, spel, ich",
+      "usage": "F1: f1, stand, team, ergebnis, sprint, weekend, grid, fahrer <Code>, jetzt, wetter, pit, kalender, tipp <Code>, spiel, ich",
       "error": "Fehler bei f1: {error}",
       "game_off": "F1: das Vorhersagespiel ist aus.",
-      "predict_dm_only": "Vorhersagen geht nur per DM an mich, so weiß ich sicher, dass du es bist, und niemand kann für dich abstimmen. Schick mir: f1 voorspel VER",
+      "predict_dm_only": "Vorhersagen geht nur per DM an mich, so weiß ich sicher, dass du es bist, und niemand kann für dich abstimmen. Schick mir: f1 tipp VER",
       "no_next_to_predict": "F1: es gibt gerade kein nächstes Rennen zum Vorhersagen.",
-      "predict_prompt": "Wer gewinnt den {gp}? f1 voorspel <Code> oder Top 3: f1 voorspel A B C. Z. B. {example}",
+      "predict_prompt": "Wer gewinnt den {gp}? f1 tipp <Code> oder Top 3: f1 tipp A B C. Z. B. {example}",
       "game_standing": "Stand: ",
       "no_points_yet": "noch keine Punkte",
       "your_points": "Du: {points} Pkt in {races} Rennen",
       "your_pick": ", du tippst {pick}",
       "no_pick_yet": ", noch keine Vorhersage",
-      "join_game": "Mitmachen: DM mir f1 voorspel <code> ({gp})",
+      "join_game": "Mitmachen: DM mir f1 tipp <code> ({gp})",
       "game_header": "Spiel {season}: ",
       "predict_no_key": "Ich kann deinen Schlüssel nicht bestimmen. Versuch es nochmal als Direktnachricht.",
       "predict_locked": "Die Vorhersagen für dieses Rennen sind geschlossen (das Qualifying hat begonnen).",
       "predict_unknown_code": "'{code}' kenne ich nicht. Benutze die 3 Buchstaben, zum Beispiel {example}.",
-      "predict_bad_format": "Nutze 1 Code (Sieger) oder 3 (deine Top 3), z. B. f1 voorspel VER oder f1 voorspel VER NOR LEC.",
+      "predict_bad_format": "Nutze 1 Code (Sieger) oder 3 (deine Top 3), z. B. f1 tipp VER oder f1 tipp VER NOR LEC.",
       "predict_changed": "Geändert: du tippst jetzt {code} (war {previous}).",
       "predict_recorded": "Notiert: du tippst {code} als Sieger.",
       "game_result_header": "Spiel: {n} Teilnehmer. ",
@@ -328,7 +328,7 @@
       "game_none_good": "Niemand hatte den Sieger oder einen Podiumsplatz richtig",
       "calendar_header": "Kalender {season}: ",
       "no_calendar": "Kein Rennkalender verfügbar.",
-      "help": "f1 = nächstes Rennen | stand, team, result, sprint, weekend, grid, fahrer VER, kalender | live: nu, wetter, pit | Spiel: voorspel (DM), spel, ich",
+      "help": "f1 = nächstes Rennen | stand, team, ergebnis, sprint, weekend, grid, fahrer VER, kalender | live: jetzt, wetter, pit | Spiel: tipp (DM), spiel, ich",
       "predict_recorded_top3": "Notiert: deine Top 3 ist {code}.",
       "predict_duplicate": "Jeder Fahrer nur einmal in deiner Top 3.",
       "left_hours": "{h}:{m} Std.",
@@ -349,7 +349,7 @@
       "no_pits": "F1: noch keine Boxenstopps in dieser Session.",
       "no_sprint": "F1: noch kein Sprintergebnis in dieser Saison.",
       "me_dm_only": "Deinen eigenen Stand siehst du per DM: schick mir f1 ich",
-      "me_none": "Du spielst beim F1-Tippspiel noch nicht mit. DM an mich: f1 voorspel VER",
+      "me_none": "Du spielst beim F1-Tippspiel noch nicht mit. DM an mich: f1 tipp VER",
       "me": "F1-Tippspiel {season}: {points} Pkt. in {races} Rennen, Platz {place} von {players}"
     },
     "rptr": {
@@ -359,7 +359,7 @@
       "not_tracked": " (nicht verfolgt)",
       "repeaters_header": "Repeater: ",
       "for_selector": " für '{selector}'",
-      "not_found": "rptr: kein Repeater gefunden{what}. Tippe rptr list.",
+      "not_found": "rptr: kein Repeater gefunden{what}. Tippe rptr liste.",
       "error": "Fehler bei rptr: {error}",
       "unit_m": "m",
       "unit_h": "Std",
@@ -387,11 +387,11 @@
       "trend_low_in": ", niedrig in ~{days} T",
       "measurements": "{n} Messungen",
       "decimal_sep": ",",
-      "help": "rptr zeigt Akku, Uptime, Airtime und Nachbarn des Repeaters; rptr buren = die Nachbarn; rptr accu [7d] = Akkuverlauf; rptr list = alle Repeater."
+      "help": "rptr zeigt Akku, Uptime, Airtime und Nachbarn des Repeaters; rptr nachbarn = die Nachbarn; rptr akku [7d] = Akkuverlauf; rptr liste = alle Repeater."
     },
     "helpall": {
-      "bad_page": "Help: Seite {page} gibt es nicht (1-{total} verfügbar).",
-      "page": "Help {page}/{total}: {names}",
+      "bad_page": "Hilfe: Seite {page} gibt es nicht (1-{total}).",
+      "page": "Hilfe {page}/{total}: {names}",
       "error": "Fehler im helpall-Befehl: {error}",
       "help": "Vollständige Liste der Kanalbefehle (ohne Admin/nur-DM): 'helpall' für Seite 1, dann 'helpall 2', 'helpall 3', ..."
     },
@@ -403,11 +403,11 @@
       "no_question": "Keine Frage von OpenTDB erhalten",
       "correct": "Richtig! Die Antwort war {letter}) {answer}.",
       "wrong": "Leider falsch. Du hast {given} gesagt, richtige Antwort war {letter}) {answer}.",
-      "already_active": "In diesem Kanal läuft bereits eine Quizfrage - antworten mit quiz a/b/c/d.",
-      "question": "Quiz: {question}",
-      "answer_hint": "Antwort: quiz a/b/c/d (60s)",
+      "already_active": "In diesem Kanal läuft bereits eine Quizfrage - antworten mit quiz a-d.",
+      "question": "❓ {question}",
+      "answer_hint": "quiz a-d (60s)",
       "error": "Fehler im quiz-Befehl: {error}",
-      "help": "Schickt eine Multiple-Choice-Quizfrage. Antworte innerhalb von 60 s mit 'quiz a', 'quiz b', 'quiz c' oder 'quiz d'. Fragen auf Englisch."
+      "help": "Schickt eine Quizfrage mit 4 Antworten (Saarland, Funk, Wissen). Antworte innerhalb von 60 s mit 'quiz a', 'quiz b', 'quiz c' oder 'quiz d'."
     },
     "hangman": {
       "wrong_suffix": " | falsch: {letters} ({n}/{max})",
@@ -425,9 +425,9 @@
       "lost": "Leider verloren. Das Wort war: {word}",
       "running": "Laufendes Spiel ({category}): {status}",
       "usage": "Verwendung: hangman start [Kategorie] ({categories})",
-      "unknown_action": "Unbekannte hangman-Aktion. Verwendung: start [Kategorie], <Buchstabe>, raad <Wort>, stop.",
+      "unknown_action": "Unbekannte hangman-Aktion. Verwendung: start [Kategorie], <Buchstabe>, rate <Wort>, stop.",
       "error": "Fehler im hangman-Befehl: {error}",
-      "help": "Buchstabenratespiel. 'hangman start [Kategorie]' startet ein Spiel (Kategorien: {categories}). Raten mit 'hangman <Buchstabe>' oder 'hangman raad <Wort>'. 'hangman stop' beendet."
+      "help": "Buchstabenratespiel. 'hangman start [Kategorie]' startet ein Spiel (Kategorien: {categories}). Raten mit 'hangman <Buchstabe>' oder 'hangman rate <Wort>'. 'hangman stop' beendet."
     },
     "poll": {
       "vote_recorded": "Stimme erfasst ({ja} ja / {nee} nein)",
@@ -435,22 +435,22 @@
       "tally": "Abstimmung '{question}': {ja} ja / {nee} nein",
       "no_active_to_stop": "Keine aktive Abstimmung zum Beenden.",
       "ended": "Abstimmung beendet: '{question}' -> {ja} ja / {nee} nein",
-      "usage": "Verwendung: stem [Nm|Nd] <Frage>",
-      "already_active": "In diesem Kanal läuft bereits eine Abstimmung - 'stem uitslag' oder abwarten.",
+      "usage": "Verwendung: abstimmung [Nm|Nd] <Frage>",
+      "already_active": "In diesem Kanal läuft bereits eine Abstimmung - 'abstimmung ergebnis' oder abwarten.",
       "question_too_long": "Frage zu lang (max ~{max} Zeichen), bitte kürzer fassen.",
-      "started": "Abstimmung gestartet: '{question}' - abstimmen mit ja/nee ({duration})",
+      "started": "Abstimmung gestartet: '{question}' - abstimmen mit ja/nein ({duration})",
       "error": "Fehler im poll-Befehl: {error}",
       "unit_min": "{n} Min",
       "unit_hour": "{n} Std",
       "unit_day": "{n} Tag",
       "unit_days": "{n} Tage",
-      "help": "Startet eine Ja/Nein-Abstimmung: 'stem <Frage>' (Frage max. ~80 Zeichen, sonst passt die Nachricht nicht). Optional vorher eine Dauer (genau eine, nicht kombinieren): 'stem 15m <Frage>', 'stem 2h <Frage>' oder 'stem 1d <Frage>' (Standard 10 Min., max. 1 Tag). Andere stimmen mit 'ja'/'nee'. 'stem uitslag' zeigt den Zwischenstand, 'stem stop' beendet die Abstimmung vorzeitig."
+      "help": "Startet eine Ja/Nein-Abstimmung: 'abstimmung <Frage>' (Frage max. ~80 Zeichen, sonst passt die Nachricht nicht). Optional vorher eine Dauer (genau eine, nicht kombinieren): 'abstimmung 15m <Frage>', 'abstimmung 2h <Frage>' oder 'abstimmung 1d <Frage>' (Standard 10 Min., max. 1 Tag). Andere stimmen mit 'ja'/'nein'. 'abstimmung ergebnis' zeigt den Zwischenstand, 'abstimmung stop' beendet die Abstimmung vorzeitig."
     },
     "botlist": {
       "none": "Botlist: keine manuellen Namen. Automatisch: Roboter-Emoji oder das Wort bot im Namen.",
       "bots_list": "Bots: {names}",
       "never_list": "Nie Bot: {names}",
-      "header": "Botlist:",
+      "header": "Botliste:",
       "missing_name": "Botlist: Name fehlt. Verwendung: botlist {sub} <Name>",
       "is_bot": "Bot",
       "not_bot": "kein Bot",
@@ -492,14 +492,14 @@
       "error": "Fehler bei dx: {error}"
     },
     "pad": {
-      "help": "pad = die Route deiner Nachricht in einer Zeile: Hops, km und Repeater (? = geschätzt). Lang: path.",
+      "help": "hops = die Route deiner Nachricht in einer Zeile: Hops, km und Repeater (? = geschätzt). Lang: path.",
       "hops": "{hops} Hops",
       "hop_one": "1 Hop",
       "km_route": "{km} km",
       "km_straight": "{km} km Luftlinie",
       "direct": "Direkt empfangen, ohne Repeater (0 Hops).",
       "no_path": "Keine Route für diese Nachricht bekannt.",
-      "error": "Fehler bei pad: {error}"
+      "error": "Fehler bei hops: {error}"
     },
     "sig": {
       "help": "sig = SNR, RSSI und Hops deiner Nachricht mit Bewertung. Praktisch zum Antennen-Tuning.",
@@ -517,7 +517,7 @@
       "error": "Fehler bei sig: {error}"
     },
     "meshkaart": {
-      "help": "meshkaart = wie viele Nodes der Bot hört (24h, 7 Tage, immer). Die Karte ist im Dashboard.",
+      "help": "meshkarte = wie viele Nodes der Bot hört (24h, 7 Tage, immer). Die Karte ist im Dashboard.",
       "reply": "Mesh 24h: {day} Nodes ({roles}), {located} mit Position | 7T: {week} | immer: {ever}",
       "role": {
         "companion": "{n} Companions",
@@ -527,7 +527,7 @@
         "other": "{n} sonstige"
       },
       "no_data": "Noch keine Nodes gehört.",
-      "error": "Fehler bei meshkaart: {error}"
+      "error": "Fehler bei meshkarte: {error}"
     },
     "karma": {
       "help": "karma <Name> = jemandem mit einem Punkt danken (max {per_day} pro Tag); karma = deine Punkte; karma top = Rangliste.",
@@ -544,7 +544,7 @@
       "error": "Fehler bei karma: {error}"
     },
     "checkin": {
-      "help": "checkin (oder meld) = täglich einchecken und eine Serie aufbauen. checkin top = längste Serien.",
+      "help": "checkin (oder einchecken) = täglich einchecken und eine Serie aufbauen. checkin top = längste Serien.",
       "done": "Eingecheckt, {name}! Serie {streak} T (Rekord {best}), heute {today} eingecheckt.",
       "again": "{name}, du bist heute schon eingecheckt. Serie {streak} T (Rekord {best}).",
       "no_name": "Kein Absendername, Einchecken nicht möglich.",
@@ -553,46 +553,46 @@
       "error": "Fehler bei checkin: {error}"
     },
     "prikbord": {
-      "help": "prikbord = neueste Notizen; prikbord <Text> = anheften ({days} Tage); prikbord <Nr>; prikbord weg <Nr>.",
+      "help": "pinnwand = neueste Notizen; pinnwand <Text> = anheften ({days} Tage); pinnwand <Nr>; pinnwand lösche <Nr>.",
       "header": "Pinnwand ({n}):",
-      "empty": "Die Pinnwand ist leer. Anheften mit: prikbord <Text>",
+      "empty": "Die Pinnwand ist leer. Anheften mit: pinnwand <Text>",
       "pinned": "Angeheftet als #{id}, {days} Tage sichtbar.",
       "removed": "#{id} entfernt.",
       "not_found": "#{id} ist nicht (mehr) an der Pinnwand.",
       "not_yours": "#{id} gehört dir nicht.",
       "too_long": "Zu lang: max {max} Bytes.",
-      "per_person": "Du hast schon {max} Notizen. Entferne eine mit: prikbord weg <Nr>",
+      "per_person": "Du hast schon {max} Notizen. Entferne eine mit: pinnwand lösche <Nr>",
       "full": "Die Pinnwand ist voll ({max}). Später versuchen.",
       "days_left": "noch {n}T",
       "no_name": "Kein Absendername, Anheften nicht möglich.",
-      "error": "Fehler bei prikbord: {error}"
+      "error": "Fehler bei pinnwand: {error}"
     },
     "noodnummers": {
-      "help": "noodnummers (oder nood) = 112 und die Hilfsnummern dieser Region.",
+      "help": "notruf = 112 und die Hilfsnummern dieser Region.",
       "reply": "Notfall: 112 anrufen (Mesh ist kein Notruf) | {numbers}",
-      "national": "Polizei ohne Eile 0900-8844 (NL) | Tierrettung 144 (NL)",
-      "error": "Fehler bei noodnummers: {error}"
+      "national": "Polizei 110 | Ärztl. Bereitschaft 116117 | Giftnotruf 06841 19240",
+      "error": "Fehler bei notruf: {error}"
     },
     "weetje": {
-      "error": "Fehler bei weetje: {error}",
-      "help": "Eine zufällige Wissenswertigkeit (auf Niederländisch)"
+      "error": "Fehler bei fakt: {error}",
+      "help": "fakt = eine zufällige Wissenswertigkeit (Saarland, Funk, Natur, Weltraum). Auch: wusstest"
     },
     "peiling": {
-      "help": "peiling [15m|2h|1d] Frage | a | b (bis {max} Optionen), abstimmen mit kies <Nr>; peiling uitslag; peiling stop.",
-      "usage": "Nutzung: peiling [15m] Frage | Option 1 | Option 2 (2 bis {max})",
-      "started": "Umfrage: {question} {choices} - abstimmen mit kies <Nr> ({duration})",
+      "help": "umfrage [15m|2h|1d] Frage | a | b (bis {max} Optionen), abstimmen mit wähle <Nr>; umfrage ergebnis; umfrage stop.",
+      "usage": "Nutzung: umfrage [15m] Frage | Option 1 | Option 2 (2 bis {max})",
+      "started": "Umfrage: {question} {choices} - abstimmen mit wähle <Nr> ({duration})",
       "voted": "Stimme für {choice} gezählt ({counts})",
       "bad_choice": "Wähle eine Zahl von 1 bis {max}.",
       "tally": "Zwischenstand '{question}': {result} ({total} Stimmen)",
       "ended": "Ergebnis '{question}': {result} ({total} Stimmen)",
       "none": "Keine Umfrage auf diesem Kanal.",
-      "already": "Es läuft schon eine Umfrage. Erst beenden mit: peiling stop",
+      "already": "Es läuft schon eine Umfrage. Erst beenden mit: umfrage stop",
       "too_long": "Zu lang für eine Nachricht (max {max} Bytes). Frage oder Optionen kürzen.",
-      "error": "Fehler bei peiling: {error}"
+      "error": "Fehler bei umfrage: {error}"
     },
     "herinner": {
-      "help": "Per DM: herinner 30m <Text>, herinner 18:30 <Text> (auch 2h, 1d); herinner lijst; herinner weg <Nr>. Max {max} offen.",
-      "usage": "Nutzung: herinner 30m <Text> oder herinner 18:30 <Text> (auch 2h, 1d)",
+      "help": "Per DM: erinnere 30m <Text>, erinnere 18:30 <Text> (auch 2h, 1d); erinnere liste; erinnere lösche <Nr>. Max {max} offen.",
+      "usage": "Nutzung: erinnere 30m <Text> oder erinnere 18:30 <Text> (auch 2h, 1d)",
       "set": "Erinnerung #{id} für {at} gesetzt.",
       "set_service_off": "Erinnerung #{id} für {at} gesetzt, aber der Reminders-Dienst ist aus: Admin bitten, ihn einzuschalten.",
       "list": "Offen: {items}",
@@ -602,30 +602,30 @@
       "too_far": "Höchstens 7 Tage im Voraus.",
       "too_soon": "Mindestens 1 Minute im Voraus.",
       "too_long": "Text zu lang: max {max} Bytes.",
-      "max_open": "Du hast schon {max} offene Erinnerungen. Lösche eine mit: herinner weg <Nr>",
+      "max_open": "Du hast schon {max} offene Erinnerungen. Lösche eine mit: erinnere lösche <Nr>",
       "no_key": "Erinnerungen gehen nur per DM an den Bot.",
       "delivery": "Erinnerung: {text}",
-      "error": "Fehler bei herinner: {error}"
+      "error": "Fehler bei erinnere: {error}"
     },
     "voorspel": {
-      "help": "voorspel = offene Frage; per DM: voorspel nieuw <Frage> | a | b, voorspel <Nr>, voorspel sluit, voorspel uitslag <Nr>; voorspel stand.",
-      "none": "Keine offene Frage. Per DM stellen: voorspel nieuw <Frage> | a | b",
-      "show_open": "Tipp: {question} {choices} ({n} Antw., per DM: voorspel <Nr>)",
+      "help": "tippspiel = offene Frage; per DM: tippspiel neu <Frage> | a | b, tippspiel <Nr>, tippspiel schließe, tippspiel ergebnis <Nr>; tippspiel stand.",
+      "none": "Keine offene Frage. Per DM stellen: tippspiel neu <Frage> | a | b",
+      "show_open": "Tipp: {question} {choices} ({n} Antw., per DM: tippspiel <Nr>)",
       "show_closed": "Tipp (geschlossen, wartet auf Ergebnis): {question} {choices} ({n} Antw.)",
       "yours": "Dein Tipp: {choice}.",
-      "new_usage": "Nutzung: voorspel nieuw <Frage> | Option 1 | Option 2 (2 bis {max})",
+      "new_usage": "Nutzung: tippspiel neu <Frage> | Option 1 | Option 2 (2 bis {max})",
       "busy": "Es gibt schon eine offene Frage. Die braucht erst ein Ergebnis.",
-      "created": "Frage #{id} ist offen. Im Kanal teilen; Antworten per DM: voorspel <Nr>.",
+      "created": "Frage #{id} ist offen. Im Kanal teilen; Antworten per DM: tippspiel <Nr>.",
       "answered": "Notiert: {choice}) {text}. Änderbar bis die Frage schließt.",
       "bad_choice": "Wähle eine Zahl von 1 bis {max}.",
       "closed": "Die Frage ist geschlossen, keine Antworten mehr.",
-      "closed_now": "Geschlossen mit {n} Antworten. Ergebnis mit: voorspel uitslag <Nr>",
+      "closed_now": "Geschlossen mit {n} Antworten. Ergebnis mit: tippspiel ergebnis <Nr>",
       "not_owner": "Nur wer gefragt hat, kann das.",
       "settled": "Ergebnis: {answer}. Richtig: {good} von {total} ({names}), +1 Punkt.",
       "standings_header": "Tipp-Stand:",
       "no_points": "Noch keine Punkte vergeben.",
       "dm_only": "Antworten und Fragen gehen per DM an den Bot (dort ist dein Schlüssel dabei).",
-      "error": "Fehler bei voorspel: {error}"
+      "error": "Fehler bei tippspiel: {error}"
     },
     "buien": {
       "help": "buien [Ort] = Regen der nächsten 2 Stunden je 10 Min (Buienradar, NL/BE). Ohne Ort: deine Position oder die des Bots.",
@@ -679,7 +679,8 @@
     "help": {
       "list_link": "Alle Befehle: {url} | help <Befehl> = Erklärung",
       "list_lang": "en",
-      "sample_suffix": " | help <cmd>=Details, helpall=alle"
+      "sample_suffix": " | help <Befehl>=Details, helpall=alle",
+      "sample_prefix": "Hilfe: "
     },
     "wx": {
       "subcommands": [
@@ -705,7 +706,12 @@
       "mqtt_weather_no_subscriber": "MQTT-Wetter-Abonnent ist nicht aktiv ([MqttWeather] und custom.mqtt_weather.*-Topics aktivieren)",
       "mqtt_weather_no_data": "Für dieses Topic ist noch keine MQTT-Wettermeldung eingegangen",
       "mqtt_weather_stale": "MQTT-Wetterdaten sind zu alt",
-      "mqtt_weather_payload_error": "Fehler in den MQTT-Wetterdaten: {detail}"
+      "mqtt_weather_payload_error": "Fehler in den MQTT-Wetterdaten: {detail}",
+      "usage": "Verwendung: wetter <PLZ|Ort> - z.B. wetter 66111 oder wetter Saarlouis",
+      "tomorrow_not_available": "Vorhersage für morgen nicht verfügbar",
+      "tomorrow_error": "Fehler bei der Vorhersage für morgen",
+      "multiday_not_available": "{num_days}-Tage-Vorhersage nicht verfügbar",
+      "multiday_error": "Fehler bei der {num_days}-Tage-Vorhersage"
     },
     "gwx": {
       "mqtt_forecast_not_supported": "Erweiterte Vorhersage ist für MQTT-Wetterquellen nicht verfügbar",
@@ -730,7 +736,11 @@
         "Saturday": "Sa",
         "Sunday": "So"
       },
-      "pressure_unit": "hPa"
+      "pressure_unit": "hPa",
+      "tomorrow_not_available": "Vorhersage für morgen nicht verfügbar",
+      "tomorrow_error": "Fehler bei der Vorhersage für morgen",
+      "multiday_not_available": "{num_days}-Tage-Vorhersage nicht verfügbar",
+      "multiday_error": "Fehler bei der {num_days}-Tage-Vorhersage"
     },
     "stats": {
       "subcommands": [
@@ -759,7 +769,13 @@
         "format": "{rank}. {name}: {count} {advert_text}",
         "hashes_label": "Hashes: {hashes}"
       },
-      "error_adverts": "Fehler beim Abrufen der Advert-Statistik: {error}"
+      "error_adverts": "Fehler beim Abrufen der Advert-Statistik: {error}",
+      "basic": {
+        "header": "Bot-Statistik (24h):"
+      },
+      "paths": {
+        "synopsis": "{rank} {sender}: {hops} Hops"
+      }
     },
     "neighbors": {
       "description": "Startet eine Nachbarsuche ohne Hops (nur per DM)",
@@ -775,12 +791,17 @@
     },
     "multitest": {
       "description": "Hört 6 Sekunden zu und sammelt alle eindeutigen Pfade eingehender Nachrichten mit demselben Paket-Hash",
-      "help": "Hört 6 Sekunden zu und sammelt alle eindeutigen Pfade eingehender Nachrichten mit demselben Paket-Hash"
+      "help": "Hört 6 Sekunden zu und sammelt alle eindeutigen Pfade eingehender Nachrichten mit demselben Paket-Hash",
+      "no_packet": "Fehler: Paketdaten zu dieser Nachricht nicht gefunden. Bitte nochmal versuchen."
     },
     "trace": {
       "description": "Link-Trace (trace = manueller Pfad, tracer = Hin und zurück, damit der Bot die Antwort hört)",
       "help": "trace [Pfad] — manueller Pfad (Rückweg evtl. nicht hörbar). tracer [Pfad] — hin und zurück. Pfad: 2-stelliges Hex, kommagetrennt (z. B. 01,7a,55). Ohne Pfad = dein Nachrichtenpfad.",
-      "timeout": "Trace: keine Antwort nach {seconds}s, {hops} Hops ({path}). Kürzer klappt öfter: tracer {short}"
+      "timeout": "Trace: keine Antwort nach {seconds}s, {hops} Hops ({path}). Kürzer klappt öfter: tracer {short}",
+      "failed": "Trace fehlgeschlagen: {error}",
+      "need_path": "trace/tracer braucht einen Pfad (z.B. trace 01,7a,55) oder eine Nachricht mit Pfad.",
+      "not_connected": "Keine Verbindung zum Funkgerät.",
+      "not_available": "Trace nicht verfügbar (Firmware/Verbindung)."
     },
     "prefix": {
       "older_entries_note": "(Einträge können älter als {days} Tage sein)"
@@ -829,7 +850,8 @@
         "snow": "Schnee",
         "showers": "Schauer",
         "thunder": "Gewitter"
-      }
+      },
+      "mismatch": "Kein {asked}, aber {actual}"
     },
     "aurora": {
       "description": "Polarlicht-Vorhersage (KP-Index und Wahrscheinlichkeit) für einen Ort",
@@ -1259,8 +1281,8 @@
     },
     "discover": {
       "result": "Direkt gehört ({n}): {list}",
-      "none": "Noch keine direkten Nachbarn bekannt (Scan: Karte BotNetwork/PacketCapture). Neuer Scan per DM: neighbors",
-      "help": "discover = die Repeater, die der Bot direkt hört (0 Hops), bestes Signal zuerst. Neuer Scan per DM: neighbors"
+      "none": "Noch keine direkten Nachbarn bekannt (Scan: Karte BotNetwork/PacketCapture). Neuer Scan per DM: nachbarscan",
+      "help": "nachbarn = die Repeater, die der Bot direkt hört (0 Hops), bestes Signal zuerst. Neuer Scan per DM: nachbarscan"
     },
     "ha": {
       "help": "ha = Home Assistant über das Mesh (Admins, DM): ha, ha <Name> (schaltet um), ha <Name> an/aus/status, ha alle",
@@ -1351,6 +1373,32 @@
       "help": "Schickt deinen Text zurück: echo <Text>",
       "result": "🗣️ {text}",
       "empty": "(leer)"
+    },
+    "aqi": {
+      "category_names": {
+        "Good": "gut",
+        "Moderate": "mäßig",
+        "Unhealthy for Sensitive Groups": "ungesund für Empfindliche",
+        "Unhealthy": "ungesund",
+        "Very Unhealthy": "sehr ungesund",
+        "Hazardous": "gefährlich"
+      },
+      "description": "Luftqualität für einen Ort (luft Saarbrücken, luft 66111, luft Metz Frankreich, luft 49.2,7.0)",
+      "usage": "Verwendung: luft <Ort|PLZ|Ort Land|lat,lon> - z.B. luft Saarbrücken, luft Metz Frankreich oder luft 49.2,7.0"
+    },
+    "cmd": {
+      "prefix": "Befehle: ",
+      "more": " (+{n} weitere)"
+    },
+    "version": {
+      "reply": "@[{sender}] Bot-Version: {version}"
+    },
+    "solarforecast": {
+      "usage": "Verwendung: pv <Ort|Repeater|lat,lon|PLZ> [Watt] [Azimut, 0=Süd] [Neigung] - z.B. pv Saarbrücken 400 0 30",
+      "usage_short": "Verwendung: pv <Ort|Repeater|lat,lon|PLZ> [W] [Azimut] [Neigung] - z.B. pv Saarbrücken 400",
+      "labels": {
+        "peak": "Spitze: {watts:.0f}W um {time}"
+      }
     }
   },
   "common": {
@@ -1459,5 +1507,44 @@
   "greeter_lang": {
     "greeting": "Willkommen im Mesh, @[{sender}]! 👋 |",
     "mesh_info": "Mesh-Info: {total_contacts} Kontakte, {repeaters} Repeater, {companions} Companions, {recent_activity_24h} aktiv in 24 h"
+  },
+  "help_override": {
+    "alert": "alert <Ort> = aktive Einsätze (nur USA, PulsePoint).",
+    "announcements": "Ankündigungen in Kanäle senden (nur per DM, braucht announcements-Recht).",
+    "aqi": "luft <Ort|PLZ|lat,lon> = Luftqualität (AQI, Feinstaub, Ozon ...). Ohne Ort: Standort des Bots. Auch: aqi",
+    "aurora": "polarlicht [Ort|PLZ|lat,lon] = Polarlicht-Aussicht (Kp-Index und Wahrscheinlichkeit). Auch: aurora",
+    "catfact": "katze = ein zufälliger Katzenfakt.",
+    "channelpause": "channelpause = Bot antwortet nicht mehr in Kanälen (DMs gehen weiter), channelresume = wieder an. Gilt bis zum Neustart (Admin).",
+    "cmd": "befehle = kompakte Liste der Befehle. Ausführlich: helpall",
+    "dadjoke": "flachwitz = ein zufälliger Flachwitz. Auch: dadjoke",
+    "feed": "feed list | status <id> | subscribe rss <url> <Kanal> [Name] | unsubscribe <id> <Kanal> | enable/disable <id> | test <url> (Admin, DM).",
+    "greeter": "Begrüßt neue Nutzer automatisch (einstellbar unter Plugins -> greeter).",
+    "hacker": "sudo, ls -l, ps aux ... = 'hackt' den Großrechner eines Superschurken, mit lustigen Fehlermeldungen.",
+    "joke": "witz = ein zufälliger Witz. Auch: witze, joke",
+    "magic8": "orakel <Frage> = die magische 8-Kugel beantwortet deine Ja/Nein-Frage. Auch: magic8",
+    "moon": "mond = Mondphase, Auf- und Untergang, nächster Voll- und Neumond.",
+    "sun": "sonne = Sonnenauf- und -untergang, Tageslänge und Sonnenstand.",
+    "solar": "sonnenwetter = Sonnenflecken, Solarflux, A-/K-Index, Röntgenfluss, Rauschen (HamQSL). Auch: solar",
+    "hfcond": "kurzwelle = KW-Ausbreitung je Band, Tag (T) und Nacht (N): gut, mäßig, schlecht. Auch: hfcond",
+    "reload": "reload = Konfiguration neu laden ohne Neustart (Funk-/Verbindungseinstellungen brauchen einen Neustart). Admin.",
+    "repeater": "Repeater-Kontakte verwalten (nur DM). Besser: Dashboard oder 'prefix'.",
+    "schedule": "schedule = geplante Nachrichten und Advert-Intervall anzeigen (DM).",
+    "trace": "trace [Pfad] = Trace entlang des Pfads, tracer [Pfad] = hin und zurück. Pfad als Hex, z.B. 01,7a,55. Ohne Pfad: der Pfad deiner Nachricht.",
+    "version": "version = welche Bot-Version läuft.",
+    "webviewer": "webviewer status | reset | restart = Dashboard-Verbindung prüfen/neu starten (Admin, DM).",
+    "wx": "wetter <Ort|PLZ> = Wetter jetzt mit Höchst- und Tiefstwert. Für Stunden: vorhersage. Auch: wx",
+    "gwx": "weltwetter <Ort> = Wetter für jeden Ort weltweit (Stadt, Land oder Koordinaten). Auch: gwx",
+    "rain": "regenradar [Ort|PLZ] = kommt in den nächsten 2 Std. Regen, wann und wie viel. schnee [Ort] für Schnee. Auch: rain",
+    "dice": "würfel = W6, würfel d20, würfel 2d6 usw. Auch: dice",
+    "roll": "zufall [X] = Zufallszahl 1-100 oder 1-X (max 10000). Auch: roll",
+    "contact": "kontakt = die Kontaktdaten des Bots zum Einfügen in die App. Auch: contact",
+    "airplanes": "flugzeuge [Ort] = Flugzeuge in der Nähe (ADS-B). Auch: airplanes, overhead",
+    "satpass": "satellit <Name|NORAD> [visuell] = nächster Überflug, z.B. satellit iss. Auch: satpass",
+    "solarforecast": "pv <Ort|PLZ|Repeater> [Watt] [Azimut, 0=Süd] [Neigung] = Solarertrag-Prognose. Auch: sf",
+    "neighbors": "nachbarscan = startet einen Scan nach direkten Nachbarn (nur per DM). Ergebnis: nachbarn",
+    "path": "pfad [hex] = Pfad deiner Nachricht oder eines angegebenen Pfads dekodieren (Repeater-Namen). Kurz: hops",
+    "stats": "statistik = 24-h-Statistik. statistik messages | channels | paths für Details.",
+    "channels": "kanäle = bekannte Hashtag-Kanäle; kanäle list, kanäle <Kategorie>, kanäle #name.",
+    "help": "help (oder hilfe) = ein paar Befehle; help <Befehl> = Erklärung; helpall = alle Befehle seitenweise."
   }
 }

@@ -64,7 +64,7 @@ class PadCommand(BaseCommand):
     """The route of your message: hops, distance and repeater names in one message."""
 
     name = "pad"
-    keywords = ["pad"]
+    keywords = ["hops", "pad"]
     description = "The route of your message in one line: hops, distance and repeaters (long form: path)"
     category = "meshcore_info"
 

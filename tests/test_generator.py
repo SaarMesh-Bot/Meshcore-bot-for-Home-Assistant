@@ -60,7 +60,8 @@ def _strip(sec): return {k: v for k, v in sec.items() if k not in ("rate_limit_s
                                                                   "command_prefix", "require_command_prefix",
                                                                   "info", "regions", "1-byte", "bier", "💙🖤")}
 check({s: _strip(dict(A[s])) for s in others} == {s: _strip(dict(B[s])) for s in others}, "alle andere secties zijn ook identiek (alleen de nieuwe zendgrens-sleutel in [Bot] komt erbij)")
-check(set(B.sections()) - set(A.sections()) == {"HARepeater", "F1", "F1_Command", "Heartbeat", "Localization", "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox", "NameHunt", "ObserverFeed", "AnalyzerFeed", "CoreScopeTelemetry", "DEWarn", "PegelAlarm", "Pegel_Command", "Odl_Command", "Warnung_Command"} and set(A.sections()) <= set(B.sections()), "alleen de nieuwe secties HARepeater, F1, F1_Command, Heartbeat, Localization, AutoLanguage, Reminders, Community, ChannelRadar, NightMode, GamesChannel, BotNetwork, InstallCount, AutoChannels, HASensors, RepeaterWatch, Setup en FarmDaily komen erbij, geen enkele sectie is weg")
+check(set(B.sections()) - set(A.sections()) == {"HARepeater", "F1", "F1_Command", "Heartbeat", "Localization", "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox", "NameHunt", "ObserverFeed", "AnalyzerFeed", "CoreScopeTelemetry", "DEWarn", "PegelAlarm", "Pegel_Command", "Odl_Command", "Warnung_Command",
+    "Alert_Command", "Sports_Command"} and set(A.sections()) <= set(B.sections()), "alleen de nieuwe secties HARepeater, F1, F1_Command, Heartbeat, Localization, AutoLanguage, Reminders, Community, ChannelRadar, NightMode, GamesChannel, BotNetwork, InstallCount, AutoChannels, HASensors, RepeaterWatch, Setup en FarmDaily komen erbij, geen enkele sectie is weg")
 check(B["Reminders"]["enabled"] == "true" and B["Reminders"]["language"] == B["Localization"]["language"] and B["Community"]["enabled"] == "true", "Reminders en Community staan na de update aan (anders werken herinner en dx/xp maar half)")
 check(B["F1"]["enabled"] == "false" and B["F1"]["channel"] == "#f1" and B["F1_Command"]["channels"] == "#f1", "F1 staat na de update UIT; het f1-commando krijgt alleen #f1 als kanaal")
 check("f1" not in B["Channels"]["monitor_channels"].lower(), "#f1 staat NIET bij de kanalen van de bot (zo werken ping, wx en de rest daar niet)")
@@ -265,5 +266,15 @@ for val, want in ((0, "0"), (1, "3"), (6, "6"), (500, "168")):
     o = copy.deepcopy(NEW); o["bot"]["advert_hours"] = val; o["bot"]["startup_advert"] = "off"
     d = tempfile.mkdtemp(); run(GEN, o, d); O = read(d)
     check(O["Bot"]["advert_interval_hours"] == want and O["Bot"]["startup_advert"] == "false", f"advert_hours {val} -> {want}, start uit")
+
+# ---- P. SaarMesh fork 1.5.1-sm.10: a German bot gets German aliases for upstream commands and the 24-hour clock
+o = copy.deepcopy(NEW); o["bot"]["language"] = "de"
+d = tempfile.mkdtemp(); run(GEN, o, d); P = read(d)
+check(P["DadJoke_Command"]["aliases"] == "flachwitz" and P["Rain_Command"]["aliases"] == "regenradar, schnee"
+      and P["Solar_Config"]["use_zulu_time"] == "true", "Deutsch: flachwitz, regenradar/schnee, 24-Stunden-Uhr")
+check(P["Alert_Command"]["enabled"] == "false" and P["Sports_Command"]["enabled"] == "false", "alert/sports (nur USA) aus")
+o["bot"]["language"] = "en"
+d = tempfile.mkdtemp(); run(GEN, o, d); P = read(d)
+check(not P.has_option("DadJoke_Command", "aliases") and not P.has_section("Solar_Config"), "Englisch: keine deutschen Aliase")
 
 print(f"\n{len(fails)} fouten"); sys.exit(1 if fails else 0)

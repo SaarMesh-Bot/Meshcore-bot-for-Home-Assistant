@@ -15,7 +15,7 @@ class UptimeCommand(BaseCommand):
     """Reports bot process uptime since last restart."""
 
     name = "uptime"
-    keywords = ["uptime"]
+    keywords = ["laufzeit", "uptime"]
     description = "How long the bot has been running since its last restart"
     category = "general"
 

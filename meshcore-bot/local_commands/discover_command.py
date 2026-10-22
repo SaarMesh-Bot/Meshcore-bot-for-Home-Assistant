@@ -40,7 +40,7 @@ class DiscoverCommand(BaseCommand):
     """Direct neighbours of the bot's radio, from the neighbour-discovery data (no transmission)."""
 
     name = "discover"
-    keywords = ["discover", "buren", "nachbarn", "voisins"]
+    keywords = ["nachbarn", "discover", "buren", "voisins"]
     description = "The repeaters the bot's radio hears directly (0 hops), best signal first; sends nothing over the radio"
     category = "meshcore_info"
 

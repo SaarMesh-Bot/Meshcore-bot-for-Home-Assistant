@@ -228,3 +228,6 @@ patch_greeter_language.py
 
 # Greeter: the greeting as a DM to the new person (card option, default DM; fallback channel or nothing).
 patch_greeter_dm.py
+
+# German texts on a German bot: help <command> overrides, sun/moon/solar/hf, rain, aqi, place names, Flachwitz/Witz/Orakel, cmd/version/trace/multitest.
+patch_german_texts.py

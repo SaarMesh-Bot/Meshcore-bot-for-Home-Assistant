@@ -22,7 +22,7 @@ class HangmanCommand(BaseCommand):
     """Letter-guessing game, one active game per channel."""
 
     name = "hangman"
-    keywords = ["hangman"]
+    keywords = ["hangman", "galgen"]
     description = "Letter guessing game (usage: hangman start [category], hangman <letter>, hangman raad <word>, hangman stop)"
     category = "fun"
 
@@ -76,7 +76,12 @@ class HangmanCommand(BaseCommand):
             lower = content.lower()
             channel = message.channel
 
-            rest = content[len("hangman"):].strip() if lower.startswith("hangman") else content
+            for kw in sorted(self.keywords, key=len, reverse=True):
+                if lower == kw or lower.startswith(kw + " "):
+                    rest = content[len(kw):].strip()
+                    break
+            else:
+                rest = content
             rest_lower = rest.lower()
 
             session = self._sessions.get(channel)
@@ -104,10 +109,11 @@ class HangmanCommand(BaseCommand):
                     ),
                 )
 
-            if rest_lower.startswith("raad "):
+            guess_prefix = next((w for w in ("raad ", "rate ", "löse ", "loese ") if rest_lower.startswith(w)), None)
+            if guess_prefix:
                 if session is None:
                     return await self.send_response(message, self.translate("commands.hangman.no_game"))
-                guess_word = rest_lower[len("raad "):].strip()
+                guess_word = rest_lower[len(guess_prefix):].strip()
                 if guess_word == session["word"]:
                     self._sessions.end(channel)
                     return await self.send_response(

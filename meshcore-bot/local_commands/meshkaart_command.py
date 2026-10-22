@@ -21,7 +21,7 @@ class MeshkaartCommand(BaseCommand):
     """Size of the mesh the bot hears: nodes per role, last 24h, 7 days and ever."""
 
     name = "meshkaart"
-    keywords = ["meshkaart", "nodes"]
+    keywords = ["meshkarte", "nodes", "meshkaart"]
     description = "How many nodes, repeaters and rooms the bot hears (24 h, 7 days, ever)"
     category = "meshcore_info"
 
