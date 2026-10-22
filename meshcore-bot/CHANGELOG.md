@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.1-sm.9
+
+- New card CoreScopeTelemetry (off by default): battery and temperature of the repeaters meshcore-ha follows are read
+  from Home Assistant (no airtime) and published to a CoreScope map as `meshcore/{REGION}/{key}/telemetry`. Only new
+  readings are sent, with the time of the reading; readings older than `max_age_hours` and offline repeaters are
+  skipped. Replaces the telemetry poller of the old SaarMesh bot.
+
 ## 1.5.1-sm.8
 
 - DEWarn: new setting `pointer_channels` (e.g. `Public, #saarland`). After a post with new warnings these channels get

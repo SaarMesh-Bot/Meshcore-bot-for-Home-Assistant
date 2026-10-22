@@ -371,6 +371,10 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
     # AnalyzerFeed: observers of chosen regions from the public EU Meshcore Analyzer (modules/observers.py). Off, no regions.
     cfg["AnalyzerFeed"] = {"enabled": "false", "regions": "", "url": "https://meshcore-analyzer.eu", "packets": "true",
                            "observers_minutes": "5", "packets_seconds": "60"}
+    # CoreScopeTelemetry: repeater battery/temperature from Home Assistant to a CoreScope map over MQTT. Off: needs a broker.
+    cfg["CoreScopeTelemetry"] = {"enabled": "false", "host": "", "port": "8883", "tls": "true", "username": "",
+                                 "password": "", "region": "", "repeaters": "", "read_interval_minutes": "10",
+                                 "max_age_hours": "6"}
 
     # DEWarn: new DWD weather warnings and NINA warnings (Germany) in a channel, with all-clears (modules/de_warn.py).
     # Off. Default area: the Saarland (state SL, its six districts).
@@ -483,7 +487,7 @@ STATE_FILE = "generated_keys.json"
 MOVED_SECTIONS = {"Notifications", "ContactCleanup", "RoomServer_Login", "HomeAssistantBridge",
                   "Webhook", "ChannelHint", "Greeter_Command", "HARepeater", "F1", "F1_Command", "Heartbeat",
                   "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox", "NameHunt", "ObserverFeed", "AnalyzerFeed",
-                  "DEWarn", "PegelAlarm", "Pegel_Command", "Odl_Command"}
+                  "CoreScopeTelemetry", "DEWarn", "PegelAlarm", "Pegel_Command", "Odl_Command"}
 # Never removed by the "generated last time but not now" cleanup: the moved sections, and the scheduled
 # messages (the dashboard's Schedule page owns them since 2.8.0; the old announcement option is gone).
 KEEP_SECTIONS = MOVED_SECTIONS | {"Scheduled_Messages"}
