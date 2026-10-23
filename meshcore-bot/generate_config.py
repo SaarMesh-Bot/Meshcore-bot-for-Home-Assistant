@@ -503,7 +503,7 @@ STATE_FILE = "generated_keys.json"
 MOVED_SECTIONS = {"Notifications", "ContactCleanup", "RoomServer_Login", "HomeAssistantBridge",
                   "Webhook", "ChannelHint", "Greeter_Command", "HARepeater", "F1", "F1_Command", "Heartbeat",
                   "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox", "NameHunt", "ObserverFeed", "AnalyzerFeed",
-                  "CoreScopeTelemetry", "DEWarn", "PegelAlarm", "Pegel_Command", "Odl_Command"}
+                  "CoreScopeTelemetry", "DEWarn", "PegelAlarm", "Pegel_Command", "Odl_Command", "HashHint"}
 # Never removed by the "generated last time but not now" cleanup: the moved sections, and the scheduled
 # messages (the dashboard's Schedule page owns them since 2.8.0; the old announcement option is gone).
 KEEP_SECTIONS = MOVED_SECTIONS | {"Scheduled_Messages"}

@@ -112,6 +112,10 @@ patch_channel_hint.py
 # the lines patch_channel_hint.py added to command_manager, so it runs right after it.
 patch_games_channel.py
 
+# Path hash tip (card HashHint): someone who sends with a 1-byte path hash in a watched channel gets a tip that 2 bytes
+# is better, once per person. Anchors on the lines patch_channel_hint.py added to message_handler.
+patch_hash_hint.py
+
 # Reply in the sender's own language (auto-detected from what they typed), for every command. Settings card
 # only (see the file); patch_sender_language_detection.py does the actual work in command_manager.py.
 patch_sender_language_detection.py

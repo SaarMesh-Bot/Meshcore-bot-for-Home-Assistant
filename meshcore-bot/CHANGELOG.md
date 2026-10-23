@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.1-sm.11
+
+- New card HashHint (off by default): someone who sends with a 1-byte path hash in a watched channel (default
+  `Public`) gets a short tip that 2 bytes per hop is better (app > Settings > Experimental Settings). The size is
+  read from the path_len byte of the RF packet matched to the message; nothing happens when no packet was matched.
+  As a DM to the sender (fallback: in the channel, or nothing), after a short delay, once per person per 30 days
+  (kept in the database), in the channel at most every 10 minutes, never to bots; optionally only within N hops.
+
 ## 1.5.1-sm.10
 
 - Everything on the mesh in German on a bot set to German (found by running every command offline with language de):
