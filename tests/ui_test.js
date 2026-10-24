@@ -6,11 +6,11 @@ const w = dom.window, d = w.document;
 const XSS = '<img src=x onerror=alert(1)>Bot';
 const now = Math.floor(Date.now() / 1000);
 let names = [
-  { name: 'DX1ABC-BOT', source: 'channel', messages: 8, last_heard: now - 60, auto: true, auto_reason: 'woord bot in de naam', manual: null, is_bot: true },
-  { name: XSS, source: 'channel', messages: 1, last_heard: now - 20, auto: true, auto_reason: 'woord bot in de naam', manual: null, is_bot: true },
-  { name: 'Echobot', source: 'contact', messages: 0, last_heard: now - 7000, auto: true, auto_reason: 'woord bot in de naam', manual: null, is_bot: true },
-  { name: 'Alex', source: 'channel', messages: 30, last_heard: now - 30, auto: false, auto_reason: 'geen bot-kenmerk', manual: null, is_bot: false },
-  { name: 'Talbot', source: 'channel', messages: 3, last_heard: now - 900, auto: true, auto_reason: 'woord bot in de naam', manual: false, is_bot: false },
+  { name: 'DX1ABC-BOT', source: 'channel', messages: 8, last_heard: now - 60, auto: true, auto_reason: 'the word bot in the name', manual: null, is_bot: true },
+  { name: XSS, source: 'channel', messages: 1, last_heard: now - 20, auto: true, auto_reason: 'the word bot in the name', manual: null, is_bot: true },
+  { name: 'Echobot', source: 'contact', messages: 0, last_heard: now - 7000, auto: true, auto_reason: 'the word bot in the name', manual: null, is_bot: true },
+  { name: 'Alex', source: 'channel', messages: 30, last_heard: now - 30, auto: false, auto_reason: 'no sign of a bot', manual: null, is_bot: false },
+  { name: 'Talbot', source: 'channel', messages: 3, last_heard: now - 900, auto: true, auto_reason: 'the word bot in the name', manual: false, is_bot: false },
 ];
 const calls = []; let failNext = false;
 w.fetch = (path, opts = {}) => {
@@ -18,7 +18,7 @@ w.fetch = (path, opts = {}) => {
   const res = (ok, status, data) => Promise.resolve({ ok, status, json: () => Promise.resolve(data) });
   if (path === '/api/bots') return res(true, 200, { names, total: names.length });
   if (path === '/api/bots/set') {
-    if (failNext) { failNext = false; return res(false, 400, { error: 'lijst vol (max 300)' }); }
+    if (failNext) { failNext = false; return res(false, 400, { error: 'list full (max 300)' }); }
     const { name, is_bot } = JSON.parse(opts.body);
     const i = names.findIndex(n => n.name.toLowerCase() === name.toLowerCase());
     const base = i >= 0 ? names[i] : { name, source: 'list', messages: 0, last_heard: 0, auto: /bot/i.test(name), auto_reason: 'x' };
@@ -93,7 +93,7 @@ w.eval(scripts[0].textContent);
   failNext = true;
   const box2 = d.querySelector('#bots-body input[type=checkbox]'); const nm = box2.closest('tr').children[1].textContent;
   box2.checked = false; box2.dispatchEvent(new w.Event('change')); await tick(); await tick();
-  ok(d.querySelector('#bots-message .alert-danger') && d.getElementById('bots-message').textContent.includes('lijst vol'), 'foutmelding van de server getoond');
+  ok(d.querySelector('#bots-message .alert-danger') && d.getElementById('bots-message').textContent.includes('list full'), 'foutmelding van de server getoond');
   ok(d.querySelector('#bots-body input[type=checkbox]').checked && rowNames().includes(nm), 'vinkje staat weer terug na een fout');
   console.log(`\n${fails} fouten`); process.exit(fails ? 1 : 0);
 })();

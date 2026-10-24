@@ -178,7 +178,13 @@
             tdName.style.wordBreak = 'break-word';
             tr.appendChild(tdName);
 
-            tr.appendChild(cell(row.auto ? 'Bot: ' + row.auto_reason : 'Not a bot: ' + row.auto_reason, 'text-muted small'));
+            // label and reason as two text nodes, so webui.js translates each (the reason comes from the server in English)
+            const tdWhy = cell(row.auto ? 'Bot:' : 'Not a bot:', 'text-muted small');
+            tdWhy.appendChild(document.createTextNode(' '));
+            const why = document.createElement('span');
+            why.textContent = row.auto_reason;
+            tdWhy.appendChild(why);
+            tr.appendChild(tdWhy);
 
             const tdBy = document.createElement('td');
             if (row.manual === null) {

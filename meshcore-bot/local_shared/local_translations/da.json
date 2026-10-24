@@ -464,7 +464,18 @@
       "usage": "Botliste: brug botlist, botlist add|not|del|check <navn>.",
       "value_error": "Botliste: {error}.",
       "error": "Fejl i botlist: {error}",
-      "help": "botlist viser listerne; botlist add <navn> = altid en bot, botlist not <navn> = aldrig en bot, botlist del <navn> = af listerne, botlist check <navn> (admin)."
+      "help": "botlist viser listerne; botlist add <navn> = altid en bot, botlist not <navn> = aldrig en bot, botlist del <navn> = af listerne, botlist check <navn> (admin).",
+      "reasons": {
+        "no_name": "intet navn",
+        "robot_emoji": "robot-emoji i navnet",
+        "word_bot": "ordet bot i navnet",
+        "no_sign": "intet bot-kendetegn",
+        "hand_bot": "manuelt: bot",
+        "hand_not_bot": "manuelt: ikke en bot",
+        "bot_network": "botnetværk",
+        "name_invalid": "navn mangler eller er for langt",
+        "list_full": "listen er fuld (maks. {max})"
+      }
     },
     "cleanup": {
       "no_service": "Oprydning: tjenesten er ikke indlæst.",

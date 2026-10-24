@@ -61,14 +61,14 @@ def make_bot(db=None):
 # ---------- 1. ChannelHint: lijsten en volgorde van regels
 bot = make_bot()
 h = get_channel_hint(bot)
-assert h.classify("DX1ABC-BOT") == (True, "woord bot in de naam")
+assert h.classify("DX1ABC-BOT") == (True, "the word bot in the name")
 assert h.classify("Alex")[0] is False
 assert h.set_manual("Alex", True) is None
-assert h.classify("Alex") == (True, "handmatig: bot")
+assert h.classify("Alex") == (True, "by hand: bot")
 assert h.set_manual("talbot", False) is None            # 'Talbot' zou als bot gelden (eindigt op bot)
-assert h.classify("Talbot") == (False, "handmatig: geen bot")
+assert h.classify("Talbot") == (False, "by hand: not a bot")
 assert h.set_manual("alex", False) is True              # verplaatst, hoofdletters maken niet uit
-assert h.classify("Alex") == (False, "handmatig: geen bot")
+assert h.classify("Alex") == (False, "by hand: not a bot")
 assert h.set_manual("Alex", None) is False
 assert h.classify("Alex")[0] is False and h.classify("DX1ABC-BOT")[0]
 assert h.manual_lists() == ([], ["talbot"])
@@ -112,8 +112,8 @@ async def commands():
     r = await run("botlist add " + "x" * 50);          print(" ", r); assert "te lang" in r
     # persistente opslag: nieuwe ChannelHint op dezelfde db ziet de lijsten
     bot2 = make_bot(bot.db_manager)
-    assert ChannelHint(bot2).classify("Sam") == (True, "handmatig: bot")
-    assert ChannelHint(bot2).classify("Talbot") == (False, "handmatig: geen bot")
+    assert ChannelHint(bot2).classify("Sam") == (True, "by hand: bot")
+    assert ChannelHint(bot2).classify("Talbot") == (False, "by hand: not a bot")
 asyncio.run(commands())
 print("2 commando: OK")
 

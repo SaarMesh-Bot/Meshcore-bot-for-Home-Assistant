@@ -218,7 +218,7 @@ class ChannelHint:
         or a full list."""
         name = " ".join((name or "").split())
         if not name or len(name) > MAX_NAME_LENGTH:
-            raise ValueError("naam ontbreekt of is te lang")
+            raise ValueError("name missing or too long")
         key = name.lower()
         self._lists_at = 0.0
         marked, never = self._lists()
@@ -230,7 +230,7 @@ class ChannelHint:
         elif status is False:
             never.append(name)
         if len(marked) > MAX_LIST_ENTRIES or len(never) > MAX_LIST_ENTRIES:
-            raise ValueError(f"lijst vol (max {MAX_LIST_ENTRIES})")
+            raise ValueError(f"list full (max {MAX_LIST_ENTRIES})")
         self._write_names(MARKED_KEY, marked)
         self._write_names(NEVER_KEY, never)
         self._lists_at = 0.0
@@ -241,12 +241,12 @@ class ChannelHint:
         self._refresh_settings()
         name = (name or "").strip()
         if not name:
-            return False, "geen naam"
+            return False, "no name"
         if any(marker in name for marker in self.bot_markers):
-            return True, "robot-emoji in de naam"
+            return True, "robot emoji in the name"
         if any(pattern.search(name) for pattern in self._bot_word_res):
-            return True, "woord bot in de naam"
-        return False, "geen bot-kenmerk"
+            return True, "the word bot in the name"
+        return False, "no sign of a bot"
 
     def manual_state(self, name: str) -> Optional[bool]:
         """True = an admin marked the name as a bot, False = never a bot, None = not in the lists."""
@@ -262,16 +262,16 @@ class ChannelHint:
         """(is a bot, reason) for a sender name. Hand-made lists win over the automatic rules."""
         name = (name or "").strip()
         if not name:
-            return False, "geen naam"
+            return False, "no name"
         state = self.manual_state(name)
         if state is False:
-            return False, "handmatig: geen bot"
+            return False, "by hand: not a bot"
         if state is True:
-            return True, "handmatig: bot"
+            return True, "by hand: bot"
         try:
             from .bot_network import is_network_bot
             if is_network_bot(self.bot, name):
-                return True, "botnetwerk"
+                return True, "bot network"
         except Exception:  # noqa: BLE001
             pass
         return self.classify_auto(name)

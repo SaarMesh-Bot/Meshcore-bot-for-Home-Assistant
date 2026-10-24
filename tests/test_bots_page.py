@@ -112,8 +112,8 @@ check(client.post("/api/bots/set", data="geen json", content_type="text/plain").
 # 5. de bot-kant ziet dezelfde lijsten
 from modules.channel_hint import ChannelHint
 bot_side = ChannelHint(types.SimpleNamespace(config=cfg, db_manager=viewer.db_manager, logger=viewer.logger))
-check(bot_side.classify("Nieuwe Onbekende") == (True, "handmatig: bot"), "bot-kant: handmatige bot")
-check(bot_side.classify("Talbot") == (False, "handmatig: geen bot"), "bot-kant: handmatig geen bot")
+check(bot_side.classify("Nieuwe Onbekende") == (True, "by hand: bot"), "bot-kant: handmatige bot")
+check(bot_side.classify("Talbot") == (False, "by hand: not a bot"), "bot-kant: handmatig geen bot")
 check(bot_side.classify("DX1ABC-BOT")[0], "bot-kant: automatische bot blijft bot")
 # en de botlist-commando-kant schrijft in dezelfde opslag
 bot_side.set_manual("Via Commando", True)

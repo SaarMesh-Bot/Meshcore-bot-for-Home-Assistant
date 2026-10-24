@@ -464,7 +464,18 @@
       "usage": "Botlist: use botlist, botlist add|not|del|check <name>.",
       "value_error": "Botlist: {error}.",
       "error": "Error in botlist: {error}",
-      "help": "botlist shows the lists; botlist add <name> = always a bot, botlist not <name> = never a bot, botlist del <name> = off the lists, botlist check <name> (admin)."
+      "help": "botlist shows the lists; botlist add <name> = always a bot, botlist not <name> = never a bot, botlist del <name> = off the lists, botlist check <name> (admin).",
+      "reasons": {
+        "no_name": "no name",
+        "robot_emoji": "robot emoji in the name",
+        "word_bot": "the word bot in the name",
+        "no_sign": "no sign of a bot",
+        "hand_bot": "by hand: bot",
+        "hand_not_bot": "by hand: not a bot",
+        "bot_network": "bot network",
+        "name_invalid": "name missing or too long",
+        "list_full": "list full (max {max})"
+      }
     },
     "cleanup": {
       "no_service": "Cleanup: service not loaded.",

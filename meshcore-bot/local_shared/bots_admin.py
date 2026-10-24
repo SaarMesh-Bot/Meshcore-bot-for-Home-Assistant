@@ -114,7 +114,7 @@ def set_bot(db_manager: Any, config: Any, name: str, is_bot: Optional[bool],
     hand-made lists only hold real exceptions. Raises ValueError for a bad name or a full list."""
     name = " ".join((name or "").split())
     if not name or len(name) > MAX_NAME_LENGTH:
-        raise ValueError("naam ontbreekt of is te lang")
+        raise ValueError("name missing or too long")
     hint = _hint(db_manager, config, logger)
     auto = hint.classify_auto(name)[0]
     status = None if (is_bot is None or is_bot == auto) else bool(is_bot)

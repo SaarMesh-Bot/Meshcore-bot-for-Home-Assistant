@@ -34,6 +34,10 @@ PATTERN = re.compile(r"(?<!def )(?:self\.)?translate\(\s*f?(['\"])(?P<key>[^'\"]
 
 # Dynamic f-string key prefixes we build ourselves in code -> every suffix that can occur at runtime.
 ENUMS = {
+    "commands.botlist.reasons": [
+        "no_name", "robot_emoji", "word_bot", "no_sign", "hand_bot", "hand_not_bot", "bot_network", "name_invalid",
+        "list_full",
+    ],
     "commands.f1.country": [
         "Australia", "Austria", "Azerbaijan", "Bahrain", "Belgium", "Brazil", "Canada", "China", "France", "Germany",
         "Hungary", "Italy", "Japan", "Mexico", "Monaco", "Netherlands", "Qatar", "Saudi Arabia", "Singapore",

@@ -27,6 +27,19 @@ DEL_WORDS = {"del", "delete", "rm", "remove", "weg", "verwijder", "lösche", "en
 CHECK_WORDS = {"check", "test", "is"}
 LIST_WORDS = {"", "list", "lijst", "show", "liste", "zeige"}
 
+# channel_hint.classify() gives its reason (and set_manual() its errors) in English; these keys say it in the
+# bot's language. Anything not listed is passed on unchanged.
+REASON_KEYS = {
+    "no name": "no_name",
+    "robot emoji in the name": "robot_emoji",
+    "the word bot in the name": "word_bot",
+    "no sign of a bot": "no_sign",
+    "by hand: bot": "hand_bot",
+    "by hand: not a bot": "hand_not_bot",
+    "bot network": "bot_network",
+    "name missing or too long": "name_invalid",
+}
+
 
 class BotlistCommand(BaseCommand):
     """Mark names as bot or not a bot."""
@@ -35,6 +48,17 @@ class BotlistCommand(BaseCommand):
     keywords = ["botliste", "botlist", "botlijst"]
     description = "Mark names as a bot, or as never a bot (admin)"
     category = "admin"
+
+    def _say(self, text: str) -> str:
+        """An English reason or error from channel_hint in the bot's language."""
+        if text.startswith("list full (max ") and text.endswith(")"):
+            out = self.translate("commands.botlist.reasons.list_full", max=text[15:-1])
+            return text if out.startswith("commands.") else out
+        key = REASON_KEYS.get(text)
+        if not key:
+            return text
+        out = self.translate(f"commands.botlist.reasons.{key}")
+        return text if not out or out.startswith("commands.") else out
 
     short_description = "Mark bots (admin)"
     usage = "botlist [add|not|del|check] [naam]"
@@ -92,7 +116,7 @@ class BotlistCommand(BaseCommand):
                 is_bot, reason = hint.classify(name)
                 verdict = self.translate("commands.botlist.is_bot") if is_bot else self.translate("commands.botlist.not_bot")
                 return await self.send_response(
-                    message, self.translate("commands.botlist.check_result", name=name, verdict=verdict, reason=reason)
+                    message, self.translate("commands.botlist.check_result", name=name, verdict=verdict, reason=self._say(reason))
                 )
 
             if sub in ADD_WORDS:
@@ -120,7 +144,7 @@ class BotlistCommand(BaseCommand):
                 message, self.translate("commands.botlist.usage")
             )
         except ValueError as e:
-            return await self.send_response(message, self.translate("commands.botlist.value_error", error=str(e)))
+            return await self.send_response(message, self.translate("commands.botlist.value_error", error=self._say(str(e))))
         except Exception as e:
             self.logger.error(f"Error executing botlist command: {e}")
             return await self.send_response(message, self.translate("commands.botlist.error", error=str(e)))

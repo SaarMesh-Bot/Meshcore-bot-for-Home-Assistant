@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.1-sm.12
+
+- Bots page and `botlist check`: the reason a name counts as a bot (or not) was always Dutch ("woord bot in de naam").
+  The bot now gives it in English and the page and the command show it in the bot's language (de/nl/en/fr/da);
+  the same for the botlist errors (name too long, list full).
+
 ## 1.5.1-sm.11
 
 - New card HashHint (off by default): someone who sends with a 1-byte path hash in a watched channel (default

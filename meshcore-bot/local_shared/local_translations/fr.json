@@ -464,7 +464,18 @@
       "usage": "Botlist : utilisez botlist, botlist add|not|del|check <nom>.",
       "value_error": "Botlist : {error}.",
       "error": "Erreur dans botlist : {error}",
-      "help": "botlist affiche les listes ; botlist add <nom> = toujours un bot, botlist not <nom> = jamais un bot, botlist del <nom> = retirer, botlist check <nom> (admin)."
+      "help": "botlist affiche les listes ; botlist add <nom> = toujours un bot, botlist not <nom> = jamais un bot, botlist del <nom> = retirer, botlist check <nom> (admin).",
+      "reasons": {
+        "no_name": "pas de nom",
+        "robot_emoji": "émoji robot dans le nom",
+        "word_bot": "mot bot dans le nom",
+        "no_sign": "aucun signe de bot",
+        "hand_bot": "à la main : bot",
+        "hand_not_bot": "à la main : pas un bot",
+        "bot_network": "réseau de bots",
+        "name_invalid": "nom manquant ou trop long",
+        "list_full": "liste pleine (max {max})"
+      }
     },
     "cleanup": {
       "no_service": "Cleanup : service non chargé.",

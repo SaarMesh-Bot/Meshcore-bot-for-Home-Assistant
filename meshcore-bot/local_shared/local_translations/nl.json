@@ -464,7 +464,18 @@
       "usage": "Botlist: gebruik botlist, botlist add|not|del|check <naam>.",
       "value_error": "Botlist: {error}.",
       "error": "Fout bij botlist: {error}",
-      "help": "botlist toont de lijsten; botlist add <naam> = altijd bot, botlist not <naam> = nooit bot, botlist del <naam> = weg uit de lijsten, botlist check <naam> (admin)."
+      "help": "botlist toont de lijsten; botlist add <naam> = altijd bot, botlist not <naam> = nooit bot, botlist del <naam> = weg uit de lijsten, botlist check <naam> (admin).",
+      "reasons": {
+        "no_name": "geen naam",
+        "robot_emoji": "robot-emoji in de naam",
+        "word_bot": "woord bot in de naam",
+        "no_sign": "geen bot-kenmerk",
+        "hand_bot": "handmatig: bot",
+        "hand_not_bot": "handmatig: geen bot",
+        "bot_network": "botnetwerk",
+        "name_invalid": "naam ontbreekt of is te lang",
+        "list_full": "lijst vol (max {max})"
+      }
     },
     "cleanup": {
       "no_service": "Cleanup: service niet geladen.",

@@ -2528,6 +2528,10 @@
 [
 "(\\d+) hours",
 "$1 timer"
+],
+[
+"^list full \\(max (\\d+)\\)$",
+"listen er fuld (maks. $1)"
 ]
 ],
 "a bot": "en bot",
@@ -2764,7 +2768,13 @@
 "📅 100 active days": "📅 100 aktive dage",
 "📅 30 active days": "📅 30 aktive dage",
 "🔥 30-day streak": "🔥 30 dage i træk",
-"🔥 7-day streak": "🔥 7 dage i træk"
+"🔥 7-day streak": "🔥 7 dage i træk",
+"no name": "intet navn",
+"robot emoji in the name": "robot-emoji i navnet",
+"the word bot in the name": "ordet bot i navnet",
+"no sign of a bot": "intet bot-kendetegn",
+"bot network": "botnetværk",
+"name missing or too long": "navn mangler eller er for langt"
 },
 "de": {
 "Newcomer": "Neuling",
@@ -5293,6 +5303,10 @@
 [
 "(\\d+) hours",
 "$1 Stunden"
+],
+[
+"^list full \\(max (\\d+)\\)$",
+"Liste voll (max. $1)"
 ]
 ],
 "a bot": "ein Bot",
@@ -5554,7 +5568,13 @@
 "Only senders within this many hops": "Nur Absender innerhalb so vieler Hops",
 "0 = any distance. A small number keeps the tips to people near the bot.": "0 = jede Entfernung. Eine kleine Zahl beschränkt die Tipps auf Leute in der Nähe des Bots.",
 "No tips for other bots": "Keine Tipps an andere Bots",
-"Bots are recognised as for the channel hint (robot emoji, the word bot, the dashboard's Bots page).": "Bots werden wie beim Kanal-Hinweis erkannt (Roboter-Emoji, das Wort bot, Bots-Seite im Dashboard)."
+"Bots are recognised as for the channel hint (robot emoji, the word bot, the dashboard's Bots page).": "Bots werden wie beim Kanal-Hinweis erkannt (Roboter-Emoji, das Wort bot, Bots-Seite im Dashboard).",
+"no name": "kein Name",
+"robot emoji in the name": "Roboter-Emoji im Namen",
+"the word bot in the name": "Wort bot im Namen",
+"no sign of a bot": "kein Bot-Merkmal",
+"bot network": "Bot-Netzwerk",
+"name missing or too long": "Name fehlt oder ist zu lang"
 },
 "fr": {
 "Newcomer": "Nouveau",
@@ -8089,6 +8109,10 @@
 [
 "(\\d+) hours",
 "$1 heures"
+],
+[
+"^list full \\(max (\\d+)\\)$",
+"liste pleine (max $1)"
 ]
 ],
 "a bot": "un bot",
@@ -8326,7 +8350,13 @@
 "📅 100 active days": "📅 100 jours actifs",
 "📅 30 active days": "📅 30 jours actifs",
 "🔥 30-day streak": "🔥 30 jours d'affilée",
-"🔥 7-day streak": "🔥 7 jours d'affilée"
+"🔥 7-day streak": "🔥 7 jours d'affilée",
+"no name": "pas de nom",
+"robot emoji in the name": "émoji robot dans le nom",
+"the word bot in the name": "mot bot dans le nom",
+"no sign of a bot": "aucun signe de bot",
+"bot network": "réseau de bots",
+"name missing or too long": "nom manquant ou trop long"
 },
 "nl": {
 "Newcomer": "Nieuwkomer",
@@ -10837,6 +10867,10 @@
 [
 "(\\d+) hours",
 "$1 uur"
+],
+[
+"^list full \\(max (\\d+)\\)$",
+"lijst vol (max $1)"
 ]
 ],
 "a bot": "een bot",
@@ -11075,6 +11109,12 @@
 "📅 100 active days": "📅 100 actieve dagen",
 "📅 30 active days": "📅 30 actieve dagen",
 "🔥 30-day streak": "🔥 30 dagen op rij",
-"🔥 7-day streak": "🔥 7 dagen op rij"
+"🔥 7-day streak": "🔥 7 dagen op rij",
+"no name": "geen naam",
+"robot emoji in the name": "robot-emoji in de naam",
+"the word bot in the name": "woord bot in de naam",
+"no sign of a bot": "geen bot-kenmerk",
+"bot network": "botnetwerk",
+"name missing or too long": "naam ontbreekt of is te lang"
 }
 }
