@@ -226,8 +226,15 @@ WATCHDOG = '''    _SNAPSHOT_KEY = 'channels.last_known'
             else:
                 return
             await asyncio.sleep(delay)
+            # Stopped or replaced (fetch_channels starts a new one): end here even when the cancel() was lost.
+            # Python 3.11's asyncio.wait_for (used by _fetch_single_channel) swallows a cancel that arrives just as
+            # the radio answers, so cancel() alone can leave an old watchdog running next to the new one.
+            if self._channel_watchdog_task is not asyncio.current_task():
+                return
             round_no += 1
             await self._channel_check(round_no)
+            if self._channel_watchdog_task is not asyncio.current_task():
+                return
 
     def _start_channel_watchdog(self) -> None:
         self._stop_channel_watchdog()

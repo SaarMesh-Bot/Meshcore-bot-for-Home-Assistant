@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.1-sm.14
+
+- Channel check: an old check task now ends by itself once it is no longer the current one. On Python 3.11
+  `asyncio.wait_for` swallows a cancel that arrives just as the radio answers, so after a channel rescan the old task
+  could keep running next to the new one. In the tests this showed as `test_channel_watchdog.py` hanging forever at
+  100 % CPU (with the wait times shortened); the test now covers a lost cancel and checks that no task is left over.
+- `tests/run_all.sh`: every test has a time limit (`TEST_TIMEOUT`, default 300 s), so one hanging test no longer
+  blocks the whole run.
+
 ## 1.5.1-sm.13
 
 - The word "repeater" at the start of a channel message is no longer a command. Upstream's translations list it as a

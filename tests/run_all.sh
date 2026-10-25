@@ -35,7 +35,9 @@ export SIM_TREE="$WORK/sim"
 fails=0; total=0
 run() {   # run <label> <command...>
   local label="$1"; shift
-  local out; out="$("$@" 2>&1)"; local code=$?
+  # time limit per test: a hanging test (25-10-2026: the channel watchdog ran for 18 h at 100 % CPU) must not block the run
+  local out; out="$(timeout "${TEST_TIMEOUT:-300}" "$@" 2>&1)"; local code=$?
+  [ $code -eq 124 ] && out="FAIL timeout after ${TEST_TIMEOUT:-300} s"
   total=$((total + 1))
   if [ $code -eq 0 ]; then printf "  ok    %s\n" "$label"; else printf "  FAIL  %s\n" "$label"; echo "$out" | grep -E "^FAIL|Traceback|Error|fouten" | head -8 | sed 's/^/          /'; fails=$((fails + 1)); fi
 }

@@ -136,6 +136,19 @@ async def main():
     assert cm._channel_watchdog_task is not old and old.cancelled()
     cm._stop_channel_watchdog()
     print("E  herstart vervangt de taak")
+
+    # --- G. cancel() verloren (Python 3.11 wait_for slikt een cancel die samenvalt met het antwoord van de radio):
+    # de oude taak ziet bij de volgende ronde dat hij niet meer de actuele is en stopt zelf (25-10-2026: liep eindeloos)
+    radio_g = {k: v for k, v in FULL.items() if k != 4}
+    cm, bot = make({}, radio_g)
+    await cm.fetch_channels()
+    orphan = cm._channel_watchdog_task
+    cm._channel_watchdog_task = None          # zoals _stop_channel_watchdog, maar zonder dat de cancel aankomt
+    assert await settle(cm, orphan.done), "verweesde controle-taak stopt niet vanzelf"
+    print("G  verloren cancel: oude taak stopt zelf")
+
+    left = [t for t in asyncio.all_tasks() if t is not asyncio.current_task() and not t.done()]
+    assert not left, f"taken lopen nog: {left}"
     print("ALLES OK")
 
 asyncio.run(main())
