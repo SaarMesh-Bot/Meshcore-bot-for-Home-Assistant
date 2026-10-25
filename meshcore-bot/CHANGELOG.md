@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.1-sm.13
+
+- The word "repeater" at the start of a channel message is no longer a command. Upstream's translations list it as a
+  keyword of the prefix lookup, so "Repeater update auf 1.18" in #saarland got "Invalid prefix format. Expected 2, 4,
+  or 6 hex characters". The prefix lookup now only listens to `prefix` and `lookup` (overlay in all languages), and
+  upstream's DM-only repeater command is switched off for channels (`[Repeater_Command] channels =` empty), so
+  "repeater ...", "repeaters ..." and "rp ..." in a channel stay silent instead of answering "only in DMs". In a DM
+  `repeater` works as before; a channel list set on the command's card wins.
+
 ## 1.5.1-sm.12
 
 - Bots page and `botlist check`: the reason a name counts as a bot (or not) was always Dutch ("woord bot in de naam").

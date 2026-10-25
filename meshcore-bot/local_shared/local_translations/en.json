@@ -1,4 +1,7 @@
 {
+  "keywords": {
+    "prefix": ["prefix", "lookup"]
+  },
   "commands": {
     "tanken": {
       "result": "National avg. pump price ({date}): Euro95 €{euro95} | Diesel €{diesel} | LPG €{lpg}",

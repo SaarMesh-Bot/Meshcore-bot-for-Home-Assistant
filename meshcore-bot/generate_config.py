@@ -344,6 +344,11 @@ def build(opts: dict, data_dir: str) -> configparser.ConfigParser:
     cfg["F1"] = {"enabled": "false", "channel": "#f1", "language": str(g("bot", "language", "en"))}
     cfg["F1_Command"] = {"channels": "#f1"}
 
+    # Upstream's repeater command (manage repeater contacts) is DM-only. In a channel it answered "only in DMs" to every
+    # message that starts with the word "repeater" ("Repeater update auf 1.18"), so it is switched off for channels:
+    # silent there, unchanged in a DM. A channel list set on its card wins (MOVED_SECTIONS).
+    cfg["Repeater_Command"] = {"channels": ""}
+
     # Auto-detect the sender's language from what they typed, and reply in that language for every command
     # (separate from [Localization] language, the fixed fallback). Off until switched on (Plugins -> AutoLanguage).
     cfg["AutoLanguage"] = {"enabled": "false"}
@@ -501,7 +506,7 @@ STATE_FILE = "generated_keys.json"
 # that is already there. Every value the options ever produced is already in config.ini, because
 # it was rewritten on every start until 2.6.1.
 MOVED_SECTIONS = {"Notifications", "ContactCleanup", "RoomServer_Login", "HomeAssistantBridge",
-                  "Webhook", "ChannelHint", "Greeter_Command", "HARepeater", "F1", "F1_Command", "Heartbeat",
+                  "Webhook", "ChannelHint", "Greeter_Command", "HARepeater", "F1", "F1_Command", "Repeater_Command", "Heartbeat",
                   "AutoLanguage", "Reminders", "Community", "ChannelRadar", "NightMode", "GamesChannel", "BotNetwork", "InstallCount", "AutoChannels", "HASensors", "RepeaterWatch", "Setup", "FarmDaily", "ProblemLog", "Mailbox", "NameHunt", "ObserverFeed", "AnalyzerFeed",
                   "CoreScopeTelemetry", "DEWarn", "PegelAlarm", "Pegel_Command", "Odl_Command", "HashHint"}
 # Never removed by the "generated last time but not now" cleanup: the moved sections, and the scheduled

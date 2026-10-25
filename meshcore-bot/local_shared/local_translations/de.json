@@ -1,4 +1,7 @@
 {
+  "keywords": {
+    "prefix": ["prefix", "lookup"]
+  },
   "commands": {
     "tanken": {
       "result": "Landesweiter Ø-Tankpreis ({date}): Super95 €{euro95} | Diesel €{diesel} | LPG €{lpg}",

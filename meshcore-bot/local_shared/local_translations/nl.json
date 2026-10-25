@@ -1,4 +1,7 @@
 {
+  "keywords": {
+    "prefix": ["prefix", "lookup"]
+  },
   "commands": {
     "tanken": {
       "result": "Landelijk gem. pompprijs ({date}): Euro95 €{euro95} | Diesel €{diesel} | LPG €{lpg}",
