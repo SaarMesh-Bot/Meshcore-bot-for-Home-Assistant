@@ -5574,7 +5574,18 @@
 "the word bot in the name": "Wort bot im Namen",
 "no sign of a bot": "kein Bot-Merkmal",
 "bot network": "Bot-Netzwerk",
-"name missing or too long": "Name fehlt oder ist zu lang"
+"name missing or too long": "Name fehlt oder ist zu lang",
+"Stand in for an old bot that is switched off: a note to people who still write to it, then the answer": "Vertretung für einen abgeschalteten alten Bot: Hinweis an alle, die ihn noch anschreiben, danach die Antwort",
+"Names of the old bot": "Namen des alten Bots",
+"As in @[...] in a message. Comma-separated, case does not matter.": "Wie in @[...] in einer Nachricht. Durch Komma getrennt, Groß-/Kleinschreibung egal.",
+"Text of the note": "Text des Hinweises",
+"Empty = a standard text in the bot's language. {sender} = the name, {old} = the old bot's name.": "Leer = Standardtext in der Sprache des Bots. {sender} = Name, {old} = Name des alten Bots.",
+"Then answer the command myself": "Danach den Befehl selbst beantworten",
+"\"@[OldBot] /path\" is handled as if it was sent to this bot.": "„@[AlterBot] /path“ wird so behandelt, als ginge es an diesen Bot.",
+"The same person gets the note again after": "Dieselbe Person bekommt den Hinweis erneut nach",
+"0 = every time. Kept in the bot's database.": "0 = jedes Mal. Steht in der Datenbank des Bots.",
+"At most one note per channel every": "Höchstens ein Hinweis pro Kanal alle",
+"Ignore other bots": "Andere Bots ignorieren"
 },
 "fr": {
 "Newcomer": "Nouveau",

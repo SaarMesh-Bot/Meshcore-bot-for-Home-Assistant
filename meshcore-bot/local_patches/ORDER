@@ -116,6 +116,10 @@ patch_games_channel.py
 # is better, once per person. Anchors on the lines patch_channel_hint.py added to message_handler.
 patch_hash_hint.py
 
+# Stand-in (card StandIn): "@[OldBot] /path" gets a note that this bot stands in, then the command runs here.
+# Anchors on the lines patch_hash_hint.py added.
+patch_stand_in.py
+
 # Reply in the sender's own language (auto-detected from what they typed), for every command. Settings card
 # only (see the file); patch_sender_language_detection.py does the actual work in command_manager.py.
 patch_sender_language_detection.py

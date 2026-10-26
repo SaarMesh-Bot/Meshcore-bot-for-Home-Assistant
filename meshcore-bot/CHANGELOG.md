@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.1-sm.15
+
+- New card StandIn (off by default): stands in for an old bot that is switched off. Someone who still writes
+  "@[SaarMesh-Bot] /path" in a channel gets a short note ("@[Ve] Der SaarMesh-Bot macht Urlaub, ich bin seine
+  Vertretung"), and the command in the message is then handled as if it was sent to this bot. The note comes once per
+  person per 12 hours (kept in the database) and at most once per channel every 2 minutes; never for other bots, never
+  in DMs, never in a hint channel (the channel hint answers there). Upstream ignored such a command before, because it
+  mentions someone else.
+
 ## 1.5.1-sm.14
 
 - Channel check: an old check task now ends by itself once it is no longer the current one. On Python 3.11
