@@ -24,6 +24,7 @@ Config (config.ini, card StandIn on the Plugins page):
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 import time
@@ -33,6 +34,7 @@ SECTION = "StandIn"
 NOTIFIED_KEY = "standin.notified"     # bot_metadata: {name (lower case): unix time of the note}
 SETTINGS_TTL_SECONDS = 30
 MAX_REMEMBERED = 2000
+MAX_WAIT_S = 15
 
 DEFAULT_TEXTS = {
     "de": "@[{sender}] Der {old} macht Urlaub, ich bin seine Vertretung \U0001F3D6\uFE0F",
@@ -205,7 +207,20 @@ class StandIn:
 
         if self.answer and own_name:
             message.content = message.content.replace(f"@[{old}]", f"@[{own_name}]")
+            if result == "note":
+                await self._wait_for_rate_limit()
         return result
+
+    async def _wait_for_rate_limit(self) -> None:
+        """The note counts in the bot's global send limit (rate_limit_seconds) even though it skips the check itself,
+        so the answer right after it would be dropped ("Rate limited. Wait 2.0 seconds", 26-10-2026). Wait until the
+        limit allows the next message (at most MAX_WAIT_S)."""
+        try:
+            wait = float(self.bot.rate_limiter.time_until_next() or 0)
+        except Exception:  # noqa: BLE001
+            return
+        if wait > 0:
+            await asyncio.sleep(min(wait + 0.3, MAX_WAIT_S))
 
 
 def get_stand_in(bot: Any) -> StandIn:

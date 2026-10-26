@@ -54,6 +54,7 @@ def make(extra=None, meta=None, lang="de", hint_channels=()):
         sent.append((channel, text, kw.get("scope")))
         return True
     bot.command_manager.send_channel_message = send_channel_message
+    bot.rate_limiter.time_until_next = lambda: 0.0
     bot._channel_hint = MagicMock()
     bot._channel_hint.is_other_bot = lambda m: "bot" in (m.sender_id or "").lower()
     bot._channel_hint.is_hint_channel = lambda m: (m.channel or "").lower() in hint_channels
@@ -89,6 +90,28 @@ m3 = msg(name="Jean")
 check(handle(s, m3) == "quiet" and len(sent) == 1, "channel cooldown: second person right after, no note")
 s._last_channel.clear()
 check(handle(s, msg(name="Jean")) == "note" and len(sent) == 2, "after the cooldown the next person gets the note")
+
+# --- after the note the bot waits for its global send limit, so the answer is not dropped ---
+s, sent = make()
+waits = []
+s.bot.rate_limiter.time_until_next = lambda: 0.4
+_sleep = asyncio.sleep
+
+
+async def fake_sleep(sec):
+    waits.append(sec)
+    await _sleep(0)
+si.asyncio.sleep = fake_sleep
+handle(s, msg())
+check(waits and 0.4 <= waits[0] <= si.MAX_WAIT_S, f"waits for the send limit after the note: {waits}")
+waits.clear()
+handle(s, msg())
+check(not waits, "no note (same person): no wait")
+s, sent = make({"answer": "false"})
+s.bot.rate_limiter.time_until_next = lambda: 0.4
+handle(s, msg())
+check(not waits, "answer off: no wait")
+si.asyncio.sleep = _sleep
 
 # --- left alone ---
 s, sent = make()

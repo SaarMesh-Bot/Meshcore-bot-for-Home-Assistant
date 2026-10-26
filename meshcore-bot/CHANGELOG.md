@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.1-sm.16
+
+- StandIn: the command after the note was not answered ("@[SaarMesh-Bot] /path" got the note, but no path). The note
+  counts in the bot's global send limit (`rate_limit_seconds`), so the answer two seconds later was dropped with
+  "Rate limited. Wait 2.0 seconds". After the note the bot now waits until the limit allows the answer (at most 15 s).
+
 ## 1.5.1-sm.15
 
 - New card StandIn (off by default): stands in for an old bot that is switched off. Someone who still writes
