@@ -3,6 +3,7 @@
 Why: people still write "@[SaarMesh-Bot] /path" out of habit after the old bot went off. Upstream ignores a command
 that mentions someone else, so nobody answered. Now the bot answers in its place:
 
+- "@[SaarMesh-Bot]" (a mention from the app) and "@SaarMesh-Bot" (typed by hand) both count;
 - once per person per `repeat_hours` it says so in the channel ("@[Ve] The SaarMesh-Bot is on holiday, I'm standing
   in for it"), at most once per `channel_cooldown_minutes` per channel;
 - with `answer = true` (default) the mention of the old name is turned into a mention of this bot, so the command in
@@ -45,6 +46,11 @@ DEFAULT_TEXTS = {
 }
 
 _MENTION = re.compile(r"@\[([^\]]+)\]")
+
+
+def _plain_mention(name: str):
+    """"@Name" without brackets, not followed by more of a name (letters, digits, - or _)."""
+    return re.compile(r"(?<![\w\[])@" + re.escape(name) + r"(?![\w-])", re.IGNORECASE)
 
 
 def _norm(name: str) -> str:
@@ -127,20 +133,24 @@ class StandIn:
 
     # ---- the check ----
     def old_mention(self, message: Any) -> Optional[str]:
-        """The old bot name (as written) when a channel message mentions it and not this bot; else None."""
+        """The mention of the old bot as written ("@[SaarMesh-Bot]" or "@SaarMesh-Bot") when a channel message
+        mentions it and not this bot; else None."""
         self._refresh_settings()
         if not self.enabled or getattr(message, "is_dm", False) or not self.names:
             return None
         content = getattr(message, "content", "") or ""
         mentions = _MENTION.findall(content)
-        if not mentions:
-            return None
         own = self._own_names()
         if any(_norm(m) in own for m in mentions):
             return None
         for m in mentions:
             if _norm(m) in self.names:
-                return m
+                return f"@[{m}]"
+        # typed by hand without brackets: "@SaarMesh-Bot /test" (no real mention in the app, 29-10-2026)
+        for name in sorted(self.names, key=len, reverse=True):
+            hit = _plain_mention(name).search(content)
+            if hit:
+                return hit.group(0)
         return None
 
     def _own_names(self) -> set:
@@ -174,9 +184,10 @@ class StandIn:
         """Called for every channel message before commands are matched. Returns what happened:
         'none' (not for the old bot), 'note' (note sent), 'quiet' (no note this time) - with 'answer' the message is
         rewritten in the last two cases so the command in it runs as if sent to this bot."""
-        old = self.old_mention(message)
-        if old is None:
+        written = self.old_mention(message)
+        if written is None:
             return "none"
+        old = written[2:-1] if written.startswith("@[") else written[1:]
         sender = (getattr(message, "sender_id", "") or "").strip()
         own_name = self.bot.config.get("Bot", "bot_name", fallback="")
         if not sender or _norm(sender) in self._own_names() or _norm(sender) in self.names:
@@ -206,7 +217,7 @@ class StandIn:
                 self.bot.logger.info("StandIn: %s wrote to %s in %s, note sent", sender, old, message.channel)
 
         if self.answer and own_name:
-            message.content = message.content.replace(f"@[{old}]", f"@[{own_name}]")
+            message.content = message.content.replace(written, f"@[{own_name}]", 1).strip()
             if result == "note":
                 await self._wait_for_rate_limit()
         return result

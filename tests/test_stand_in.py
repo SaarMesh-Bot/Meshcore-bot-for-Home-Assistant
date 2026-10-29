@@ -113,6 +113,19 @@ handle(s, msg())
 check(not waits, "answer off: no wait")
 si.asyncio.sleep = _sleep
 
+# --- typed by hand without brackets ---
+s, sent = make()
+mp = msg(text="@SaarMesh-Bot /test", name="Fred", channel="#bot")
+check(handle(s, mp) == "note" and sent and sent[-1][1].startswith("@[Fred] Der SaarMesh-Bot macht Urlaub"),
+      "\"@SaarMesh-Bot /test\" without brackets: note")
+check(mp.content == "@[Saarlodri|\U0001F916] /test", f"...and the command handed to this bot: {mp.content!r}")
+mp2 = msg(text="@saarmesh-bot test", name="Fred", channel="#bot")
+check(handle(s, mp2) == "quiet" and mp2.content == "@[Saarlodri|\U0001F916] test", "case does not matter, no slash")
+check(handle(s, msg(text="@SaarMesh-Bot2 /test", name="Jo")) == "none", "a longer name is someone else")
+check(handle(s, msg(text="mail@SaarMesh-Bot.de", name="Jo")) == "none", "@ inside a word is no mention")
+check(handle(s, msg(text="@SaarMesh-Bot @[Saarlodri|\U0001F916] /test", name="Jo")) == "none",
+      "this bot mentioned too: nothing")
+
 # --- left alone ---
 s, sent = make()
 check(handle(s, msg(text="/path")) == "none" and not sent, "no mention: nothing")

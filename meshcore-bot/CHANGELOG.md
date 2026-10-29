@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.1-sm.17
+
+- StandIn: "@SaarMesh-Bot /test" typed by hand without brackets now counts too (only "@[SaarMesh-Bot]", the mention
+  the app makes, did). The note comes the same way and the command is handed to this bot. "@SaarMesh-Bot2" or
+  "mail@SaarMesh-Bot.de" are not a mention.
+
 ## 1.5.1-sm.16
 
 - StandIn: the command after the note was not answered ("@[SaarMesh-Bot] /path" got the note, but no path). The note
