@@ -100,7 +100,12 @@ tokens = W.settings(configparser.ConfigParser())["tokens"]
 warns, cancels = W.nina_items(NINA, "Saarlouis", NOW, tokens)
 wt = [w["text"] for w in warns]
 check(any(t.startswith("🟩 Saarlouis · Rauch") for t in wt), f"Rauch trotz 'Minor' gepostet: {wt}")
-check(not any("Trinkwasser" in t for t in wt), "harmlose 'Minor'-Meldung (Chlorung) nicht")
+check(any(t.startswith("🟩 Biringen · Trinkwasser") for t in wt), f"'Minor' von MoWaS (Gefahreninformation) gepostet: {wt}")
+st_ing = card("mow.5", "Einschränkung der Trinkwasserversorgung - St. Ingbert", "Minor")
+st_w, _ = W.nina_items([st_ing], "Saarpfalz-Kreis", NOW, tokens)
+check([w["text"] for w in st_w] == ["🟩 St. Ingbert · Trinkwasser"], f"Trinkwasser St. Ingbert (31.10.2026): {st_w}")
+dwd_minor = card("dwd.2", "Amtliche WARNUNG vor NEBEL", "Minor", provider="DWD", cat_en="Fog")
+check(W.nina_items([dwd_minor], "Saarlouis", NOW, tokens)[0] == [], "DWD-'Minor' (Nebel) über NINA weiter nicht")
 check(any(t.startswith("🟧 Saarland ·") and t.endswith("· bis 17:00") for t in wt), f"landesweit am Schlagzeilen-Suffix erkannt: {wt}")
 check(len(cancels) == 1 and cancels[0][0].startswith("nina::saarlouis::gefahrstoff::"), f"Entwarnung erkannt: {cancels}")
 warns2, _ = W.nina_items([dict(NINA[0], id="mow.1-001", sent=(NOW + timedelta(minutes=5)).isoformat())], "Saarlouis", NOW, tokens)

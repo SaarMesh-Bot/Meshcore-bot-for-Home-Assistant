@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.1-sm.18
+
+- DEWarn: NINA warnings rated "Minor" by an authority (MoWaS, police, flood centres - in the NINA app "Warnstufe
+  Gefahreninformation") now go out. Until now every "Minor" was dropped unless the text named a fire or hazmat, so
+  "Einschränkung der Trinkwasserversorgung - St. Ingbert" (31.10.2026) reached neither #warnings nor the `warnung`
+  command. Minor DWD weather mirrors are still held back.
+- Command `warnung`: also answers to `warnings`.
+
 ## 1.5.1-sm.17
 
 - StandIn: "@SaarMesh-Bot /test" typed by hand without brackets now counts too (only "@[SaarMesh-Bot]", the mention

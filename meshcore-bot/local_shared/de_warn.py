@@ -111,6 +111,14 @@ def nina_region(headline: Optional[str], fallback: str, region_tokens: Iterable[
         low = seg.lower()
         if any(t in low for t in tokens):
             return short_region(seg, fallback)
+    # A local MoWaS warning ends on the town ('Einschränkung der Trinkwasserversorgung - St. Ingbert'): take the last
+    # segment when it looks like a place - short, no digits, capitalised, no hazard word.
+    if len(segs) > 1:
+        last = segs[-1]
+        low = last.lower()
+        if (len(last) <= 30 and len(last.split()) <= 3 and last[:1].isupper() and not re.search(r"\d", last)
+                and not any(stem in low for stem, _ in _PHENOM) and not any(k in low for k in _MINOR_PUSH)):
+            return short_region(last, fallback)
     return short_region(fallback, fallback)
 
 
@@ -305,10 +313,14 @@ def nina_items(data: Any, area_name: str, now: datetime, region_tokens: Iterable
             cancels.append((prefix, f"{region} · {phenom}"))
             continue
         sev = severity(pd.get("severity") or p.get("severity") or c.get("severity"))
-        if sev == "minor" and not any(k in " ".join((headline, cat, i18n.get("en") or "")).lower() for k in _MINOR_PUSH):
+        provider = _pick(pd.get("provider"), c.get("provider"), p.get("provider"), "NINA")
+        # "Minor" from an authority (MoWaS, police, flood centres) is a "Gefahreninformation" - drinking water, power,
+        # an emergency-number outage - and goes out. Only DWD's minor weather mirrors are held back unless the text
+        # names a hazard from _MINOR_PUSH.
+        if (sev == "minor" and provider.upper().startswith("DWD")
+                and not any(k in " ".join((headline, cat, i18n.get("en") or "")).lower() for k in _MINOR_PUSH)):
             continue
         desc = _pick(pd.get("description"), pd.get("instruction"), pd.get("headline"), c.get("body"), headline)
-        provider = _pick(pd.get("provider"), c.get("provider"), p.get("provider"), "NINA")
         start = to_dt(_pick(pd.get("onset"), pd.get("effective")), tz)
         end = to_dt(_pick(pd.get("expires"), pd.get("end")), tz)
         if end and end <= now:
