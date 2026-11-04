@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.1-sm.19
+
+- Command `pegel`: the old SaarMesh bot's easter eggs are back - `pegel bier`, `pegel kaffee` and `pegel espresso`
+  answer with a random joke reading instead of "unknown gauge". They stay out of the `pegel ?` list.
+
 ## 1.5.1-sm.18
 
 - DEWarn: NINA warnings rated "Minor" by an authority (MoWaS, police, flood centres - in the NINA app "Warnstufe

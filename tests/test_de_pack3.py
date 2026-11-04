@@ -149,6 +149,12 @@ check(pg("pegel trend nied 5d") == {"mode": "trend", "station": "Nied (Niedaltdo
 check(pg("pegel nied 3d")["mode"] == "trend" and pg("pegel nied 3d")["days"] == 3, "pegel nied 3d")
 check(pg("pegelalarm") == {"mode": "alarm"} and pg("pegel alarm") == {"mode": "alarm"}, "pegelalarm / pegel alarm")
 check(pg("pegel ?").get("text") == "commands.pegel.list", "pegel ? bleibt die Liste")
+from modules.commands.pegel_command import EASTER_EGGS  # noqa: E402
+for egg in ("bier", "kaffee", "espresso"):
+    for form in (f"pegel {egg}", f"Pegel {egg.capitalize()}"):
+        check(pg(form).get("text") in EASTER_EGGS[egg], f"{form}: Easter Egg")
+check(all(len(t.encode()) <= 140 for v in EASTER_EGGS.values() for t in v), "Easter Eggs passen in eine Nachricht")
+check(pg("pegel Kakao").get("text") == "commands.pegel.unknown", "pegel Kakao bleibt unbekannt")
 
 # ---------------------------------------------------------------- generate_config
 def gen(opts):

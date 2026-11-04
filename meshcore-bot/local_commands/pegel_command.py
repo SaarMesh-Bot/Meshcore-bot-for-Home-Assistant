@@ -14,10 +14,47 @@ the default is the Saarland's: saar (Sankt Arnual), blies (Alsfassen), nied (Nie
                      -> the alarm station (PegelAlarm card) against its thresholds: the stage now and the next one
 """
 
+import random
 from typing import Any
 
 from ..models import MeshMessage
 from .base_command import BaseCommand
+
+
+# Easter eggs from the old SaarMesh bot: "pegel bier", "pegel kaffee", "pegel espresso" (not in the "pegel ?" list).
+EASTER_EGGS = {
+    "bier": [
+        "🍺 Pegel Bier: 0,3 m – genau ein Glas, mehr nicht.",
+        "🍺 Pegel Bier: Fass leer, neues anstechen!",
+        "🍺 Pegel Bier: Trend steigend, aber nur weil jemand nachschenkt.",
+        "🍺 Bierpegel kritisch niedrig – Alarmstufe Durst!",
+        "🍺 Pegel Bier: Für den echten Wert schau lieber bei der Brauerei Bruch in Saarbrücken vorbei.",
+        "🍺 Messstation meldet: Glas halbvoll, Optimismus vorhanden.",
+        "🍺 Pegel Bier: Schaumkrone 2 cm, Rest folgt beim nächsten Zug.",
+        "🍺 Kein offizieller Pegel – aber ein Bruch-Pils schadet nie.",
+        "🍺 Pegel Bier: Sensor meldet 'Prost', keine weiteren Daten verfügbar.",
+    ],
+    "kaffee": [
+        "☕ Pegel Kaffee: Kanne leer, Nachschub dringend erforderlich.",
+        "☕ Kaffeepegel bei 0 % – Konzentration nicht mehr messbar.",
+        "☕ Pegel Kaffee: Trend fallend, dringend nachfüllen.",
+        "☕ Filter leer, Bohnen alle – Systemausfall droht.",
+        "☕ Pegel Kaffee: Sensor meldet 'brauch Koffein', keine weiteren Daten.",
+        "☕ Kaffeestand kritisch – wie dein Wachzustand um 7 Uhr morgens.",
+        "☕ Pegel Kaffee: Tasse zu 50 % – reicht für einen Schluck Motivation.",
+        "☕ Messstation meldet: Müde. Bitte Kaffee einwerfen.",
+    ],
+    "espresso": [
+        "☕ Tasse leer, du solltest einen neuen ziehen.",
+        "☕ Pegel kritisch niedrig. Nachschub erforderlich.",
+        "☕ Espressostand: 0 %. Sofortmaßnahme empfohlen.",
+        "☕ Kein Espresso erkannt. Funktionsstörung im Anwender.",
+        "☕ Pegel Espresso: 0,0 cm – Alarmstufe Koffein.",
+        "☕ Hochwasser im Becher: nicht vorhanden. Bitte nachfüllen.",
+        "☕ Espresso-Trend: ↘️ fallend. Empfehlung: sofort gegensteuern.",
+        "☕ Pegelstand kritisch – wie deine Konzentration ohne Kaffee.",
+    ],
+}
 
 
 class PegelCommand(BaseCommand):
@@ -133,6 +170,8 @@ class PegelCommand(BaseCommand):
                     message, self.translate("commands.pegel.list", stations=", ".join(
                         f"{k} ({v['label']})" for k, v in self.stations.items())))
             key = P.norm(arg) if arg else self.default
+            if key in EASTER_EGGS and key not in self.stations:
+                return await self.send_response(message, random.choice(EASTER_EGGS[key]))
             st = self.stations.get(key)
             if st is None:
                 return await self.send_response(message, self.translate("commands.pegel.unknown", name=arg))
