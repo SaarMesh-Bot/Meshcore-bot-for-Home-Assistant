@@ -21,7 +21,8 @@ from ..models import MeshMessage
 from .base_command import BaseCommand
 
 
-# Easter eggs from the old SaarMesh bot: "pegel bier", "pegel kaffee", "pegel espresso" (not in the "pegel ?" list).
+# Easter eggs from the old SaarMesh bot: "pegel bier", "pegel kaffee", "pegel espresso" (listed at the end of "pegel ?",
+# as the old bot did).
 EASTER_EGGS = {
     "bier": [
         "🍺 Pegel Bier: 0,3 m – genau ein Glas, mehr nicht.",
@@ -168,7 +169,9 @@ class PegelCommand(BaseCommand):
             if arg in ("?", "liste", "list", "help", "hilfe"):
                 return await self.send_response(
                     message, self.translate("commands.pegel.list", stations=", ".join(
-                        f"{k} ({v['label']})" for k, v in self.stations.items())))
+                        f"{k} ({v['label']})" for k, v in self.stations.items()))
+                    + " " + self.translate("commands.pegel.list_eggs", eggs=", ".join(
+                        k for k in EASTER_EGGS if k not in self.stations)))
             key = P.norm(arg) if arg else self.default
             if key in EASTER_EGGS and key not in self.stations:
                 return await self.send_response(message, random.choice(EASTER_EGGS[key]))

@@ -148,7 +148,8 @@ check(pg("pegel10d")["days"] == 10 and pg("pegel3d")["days"] == 3, "pegel3d / pe
 check(pg("pegel trend nied 5d") == {"mode": "trend", "station": "Nied (Niedaltdorf)", "days": 5}, "pegel trend nied 5d")
 check(pg("pegel nied 3d")["mode"] == "trend" and pg("pegel nied 3d")["days"] == 3, "pegel nied 3d")
 check(pg("pegelalarm") == {"mode": "alarm"} and pg("pegel alarm") == {"mode": "alarm"}, "pegelalarm / pegel alarm")
-check(pg("pegel ?").get("text") == "commands.pegel.list", "pegel ? bleibt die Liste")
+check(pg("pegel ?").get("text", "").startswith("commands.pegel.list"), "pegel ? bleibt die Liste")
+check("commands.pegel.list_eggs" in pg("pegel ?").get("text", ""), "pegel ? nennt die Easter Eggs")
 from modules.commands.pegel_command import EASTER_EGGS  # noqa: E402
 for egg in ("bier", "kaffee", "espresso"):
     for form in (f"pegel {egg}", f"Pegel {egg.capitalize()}"):

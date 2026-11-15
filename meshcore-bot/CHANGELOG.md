@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.1-sm.20
+
+- Command `pegel`: `pegel ?` now ends with the easter eggs (`bier, kaffee, espresso`), as the old SaarMesh bot
+  listed them.
+
 ## 1.5.1-sm.19
 
 - Command `pegel`: the old SaarMesh bot's easter eggs are back - `pegel bier`, `pegel kaffee` and `pegel espresso`

@@ -1329,6 +1329,7 @@
     "pegel": {
       "help": "Actuele waterstand (Duitsland) met trend over 3 uur. Meetpunten: {stations}. 'pegel ?' toont de lijst.",
       "list": "🌊 Meetpunten: {stations}",
+      "list_eggs": "· 🍺☕ Easter eggs: {eggs}",
       "unknown": "Onbekend meetpunt '{name}'. 'pegel ?' toont de lijst.",
       "fetch_error": "Meetpunt {station} is nu niet op te vragen.",
       "result": "🌊 Waterstand {station}: {value} m{trend} · {time}",

@@ -1350,6 +1350,7 @@
     "pegel": {
       "help": "Aktueller Pegelstand mit 3-h-Trend. Pegel: {stations}. 'pegel ?' zeigt die Liste.",
       "list": "🌊 Pegel: {stations}",
+      "list_eggs": "· 🍺☕ Easter Eggs: {eggs}",
       "unknown": "Unbekannter Pegel '{name}'. 'pegel ?' zeigt die Liste.",
       "fetch_error": "Pegel {station} gerade nicht abrufbar.",
       "result": "🌊 Pegel {station}: {value} m{trend} · {time}",

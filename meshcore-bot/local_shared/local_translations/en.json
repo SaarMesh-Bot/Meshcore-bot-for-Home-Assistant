@@ -951,6 +951,7 @@
     "pegel": {
       "help": "Current water level with 3 h trend. Gauges: {stations}. 'pegel ?' lists them.",
       "list": "🌊 Gauges: {stations}",
+      "list_eggs": "· 🍺☕ Easter eggs: {eggs}",
       "unknown": "Unknown gauge '{name}'. 'pegel ?' lists them.",
       "fetch_error": "Gauge {station} cannot be read right now.",
       "result": "🌊 Gauge {station}: {value} m{trend} · {time}",

@@ -1329,6 +1329,7 @@
     "pegel": {
       "help": "Niveau d'eau actuel (Allemagne) avec tendance sur 3 h. Stations : {stations}. 'pegel ?' affiche la liste.",
       "list": "🌊 Stations : {stations}",
+      "list_eggs": "· 🍺☕ Easter eggs : {eggs}",
       "unknown": "Station inconnue '{name}'. 'pegel ?' affiche la liste.",
       "fetch_error": "Station {station} indisponible pour le moment.",
       "result": "🌊 Niveau {station} : {value} m{trend} · {time}",

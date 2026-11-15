@@ -1534,6 +1534,7 @@
     "pegel": {
       "help": "Aktuel vandstand (Tyskland) med 3-timers tendens. Målere: {stations}. 'pegel ?' viser listen.",
       "list": "🌊 Målere: {stations}",
+      "list_eggs": "· 🍺☕ Easter eggs: {eggs}",
       "unknown": "Ukendt måler '{name}'. 'pegel ?' viser listen.",
       "fetch_error": "Måler {station} kan ikke læses lige nu.",
       "result": "🌊 Vandstand {station}: {value} m{trend} · {time}",
