@@ -11,7 +11,14 @@ Supervisor token, no airtime) and publishes every NEW reading in the format Core
 
 `ts` is the time of the reading in Home Assistant, not the time of publishing, so a reading that is sent twice (after a
 restart) is the same data point. Nothing goes over the radio and nothing is written to Home Assistant.
+
+Boards with their own battery channel (Inhero MR2): the status "battery voltage" of these boards is not the cell
+voltage but the coulomb-counted state of charge mapped onto a Li-Ion curve (100 % = 4.20 V, see the Inhero firmware,
+variants/inhero_mr2/helpers/BatteryOcvMapping.cpp), so a LiFePO4 pack at 3.43 V shows as 4.20 V. The real voltage comes
+in the same telemetry answer on a board channel (voltage + percentage + current), which meshcore-ha already keeps as
+`chN_voltage`. When such a channel exists, its voltage is sent instead.
 """
+import re
 import asyncio
 import json
 import os
@@ -33,6 +40,30 @@ except ImportError:  # pragma: no cover - unit tests import the file directly
 
 STATES_URL = "http://supervisor/core/api/states"
 FIRST_READ_DELAY_S = 60
+CHANNEL = re.compile(r"^ch(?P<n>\d{1,2})_(?P<kind>[a-z]+)$")
+
+
+def board_battery_mv(rep: dict) -> Optional[int]:
+    """Cell voltage in mV from a board battery channel, or None.
+
+    The board channel is the lowest channel from 2 on that reports voltage, percentage AND current together (the
+    Inhero MR2 battery channel; its solar channel is the next one, so the lowest match is the battery). Channel 1 is the
+    standard firmware channel and carries the same value as the status, so it never counts."""
+    tel = rep.get("telemetry") or {}
+    channels = sorted({int(m.group("n")) for m in (CHANNEL.match(k) for k in tel) if m})
+    for n in channels:
+        if n < 2:
+            continue
+        volt, pct, cur = (tel.get(f"ch{n}_{kind}") for kind in ("voltage", "percentage", "current"))
+        if not (volt and pct and cur):
+            continue
+        value = volt.get("value")
+        if value is None:
+            continue
+        mv = round(value if str(volt.get("unit", "")).lower() == "mv" else value * 1000)
+        if 1000 <= mv <= 20000:
+            return int(mv)
+    return None
 ERROR_LOG_INTERVAL_S = 6 * 3600
 
 
@@ -42,7 +73,11 @@ def build_payload(rep: dict, now: Optional[float] = None) -> Optional[tuple]:
     if len(pk) != 64:
         return None                      # CoreScope keys nodes by the full key; a prefix would create a ghost node
     payload: dict = {"public_key": pk, "source": "ha-bot"}
-    if rep.get("battery_mv"):
+    board_mv = board_battery_mv(rep)
+    if board_mv:
+        payload["battery_mv"] = board_mv
+        payload["battery_source"] = "board"   # informational; the ingestor ignores unknown fields
+    elif rep.get("battery_mv"):
         payload["battery_mv"] = int(rep["battery_mv"])
     if rep.get("temperature") is not None:
         payload["temperature_c"] = float(rep["temperature"])

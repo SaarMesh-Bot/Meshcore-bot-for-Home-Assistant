@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.1-sm.21
+
+- CoreScopeTelemetry: boards with their own battery channel (Inhero MR2) now send the real cell voltage. Their status
+  "battery voltage" is the coulomb-counted state of charge mapped onto a Li-Ion curve (100 % = 4.20 V), so a LiFePO4
+  pack at 3.43 V reached CoreScope as 4.20 V. The real value comes in the same telemetry answer on a board channel
+  (voltage + percentage + current, e.g. `ch3_voltage`) that meshcore-ha already keeps; it is used when present.
+  The payload carries `"battery_source": "board"` then. Other repeaters are unchanged, and nothing extra goes over the
+  radio.
+
 ## 1.5.1-sm.20
 
 - Command `pegel`: `pegel ?` now ends with the easter eggs (`bier, kaffee, espresso`), as the old SaarMesh bot

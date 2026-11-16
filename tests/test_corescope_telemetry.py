@@ -55,6 +55,33 @@ check(make().due(offline, NOW) == [], "offline gemeldeter Repeater wird überspr
 check(make(repeaters="ffff").due(states, NOW) == [], "Filter auf andere Schlüssel: nichts")
 check(len(make(repeaters=F.KEY[:6]).due(states, NOW)) == 1, "Filter auf diesen Schlüssel: gesendet")
 
+# Inhero MR2: status battery = state of charge as a Li-Ion voltage (4.20 V); the real cell voltage is on board channel 3
+TS = NOW - 900
+mr2 = k64(F.repeater_states(NOW, stats_key="mr2", mv=4200, age=900)) + [
+    F.s("sensor", "ch2_temperature", "16.9", None, TS), F.s("sensor", "ch2_humidity", "61.0", None, TS),
+    F.s("sensor", "ch3_voltage", "3.43", {"unit_of_measurement": "V"}, TS),
+    F.s("sensor", "ch3_percentage", "100.0", {"unit_of_measurement": "%"}, TS),
+    F.s("sensor", "ch3_current", "60.0", {"unit_of_measurement": "mA"}, TS),
+    F.s("sensor", "ch3_temperature", "16.5", None, TS),
+    F.s("sensor", "ch4_voltage", "5.72", {"unit_of_measurement": "V"}, TS),
+    F.s("sensor", "ch4_current", "55.0", {"unit_of_measurement": "mA"}, TS),
+    F.s("sensor", "ch4_percentage", "95", {"unit_of_measurement": "%"}, TS),
+]
+d = make().due(mr2, NOW)
+check(len(d) == 1 and d[0][1]["battery_mv"] == 3430, f"MR2: echte Zellspannung vom Board-Kanal statt 4200 ({d and d[0][1]})")
+check(bool(d) and d[0][1].get("battery_source") == "board", "MR2: Quelle des Akkuwerts markiert")
+half = [st for st in mr2 if "ch3_percentage" not in st["entity_id"]]
+d2 = make().due(half, NOW)
+check(bool(d2) and d2[0][1]["battery_mv"] == 5720, f"ohne Prozent auf Kanal 3: nächster vollständiger Kanal ({d2 and d2[0][1].get('battery_mv')})")
+plain = make().due(k64(F.repeater_states(NOW, stats_key="plain", mv=3920, age=900)), NOW)
+check(bool(plain) and plain[0][1]["battery_mv"] == 3920 and "battery_source" not in plain[0][1], "normaler Repeater: unverändert")
+only_ch1 = build_payload({"public_key": K64, "battery_mv": 4100, "telemetry": {
+    "ch1_voltage": {"value": 4.1, "unit": "V"}, "ch1_percentage": {"value": 90, "unit": "%"}, "ch1_current": {"value": 5, "unit": "mA"}}})
+check(bool(only_ch1) and only_ch1[1]["battery_mv"] == 4100, "Kanal 1 zählt nie als Board-Kanal")
+mv_unit = build_payload({"public_key": K64, "battery_mv": 4200, "telemetry": {
+    "ch3_voltage": {"value": 3431, "unit": "mV"}, "ch3_percentage": {"value": 99, "unit": "%"}, "ch3_current": {"value": 1, "unit": "mA"}}})
+check(bool(mv_unit) and mv_unit[1]["battery_mv"] == 3431, "Einheit mV wird nicht nochmal umgerechnet")
+
 check(build_payload({"public_key": "abcd", "battery_mv": 4000}) is None, "nur Präfix bekannt: nichts (kein Geister-Node)")
 check(build_payload({"public_key": K64}) is None, "keine Werte: nichts")
 
