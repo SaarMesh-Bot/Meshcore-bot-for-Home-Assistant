@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.1-sm.23
+
+- Replies: a reply waiting for the send limit now waits at most 5 s (was 15 s); longer waits are dropped.
+
 ## 1.5.1-sm.22
 
 - Replies: a command reply that hits the send limit (`rate_limit_seconds`) now waits until the limit is free (at

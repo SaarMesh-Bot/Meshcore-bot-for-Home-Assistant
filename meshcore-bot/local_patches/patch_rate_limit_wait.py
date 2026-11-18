@@ -4,7 +4,7 @@
 Upstream drops a reply when the global send limit (rate_limit_seconds) or the per-user limit is not yet free:
 "Rate limited. Wait 1.1 seconds" and nothing is sent. On 18-11-2026 "Moin" and "Pegel Saar" came 20 s apart in
 #saarland; the greeting reply went out (after tx delay) 2 s before the pegel command arrived, so the pegel reply was
-silently dropped. Now the reply waits until the limit is free (at most MAX_WAIT seconds) and is then sent. Only when
+silently dropped. Now the reply waits until the limit is free (at most 5 seconds) and is then sent. Only when
 the wait would be longer (real flooding) is it still dropped.
 """
 import pathlib
@@ -44,9 +44,9 @@ patch(
                         return False, f"Rate limited. Wait {wait_time:.1f} seconds"
                     return False, \"\"""",
     """        if not skip_user_rate_limit:
-            # (add-on) wait for the limit instead of dropping the reply (at most 15 s; longer = flooding, dropped)
+            # (add-on) wait for the limit instead of dropping the reply (at most 5 s; longer = flooding, dropped)
             import asyncio as _asyncio
-            _max_wait = 15.0
+            _max_wait = 5.0
             if not self.bot.rate_limiter.can_send():
                 wait_time = self.bot.rate_limiter.time_until_next()
                 if wait_time > _max_wait:

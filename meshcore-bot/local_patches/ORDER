@@ -240,5 +240,5 @@ patch_greeter_dm.py
 # German texts on a German bot: help <command> overrides, sun/moon/solar/hf, rain, aqi, place names, Flachwitz/Witz/Orakel, cmd/version/trace/multitest.
 patch_german_texts.py
 
-# A command reply waits for the send limit (max 15 s) instead of being dropped ("Rate limited. Wait 1.1 seconds", 18-11-2026).
+# A command reply waits for the send limit (max 5 s) instead of being dropped ("Rate limited. Wait 1.1 seconds", 18-11-2026).
 patch_rate_limit_wait.py
