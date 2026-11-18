@@ -22,12 +22,12 @@ the MeshCore **companion (USB)** firmware. Every option is also explained in the
 
 Quickest: click this button, it opens your Home Assistant with the repository filled in.
 
-[![Add the repository to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fvipje%2FMeshcore-bot-for-Home-Assistant)
+[![Add the repository to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FSaarMesh-Bot%2FMeshcore-bot-for-Home-Assistant)
 
 Or by hand:
 
 1. **Settings → Add-ons → Add-on Store**.
-2. Top right **⋮ → Repositories**, paste `https://github.com/vipje/Meshcore-bot-for-Home-Assistant` and click **Add**.
+2. Top right **⋮ → Repositories**, paste `https://github.com/SaarMesh-Bot/Meshcore-bot-for-Home-Assistant` and click **Add**.
 3. Close the window. **MeshCore Proxy** and **MeshCore Bot** now appear in the store (reload the page if they do not).
 
 ## 3. MeshCore Proxy
@@ -170,4 +170,4 @@ Your settings, games and database can go with you to a new Home Assistant: put a
 *Moving the bot*.
 
 More in the **Documentation** tab of the bot. Questions about these add-ons:
-[issues of this repository](https://github.com/vipje/Meshcore-bot-for-Home-Assistant/issues).
+[issues of this repository](https://github.com/SaarMesh-Bot/Meshcore-bot-for-Home-Assistant/issues).

@@ -23,12 +23,12 @@ elke add-on (Engels).
 
 Het snelst: klik op deze knop, die opent je Home Assistant met de repository al ingevuld.
 
-[![Add the repository to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fvipje%2FMeshcore-bot-for-Home-Assistant)
+[![Add the repository to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FSaarMesh-Bot%2FMeshcore-bot-for-Home-Assistant)
 
 Of met de hand:
 
 1. **Instellingen → Add-ons → Add-on Store**.
-2. Rechtsboven **⋮ → Repositories**, plak `https://github.com/vipje/Meshcore-bot-for-Home-Assistant` en klik **Toevoegen**.
+2. Rechtsboven **⋮ → Repositories**, plak `https://github.com/SaarMesh-Bot/Meshcore-bot-for-Home-Assistant` en klik **Toevoegen**.
 3. Sluit het venster. **MeshCore Proxy** en **MeshCore Bot** staan nu in de store (herlaad de pagina als ze er niet staan).
 
 ## 3. MeshCore Proxy
@@ -171,4 +171,4 @@ Je instellingen, spellen en database kunnen mee naar een nieuwe Home Assistant: 
 Documentatie, *Moving the bot*.
 
 Meer in het tabblad **Documentatie** van de bot. Vragen over deze add-ons:
-[issues van deze repository](https://github.com/vipje/Meshcore-bot-for-Home-Assistant/issues).
+[issues van deze repository](https://github.com/SaarMesh-Bot/Meshcore-bot-for-Home-Assistant/issues).

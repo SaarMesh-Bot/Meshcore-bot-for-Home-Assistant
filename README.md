@@ -1,6 +1,6 @@
 # MeshCore bot for Home Assistant
 
-[![tests](https://github.com/vipje/Meshcore-bot-for-Home-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/vipje/Meshcore-bot-for-Home-Assistant/actions/workflows/tests.yml)
+[![tests](https://github.com/SaarMesh-Bot/Meshcore-bot-for-Home-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/SaarMesh-Bot/Meshcore-bot-for-Home-Assistant/actions/workflows/tests.yml)
 
 *[Nederlands](README.nl.md)*
 
@@ -41,10 +41,10 @@ Dutch, English, German, French or Danish.
 
 Click the button to add this repository to your Home Assistant, or follow step 1:
 
-[![Add the repository to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fvipje%2FMeshcore-bot-for-Home-Assistant)
+[![Add the repository to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FSaarMesh-Bot%2FMeshcore-bot-for-Home-Assistant)
 
 1. In Home Assistant: **Settings → Add-ons → Add-on Store → ⋮ → Repositories**, add
-   `https://github.com/vipje/Meshcore-bot-for-Home-Assistant`.
+   `https://github.com/SaarMesh-Bot/Meshcore-bot-for-Home-Assistant`.
 2. Install **MeshCore Proxy**, choose your radio under *Serial port* and start it.
 3. Install **MeshCore Bot**, fill in at least the bot name and your own *Admin public key*, and start it.
 4. Open the dashboard in the HA sidebar and follow the **setup wizard** (the banner at the top, or *Settings → Setup*):
