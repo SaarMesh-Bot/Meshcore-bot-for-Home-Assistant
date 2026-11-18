@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.1-sm.22
+
+- Replies: a command reply that hits the send limit (`rate_limit_seconds`) now waits until the limit is free (at
+  most 15 s) instead of being dropped. On 18.11.2026 `Pegel Saar` came in 2 s after the greeting reply went out and
+  got no answer ("Rate limited. Wait 1.1 seconds"). Only waits longer than 15 s (real flooding) are still dropped.
+
 ## 1.5.1-sm.21
 
 - CoreScopeTelemetry: boards with their own battery channel (Inhero MR2) now send the real cell voltage. Their status
