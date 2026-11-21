@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.1-sm.24
+
+- New card Watchlist (Plugins page): when a watched sender writes in a channel, it gets one DM per cooldown (default
+  24 h, kept in the database) and Home Assistant is told (default `telegram_bot.send_message`: sender, channel, text,
+  hops, DM result). A channel message carries no public key, so a target can be given as `Name=public key`; the bot
+  adds that key as a contact when needed. Nothing is ever sent in the channel. Occasion: a node with an offensive
+  name in Public on 21.11.2026.
+
 ## 1.5.1-sm.23
 
 - Replies: a reply waiting for the send limit now waits at most 5 s (was 15 s); longer waits are dropped.

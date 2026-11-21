@@ -120,6 +120,10 @@ patch_hash_hint.py
 # Anchors on the lines patch_hash_hint.py added.
 patch_stand_in.py
 
+# Watchlist (card Watchlist): a watched sender in a channel gets one DM per cooldown and Home Assistant is told.
+# Anchors on the lines patch_stand_in.py added.
+patch_watchlist.py
+
 # Reply in the sender's own language (auto-detected from what they typed), for every command. Settings card
 # only (see the file); patch_sender_language_detection.py does the actual work in command_manager.py.
 patch_sender_language_detection.py
