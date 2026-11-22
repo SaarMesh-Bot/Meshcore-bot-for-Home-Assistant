@@ -2777,6 +2777,8 @@
 "name missing or too long": "navn mangler eller er for langt"
 },
 "de": {
+"Minimum DWD level": "DWD-Mindeststufe",
+"Levels as in the DWD feed: 1 = also pre-information, 2 = simple warnings, yellow, e.g. frost or fog (default), 3 = from 'markant' (orange), 4 = severe weather (Unwetter, red) and up, 5 = extreme only.": "Stufen wie im DWD-Feed: 1 = auch Vorabinformationen, 2 = einfache gelbe Warnungen, z. B. Frost oder Nebel (Standard), 3 = ab markant (orange), 4 = ab Unwetter (rot), 5 = nur extreme Unwetter.",
 "Newcomer": "Neuling",
 "Listener": "Zuhörer",
 "Chatter": "Plauderer",

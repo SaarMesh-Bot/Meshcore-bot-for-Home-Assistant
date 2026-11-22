@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.1-sm.27
+
+- DEWarn: the help text of "Minimum DWD level" now matches the DWD feed: 2 is the simple yellow warning (frost, fog),
+  3 is "markant", 4 Unwetter, 5 extreme. The setting now goes up to 5, so "extreme only" can really be chosen.
+
 ## 1.5.1-sm.26
 
 - Watchlist: text templates (Bausteine) - one per reason for being on the list. Each has a DM text, "send a DM"

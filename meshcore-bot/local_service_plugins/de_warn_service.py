@@ -36,8 +36,9 @@ class DEWarnService(BaseServicePlugin):
         {"key": "districts", "label": "Districts (NINA)", "type": "str", "default": "10041,10042,10043,10044,10045,10046",
          "help": "The first 5 digits of the Amtlicher Regionalschlüssel (ARS) per district, optionally with a name: "
                  "10044=Saarlouis. Default: the six districts of the Saarland."},
-        {"key": "min_level", "label": "Minimum DWD level", "type": "int", "default": 2, "min": 1, "max": 4,
-         "help": "1 = also minor warnings, 2 = from 'markant' (default), 3 = severe weather only, 4 = extreme only."},
+        {"key": "min_level", "label": "Minimum DWD level", "type": "int", "default": 2, "min": 1, "max": 5,
+         "help": "Levels as in the DWD feed: 1 = also pre-information, 2 = simple warnings, yellow, e.g. frost or fog "
+                 "(default), 3 = from 'markant' (orange), 4 = severe weather (Unwetter, red) and up, 5 = extreme only."},
         {"key": "max_dwd", "label": "At most DWD lines per post", "type": "int", "default": 6, "min": 1, "max": 20},
         {"key": "all_clear", "label": "Post all-clears", "type": "bool", "default": True,
          "help": "A NINA all-clear for a warning that was posted before goes out as 'Entwarnung'."},

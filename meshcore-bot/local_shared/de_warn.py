@@ -4,7 +4,7 @@ Ported from the SaarMesh bot (saarmesh.de), where this has run in #warnings sinc
 
 Sources
 - DWD: https://www.dwd.de/DWD/warnungen/warnapp/json/warnings.json - JSONP (``warnWetter.loadWarnings({...});``) with
-  every active warning per warn cell. Each warning has ``level`` (1-4, heat 50/51), ``start``/``end`` (ms), ``regionName``,
+  every active warning per warn cell. Each warning has ``level`` (1 pre-information, 2 yellow, 3 markant, 4 Unwetter, 5 extreme; heat 50/51), ``start``/``end`` (ms), ``regionName``,
   ``stateShort`` (e.g. SL, RP), ``headline``. Filtered on the federal state(s) on the card (``states``, default SL).
 - NINA: https://warnung.bund.de/api31/dashboard/{ARS12}.json - the warnings for one district (Kreis), keyed on its
   12-digit Amtlicher Regionalschlüssel. The fields sit under ``payload.data`` (older answers: flat). Cancellations
