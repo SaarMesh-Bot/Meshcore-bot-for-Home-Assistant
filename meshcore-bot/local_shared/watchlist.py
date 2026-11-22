@@ -23,6 +23,10 @@ Config (config.ini, set on the Watchlist card of the Plugins page):
     delay_seconds = 15
     notify = true
     ha_notify_service = telegram_bot.send_message
+    corescope_url =                              ; optional, e.g. https://live.saarmesh.de: the page links keys there
+
+The Watchlist page (menu, /watchlist) shows the targets with their statistics, the hit log (last MAX_HITS) and the
+settings; statistics and hits live in bot_metadata (STATS_KEY, HITS_KEY).
 """
 from __future__ import annotations
 
@@ -40,6 +44,9 @@ except ImportError:  # pragma: no cover
 
 SECTION = "Watchlist"
 DM_KEY = "watchlist.dm_sent"   # bot_metadata: {target name (lower case): unix time of the last DM}
+STATS_KEY = "watchlist.stats"  # bot_metadata: {target name (lower case): {last_seen, msgs, dms, ...}}
+HITS_KEY = "watchlist.hits"    # bot_metadata: [newest first] {ts, target, sender, channel, text, hops, snr, dm}
+MAX_HITS = 200
 SETTINGS_TTL_SECONDS = 30
 DELAY_JITTER_SECONDS = 5
 DEFAULT_DM = ("Hallo, bitte wähl einen anderen Node-Namen, der jetzige ist hier im Netz nicht erwünscht. "
@@ -52,6 +59,142 @@ def _split(value: str) -> list:
 
 def _norm(name: str) -> str:
     return (name or "").strip().casefold()
+
+
+def parse_targets(value: str) -> list:
+    """'Name=key, Other' -> [(name lower case, name as written, key or '')]."""
+    targets = []
+    for item in _split(value):
+        name, _, key = item.partition("=")
+        key = key.strip().lower()
+        if _norm(name):
+            targets.append((_norm(name), name.strip(), key if len(key) == 64 else ""))
+    return targets
+
+
+def _load_json(db: Any, key: str, default):
+    try:
+        raw = db.get_metadata(key)
+        data = json.loads(raw) if raw else default
+        return data if isinstance(data, type(default)) else default
+    except Exception:  # noqa: BLE001
+        return default
+
+
+def record_hit(db: Any, target: str, message: Any, dm_result: str, now: Optional[float] = None) -> None:
+    """Per-target statistics and the hit log (newest first, at most MAX_HITS), both in the bot's database."""
+    now = time.time() if now is None else now
+    stats = _load_json(db, STATS_KEY, {})
+    st = stats.get(target) if isinstance(stats.get(target), dict) else {}
+    st["last_seen"] = now
+    st["msgs"] = int(st.get("msgs", 0)) + 1
+    st["last_sender"] = getattr(message, "sender_id", "") or ""
+    st["last_channel"] = getattr(message, "channel", "") or ""
+    if dm_result == "gesendet":
+        st["last_dm"] = now
+        st["dms"] = int(st.get("dms", 0)) + 1
+    if not dm_result.startswith("keine"):
+        st["last_dm_result"] = dm_result
+    stats[target] = st
+    db.set_metadata(STATS_KEY, json.dumps(stats, ensure_ascii=False))
+    hits = _load_json(db, HITS_KEY, [])
+    hits.insert(0, {
+        "ts": now, "target": target, "sender": st["last_sender"], "channel": st["last_channel"],
+        "text": (getattr(message, "content", "") or "")[:300], "hops": _hops(message),
+        "snr": getattr(message, "snr", None), "dm": dm_result,
+    })
+    db.set_metadata(HITS_KEY, json.dumps(hits[:MAX_HITS], ensure_ascii=False))
+
+
+def overview(db: Any, cfg: Any, now: Optional[float] = None) -> dict:
+    """Everything the Watchlist page shows: settings, the targets with their statistics, the hit log."""
+    now = time.time() if now is None else now
+    has = cfg.has_section(SECTION)
+
+    def get(key, fallback=""):
+        return cfg.get(SECTION, key, fallback=fallback, raw=True) if has else fallback
+
+    try:
+        cooldown_h = int(float(get("dm_cooldown_hours", "24") or 24))
+    except ValueError:
+        cooldown_h = 24
+    settings = {
+        "enabled": cfg.getboolean(SECTION, "enabled", fallback=False) if has else False,
+        "targets": get("targets", ""),
+        "channels": get("channels", ""),
+        "message_dm": get("message_dm", ""),
+        "default_dm": DEFAULT_DM,
+        "dm_cooldown_hours": cooldown_h,
+        "delay_seconds": get("delay_seconds", "15"),
+        "notify": cfg.getboolean(SECTION, "notify", fallback=True) if has else True,
+        "ha_notify_service": get("ha_notify_service", "telegram_bot.send_message"),
+        "corescope_url": get("corescope_url", "").rstrip("/"),
+    }
+    stats = _load_json(db, STATS_KEY, {})
+    dm_sent = _load_json(db, DM_KEY, {})
+    hits = _load_json(db, HITS_KEY, [])
+    targets = []
+    for norm, name, key in parse_targets(settings["targets"]):
+        st = stats.get(norm) if isinstance(stats.get(norm), dict) else {}
+        last_dm = float(dm_sent.get(norm, 0) or 0)
+        targets.append({
+            "id": norm, "name": name, "key": key,
+            "msgs": int(st.get("msgs", 0)), "last_seen": st.get("last_seen"),
+            "last_sender": st.get("last_sender"), "last_channel": st.get("last_channel"),
+            "dms": int(st.get("dms", 0)), "last_dm": last_dm or None,
+            "last_dm_result": st.get("last_dm_result"),
+            "next_dm": (last_dm + cooldown_h * 3600) if last_dm and last_dm + cooldown_h * 3600 > now else None,
+        })
+    week = now - 7 * 86400
+    return {
+        "settings": settings,
+        "targets": targets,
+        "hits": hits,
+        "counts": {
+            "targets": len(targets),
+            "hits_7d": sum(1 for h in hits if float(h.get("ts", 0)) >= week),
+            "dms": sum(t["dms"] for t in targets),
+            "last_hit": hits[0]["ts"] if hits else None,
+        },
+    }
+
+
+def reset_cooldown(db: Any, target: str) -> bool:
+    """The next message of this target gets a DM again."""
+    data = _load_json(db, DM_KEY, {})
+    if _norm(target) not in data:
+        return False
+    del data[_norm(target)]
+    db.set_metadata(DM_KEY, json.dumps(data, ensure_ascii=False))
+    return True
+
+
+def clear_hits(db: Any) -> None:
+    db.set_metadata(HITS_KEY, "[]")
+
+
+def send_test_note(cfg: Any) -> tuple:
+    """A test note through the configured HA service (called from the web viewer, synchronous). (ok, detail)"""
+    import urllib.error
+    import urllib.request
+    service = (cfg.get(SECTION, "ha_notify_service", fallback="telegram_bot.send_message", raw=True)
+               if cfg.has_section(SECTION) else "telegram_bot.send_message").strip()
+    token = os.environ.get("SUPERVISOR_TOKEN", "")
+    if "." not in service:
+        return False, "no Home Assistant service set"
+    if not token:
+        return False, "no SUPERVISOR_TOKEN (not running as an add-on?)"
+    domain, name = service.split(".", 1)
+    body = json.dumps({"title": "👀 Watchlist", "message": "Test: so sieht eine Watchlist-Meldung aus."}).encode()
+    req = urllib.request.Request(f"http://supervisor/core/api/services/{domain}/{name}", data=body, method="POST",
+                                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return r.status < 300, f"{service}: HTTP {r.status}"
+    except urllib.error.HTTPError as e:
+        return False, f"{service}: HTTP {e.code}"
+    except Exception as e:  # noqa: BLE001
+        return False, f"{service}: {e}"
 
 
 def _hops(message: Any) -> Optional[int]:
@@ -89,13 +232,7 @@ class Watchlist:
                 return fallback
 
         self.enabled = cfg.getboolean(SECTION, "enabled", fallback=False) if has else False
-        targets = []
-        for item in _split(get("targets", "")):
-            name, _, key = item.partition("=")
-            key = key.strip().lower()
-            if _norm(name):
-                targets.append((_norm(name), name.strip(), key if len(key) == 64 else ""))
-        self.targets = targets
+        self.targets = parse_targets(get("targets", ""))
         self.channels = {_norm(c) for c in _split(get("channels", ""))}
         self.message_dm = get("message_dm", "").strip() or DEFAULT_DM
         self.dm_cooldown = num("dm_cooldown_hours", 24, 0, 24 * 365) * 3600
@@ -169,6 +306,10 @@ class Watchlist:
         except Exception as e:  # noqa: BLE001
             dm_result = f"Fehler: {e}"
             self.bot.logger.warning("Watchlist: DM to %s failed: %s", getattr(message, "sender_id", "?"), e)
+        try:
+            record_hit(self.bot.db_manager, key_name, message, dm_result)
+        except Exception as e:  # noqa: BLE001
+            self.bot.logger.info("Watchlist: could not save the hit: %s", e)
         if self.notify:
             await self._ha_notify(message, dm_result)
 

@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Watchlist - MeshCore Bot Data Viewer{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-2"><i class="fas fa-eye"></i> Watchlist</h1>
+        <p class="text-muted mb-1">
+            Watched senders: when one writes in a channel, the bot sends them one DM per cooldown and tells Home
+            Assistant. Nothing is ever sent in the channel. Refreshes every minute.
+        </p>
+        <div id="wl-message" role="status" aria-live="polite"></div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3" id="wl-tiles"></div>
+
+<h2 class="h5 mt-4"><i class="fas fa-user-slash me-1"></i> Watched senders</h2>
+<div class="card mb-2">
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+            <thead><tr>
+                <th scope="col">Name</th><th scope="col">Public key</th><th scope="col">Messages</th>
+                <th scope="col">Last seen</th><th scope="col">Last DM</th><th scope="col">Next DM</th><th scope="col"></th>
+            </tr></thead>
+            <tbody id="wl-targets"></tbody>
+        </table>
+    </div>
+</div>
+<form class="row g-2 align-items-end mb-4" id="wl-add" autocomplete="off">
+    <div class="col-12 col-md-4">
+        <label class="form-label small mb-0" for="wl-add-name">Name (part of the sender name)</label>
+        <input class="form-control form-control-sm" id="wl-add-name" required maxlength="32">
+    </div>
+    <div class="col-12 col-md-6">
+        <label class="form-label small mb-0" for="wl-add-key">Public key (optional, 64 hex characters, needed for the DM)</label>
+        <input class="form-control form-control-sm font-monospace" id="wl-add-key" pattern="[0-9a-fA-F]{64}" maxlength="64">
+    </div>
+    <div class="col-12 col-md-2">
+        <button class="btn btn-primary btn-sm w-100" type="submit"><i class="fas fa-plus me-1"></i>Add</button>
+    </div>
+</form>
+
+<div class="d-flex flex-wrap align-items-center gap-2 mt-4">
+    <h2 class="h5 mb-0 me-auto"><i class="fas fa-list me-1"></i> Hits</h2>
+    <button class="btn btn-outline-secondary btn-sm" type="button" id="wl-clear"><i class="fas fa-broom me-1"></i>Clear the list</button>
+</div>
+<p class="small text-muted mb-1">Every channel message of a watched sender (the last 200).</p>
+<div class="card mb-4">
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+            <thead><tr>
+                <th scope="col">When</th><th scope="col">Sender</th><th scope="col">Channel</th>
+                <th scope="col">Message</th><th scope="col">Hops</th><th scope="col">DM</th>
+            </tr></thead>
+            <tbody id="wl-hits"></tbody>
+        </table>
+    </div>
+</div>
+
+<h2 class="h5"><i class="fas fa-sliders me-1"></i> Settings</h2>
+<form class="card mb-5" id="wl-settings" autocomplete="off">
+    <div class="card-body row g-3">
+        <div class="col-12">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="wl-enabled">
+                <label class="form-check-label" for="wl-enabled">Watchlist on</label>
+            </div>
+        </div>
+        <div class="col-12">
+            <label class="form-label small mb-0" for="wl-text">Text of the DM</label>
+            <textarea class="form-control form-control-sm" id="wl-text" rows="2"></textarea>
+            <div class="form-text"><span id="wl-bytes"></span> · <span>{sender} becomes the name</span> · <span>empty = the standard text</span></div>
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label small mb-0" for="wl-cooldown">At most one DM every (h)</label>
+            <input class="form-control form-control-sm" type="number" min="0" max="8760" id="wl-cooldown">
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label small mb-0" for="wl-delay">Wait before the DM (s)</label>
+            <input class="form-control form-control-sm" type="number" min="0" max="600" id="wl-delay">
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label small mb-0" for="wl-channels">Channels to listen to (empty = all)</label>
+            <input class="form-control form-control-sm" id="wl-channels">
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="form-check form-switch mb-1">
+                <input class="form-check-input" type="checkbox" id="wl-notify">
+                <label class="form-check-label" for="wl-notify">Tell Home Assistant</label>
+            </div>
+            <input class="form-control form-control-sm" id="wl-service" placeholder="telegram_bot.send_message">
+        </div>
+        <div class="col-12 col-md-6">
+            <label class="form-label small mb-0" for="wl-corescope">CoreScope address (links the keys)</label>
+            <input class="form-control form-control-sm" id="wl-corescope" placeholder="https://live.saarmesh.de">
+        </div>
+        <div class="col-12 d-flex flex-wrap gap-2">
+            <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-floppy-disk me-1"></i>Save</button>
+            <button class="btn btn-outline-secondary btn-sm" type="button" id="wl-test"><i class="fas fa-paper-plane me-1"></i>Send a test note</button>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+    // Names and texts come from the mesh: built with textContent only.
+    const H = { 'X-Requested-With': 'XMLHttpRequest' };
+    let data = null;
+
+    function el(tag, text, cls) {
+        const n = document.createElement(tag);
+        if (text !== undefined && text !== null) n.textContent = String(text);
+        if (cls) n.className = cls;
+        return n;
+    }
+    function icon(cls) { return el('i', null, 'fas ' + cls); }
+    // text from the mesh (names, channels, messages): never run through the dashboard translation
+    function raw(n) { n.setAttribute('data-no-i18n', ''); return n; }
+    // confirm() texts are not in the page, so the dashboard translation does not see them
+    function T(s) { const d = window.WEBUI_I18N || {}; return Object.prototype.hasOwnProperty.call(d, s) ? d[s] : s; }
+    function when(ts) {
+        if (!ts) return '-';
+        const d = new Date(ts * 1000);
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    }
+    function say(text, cls) {
+        const box = document.getElementById('wl-message');
+        box.replaceChildren();
+        if (text) box.appendChild(el('div', text, 'alert ' + (cls || 'alert-danger') + ' py-2'));
+    }
+    function api(path, body) {
+        const opt = body === undefined ? { headers: H } : { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify(body) };
+        return fetch(path, opt).then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (b) {
+                if (!r.ok) throw new Error(b.detail || b.error || (b.errors && JSON.stringify(b.errors)) || ('HTTP ' + r.status));
+                return b;
+            });
+        });
+    }
+    function emptyRow(body, cols, text) {
+        const td = el('td', text, 'text-center text-muted py-3'); td.colSpan = cols;
+        const tr = el('tr'); tr.appendChild(td); body.replaceChildren(tr);
+    }
+
+    // ---- settings <-> form; every save writes the whole [Watchlist] section through the plugin API ----
+    function targetsString(list) {
+        return list.map(function (t) { return t.key ? t.name + '=' + t.key : t.name; }).join(', ');
+    }
+    function save(overrides) {
+        const s = data.settings;
+        const values = Object.assign({
+            targets: s.targets, channels: s.channels, message_dm: s.message_dm,
+            dm_cooldown_hours: s.dm_cooldown_hours, delay_seconds: s.delay_seconds, notify: s.notify,
+            ha_notify_service: s.ha_notify_service, corescope_url: s.corescope_url
+        }, overrides.values || {});
+        const enabled = overrides.enabled === undefined ? s.enabled : overrides.enabled;
+        return api('/api/plugins/service/watchlist', { section: 'Watchlist', enabled: enabled, values: values })
+            .then(function (b) {
+                say(b.restart_required ? 'Saved. Restart the bot to switch the watchlist on or off.' : 'Saved.', b.restart_required ? 'alert-warning' : 'alert-success');
+                return load(true);
+            });
+    }
+    function fillForm() {
+        const s = data.settings;
+        document.getElementById('wl-enabled').checked = !!s.enabled;
+        document.getElementById('wl-text').value = s.message_dm || '';
+        document.getElementById('wl-text').placeholder = s.default_dm;
+        document.getElementById('wl-cooldown').value = s.dm_cooldown_hours;
+        document.getElementById('wl-delay').value = s.delay_seconds;
+        document.getElementById('wl-channels').value = s.channels || '';
+        document.getElementById('wl-notify').checked = !!s.notify;
+        document.getElementById('wl-service').value = s.ha_notify_service || '';
+        document.getElementById('wl-corescope').value = s.corescope_url || '';
+        bytes();
+    }
+    function bytes() {
+        const t = document.getElementById('wl-text').value || data.settings.default_dm;
+        const n = new TextEncoder().encode(t).length;
+        const out = document.getElementById('wl-bytes');
+        out.textContent = n + ' / 158 bytes';
+        out.className = n > 158 ? 'text-danger fw-semibold' : '';
+    }
+
+    // ---- render ----
+    function render() {
+        const c = data.counts;
+        const tiles = document.getElementById('wl-tiles');
+        tiles.replaceChildren();
+        [['fa-user-slash', 'Watched', c.targets], ['fa-comment', 'Hits (7 days)', c.hits_7d],
+         ['fa-paper-plane', 'DMs sent', c.dms], ['fa-clock', 'Last hit', when(c.last_hit)],
+         [data.settings.enabled ? 'fa-toggle-on' : 'fa-toggle-off', 'Status', data.settings.enabled ? 'on' : 'off']].forEach(function (t) {
+            const col = el('div', null, 'col-6 col-md');
+            const card = el('div', null, 'card h-100');
+            const body = el('div', null, 'card-body py-2');
+            const lab = el('div', null, 'small text-muted');
+            lab.append(icon(t[0] + ' me-1'), document.createTextNode(t[1]));
+            body.append(lab, el('div', t[2], 'fs-5 fw-semibold'));
+            card.appendChild(body); col.appendChild(card); tiles.appendChild(col);
+        });
+
+        const tb = document.getElementById('wl-targets');
+        if (!data.targets.length) emptyRow(tb, 7, 'Nobody is watched.');
+        else {
+            tb.replaceChildren();
+            data.targets.forEach(function (t, i) {
+                const tr = el('tr');
+                const name = el('td', null);
+                name.appendChild(raw(el('div', t.name, 'fw-semibold')));
+                if (t.last_sender && t.last_sender !== t.name) name.appendChild(raw(el('div', t.last_sender, 'small text-muted')));
+                const key = el('td', null, 'font-monospace small');
+                if (!t.key) key.appendChild(el('span', 'none - no DM possible', 'text-warning'));
+                else if (data.settings.corescope_url) {
+                    const a = el('a', t.key.slice(0, 12) + '…');
+                    a.href = data.settings.corescope_url + '/#/nodes/' + encodeURIComponent(t.key);
+                    a.target = '_blank'; a.rel = 'noopener'; a.title = t.key;
+                    key.appendChild(a);
+                } else { const s = el('span', t.key.slice(0, 12) + '…'); s.title = t.key; key.appendChild(s); }
+                const lastSeen = el('td', when(t.last_seen), 'small text-nowrap');
+                if (t.last_channel) lastSeen.appendChild(raw(el('div', t.last_channel, 'text-muted')));
+                const lastDm = el('td', t.last_dm ? when(t.last_dm) + ' (' + t.dms + '×)' : '-', 'small text-nowrap');
+                if (t.last_dm_result && t.last_dm_result !== 'gesendet') lastDm.appendChild(raw(el('div', t.last_dm_result, 'text-warning')));
+                const next = el('td', t.next_dm ? when(t.next_dm) : 'with the next message', 'small');
+                const act = el('td', null, 'text-end text-nowrap');
+                if (t.next_dm) {
+                    const r = el('button', null, 'btn btn-outline-secondary btn-sm me-1');
+                    r.type = 'button'; r.title = 'Reset the cooldown: the next message gets a DM again';
+                    r.setAttribute('aria-label', r.title); r.appendChild(icon('fa-rotate-left'));
+                    r.addEventListener('click', function () {
+                        api('/api/watchlist/reset', { target: t.id }).then(function () { say('Cooldown reset.', 'alert-success'); return load(); })
+                            .catch(function (e) { say('Could not reset: ' + e.message); });
+                    });
+                    act.appendChild(r);
+                }
+                const del = el('button', null, 'btn btn-outline-danger btn-sm');
+                del.type = 'button'; del.title = 'Stop watching'; del.setAttribute('aria-label', del.title);
+                del.appendChild(icon('fa-trash'));
+                del.addEventListener('click', function () {
+                    if (!confirm(T('Stop watching this sender?') + '\n' + t.name)) return;
+                    const rest = data.targets.filter(function (_, j) { return j !== i; });
+                    save({ values: { targets: targetsString(rest) } }).catch(function (e) { say('Could not save: ' + e.message); });
+                });
+                act.appendChild(del);
+                tr.append(name, key, el('td', t.msgs), lastSeen, lastDm, next, act);
+                tb.appendChild(tr);
+            });
+        }
+
+        const hb = document.getElementById('wl-hits');
+        if (!data.hits.length) emptyRow(hb, 6, 'No hits yet.');
+        else {
+            hb.replaceChildren();
+            data.hits.forEach(function (h) {
+                const tr = el('tr');
+                const rf = h.hops === null || h.hops === undefined ? '-' : h.hops + (h.snr !== null && h.snr !== undefined ? ' · SNR ' + h.snr : '');
+                tr.append(el('td', when(h.ts), 'small text-nowrap'), raw(el('td', h.sender, 'fw-semibold')), raw(el('td', h.channel, 'small')),
+                          raw(el('td', h.text, 'small text-break')), el('td', rf, 'small text-nowrap'), raw(el('td', h.dm, 'small')));
+                hb.appendChild(tr);
+            });
+        }
+    }
+
+    function load(refill) {
+        return api('/api/watchlist').then(function (b) {
+            const first = data === null;
+            data = b;
+            if (first || refill) fillForm();
+            render();
+        }).catch(function (e) { say('Could not load the watchlist: ' + e.message); });
+    }
+
+    document.getElementById('wl-add').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        const name = document.getElementById('wl-add-name').value.trim().replace(/[,=]/g, '');
+        const key = document.getElementById('wl-add-key').value.trim().toLowerCase();
+        if (!name) return;
+        const list = data.targets.map(function (t) { return { name: t.name, key: t.key }; });
+        list.push({ name: name, key: key });
+        save({ values: { targets: targetsString(list) } }).then(function () {
+            document.getElementById('wl-add-name').value = ''; document.getElementById('wl-add-key').value = '';
+        }).catch(function (e) { say('Could not save: ' + e.message); });
+    });
+    document.getElementById('wl-settings').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        save({
+            enabled: document.getElementById('wl-enabled').checked,
+            values: {
+                message_dm: document.getElementById('wl-text').value.trim(),
+                dm_cooldown_hours: document.getElementById('wl-cooldown').value,
+                delay_seconds: document.getElementById('wl-delay').value,
+                channels: document.getElementById('wl-channels').value,
+                notify: document.getElementById('wl-notify').checked,
+                ha_notify_service: document.getElementById('wl-service').value.trim(),
+                corescope_url: document.getElementById('wl-corescope').value.trim()
+            }
+        }).catch(function (e) { say('Could not save: ' + e.message); });
+    });
+    document.getElementById('wl-text').addEventListener('input', bytes);
+    document.getElementById('wl-test').addEventListener('click', function () {
+        api('/api/watchlist/test', {}).then(function (b) { say('Test note sent (' + b.detail + ').', 'alert-success'); })
+            .catch(function (e) { say('Test note failed: ' + e.message); });
+    });
+    document.getElementById('wl-clear').addEventListener('click', function () {
+        if (!confirm(T('Clear the list of hits? The statistics per sender stay.'))) return;
+        api('/api/watchlist/clear-hits', {}).then(function () { return load(); }).catch(function (e) { say('Could not clear: ' + e.message); });
+    });
+
+    load();
+    setInterval(function () { if (!document.hidden) load(); }, 60000);
+})();
+</script>
+{% endblock %}

@@ -39,6 +39,8 @@ class WatchlistService(BaseServicePlugin):
         {"key": "ha_notify_service", "label": "Home Assistant service", "type": "str",
          "default": "telegram_bot.send_message",
          "help": "e.g. telegram_bot.send_message or notify.mobile_app_myphone. Called with title and message."},
+        {"key": "corescope_url", "label": "CoreScope address", "type": "str", "default": "",
+         "help": "Optional, e.g. https://live.saarmesh.de. The Watchlist page then links each public key to its node there."},
     ]
 
     def __init__(self, bot: Any):

@@ -79,6 +79,7 @@ run "Begroeting en hint in de taal van de afzender" "$PY" "$HERE/test_sender_lan
 run "Begroeting via DM" "$PY" "$HERE/test_greeter_dm.py" "$SIM_TREE"
 run "path hash tip (1 byte -> 2 bytes)" "$PY" "$HERE/test_hash_hint.py" "$SIM_TREE"
 run "watchlist (watched sender: DM + HA note)" "$PY" "$HERE/test_watchlist.py" "$SIM_TREE"
+run "watchlist page (menu, API, reset, settings)" "$PY" "$HERE/test_watchlist_page.py" "$SIM_TREE"
 run "stand-in for the old bot (@[SaarMesh-Bot])" "$PY" "$HERE/test_stand_in.py" "$SIM_TREE"
 run "language: English by default, help, ping, test bytes" "$PY" "$HERE/test_language.py" "$SIM_TREE"
 run "games channel (game commands in one channel)" "$PY" "$HERE/test_games_channel.py" "$SIM_TREE"

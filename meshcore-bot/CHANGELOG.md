@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.1-sm.25
+
+- New page Watchlist in the menu (after Mailbox; admin only): the watched senders with their statistics (messages,
+  last seen, DMs, last DM result, when the next DM is possible), a hit log (the last 200 channel messages of watched
+  senders), adding and removing senders, resetting a sender's DM cooldown, and the settings with a test note to Home
+  Assistant. New optional setting `corescope_url`: the page links each public key to its node in CoreScope.
+- Watchlist: statistics and hits are kept in the bot's database (`watchlist.stats`, `watchlist.hits`).
+
 ## 1.5.1-sm.24
 
 - New card Watchlist (Plugins page): when a watched sender writes in a channel, it gets one DM per cooldown (default

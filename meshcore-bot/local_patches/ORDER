@@ -161,6 +161,10 @@ patch_webviewer_radar.py
 # Mailbox page: messages left with post (after the Radar menu item).
 patch_webviewer_mailbox.py
 
+# Watchlist page (menu item after Mailbox): watched senders, their DMs and hits, settings. Anchors on the Mailbox
+# route and menu item patch_webviewer_mailbox.py added.
+patch_webviewer_watchlist.py
+
 # Repeater page (history of the repeaters the HARepeater service follows); anchors on the Channel radar route and menu item.
 patch_webviewer_repeater.py
 
