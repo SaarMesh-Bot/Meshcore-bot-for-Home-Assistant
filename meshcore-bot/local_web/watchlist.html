@@ -7,8 +7,8 @@
     <div class="col-12">
         <h1 class="mb-2"><i class="fas fa-eye"></i> Watchlist</h1>
         <p class="text-muted mb-1">
-            Watched senders: when one writes in a channel, the bot sends them one DM per cooldown and tells Home
-            Assistant. Nothing is ever sent in the channel. Refreshes every minute.
+            Watched senders: when one writes in a channel, the bot sends them one DM per cooldown with the text of
+            their template and tells Home Assistant. Nothing is ever sent in the channel. Refreshes every minute.
         </p>
         <div id="wl-message" role="status" aria-live="polite"></div>
     </div>
@@ -21,23 +21,28 @@
     <div class="card-body p-0 table-responsive">
         <table class="table table-sm mb-0 align-middle">
             <thead><tr>
-                <th scope="col">Name</th><th scope="col">Public key</th><th scope="col">Messages</th>
-                <th scope="col">Last seen</th><th scope="col">Last DM</th><th scope="col">Next DM</th><th scope="col"></th>
+                <th scope="col">Name</th><th scope="col">Template</th><th scope="col">Public key</th>
+                <th scope="col">Messages</th><th scope="col">Last seen</th><th scope="col">Last DM</th>
+                <th scope="col">Next DM</th><th scope="col"></th>
             </tr></thead>
             <tbody id="wl-targets"></tbody>
         </table>
     </div>
 </div>
 <form class="row g-2 align-items-end mb-4" id="wl-add" autocomplete="off">
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-md-3">
         <label class="form-label small mb-0" for="wl-add-name">Name (part of the sender name)</label>
         <input class="form-control form-control-sm" id="wl-add-name" required maxlength="32">
     </div>
-    <div class="col-12 col-md-6">
+    <div class="col-12 col-md-5">
         <label class="form-label small mb-0" for="wl-add-key">Public key (optional, 64 hex characters, needed for the DM)</label>
         <input class="form-control form-control-sm font-monospace" id="wl-add-key" pattern="[0-9a-fA-F]{64}" maxlength="64">
     </div>
-    <div class="col-12 col-md-2">
+    <div class="col-8 col-md-2">
+        <label class="form-label small mb-0" for="wl-add-tpl">Template</label>
+        <select class="form-select form-select-sm" id="wl-add-tpl"></select>
+    </div>
+    <div class="col-4 col-md-2">
         <button class="btn btn-primary btn-sm w-100" type="submit"><i class="fas fa-plus me-1"></i>Add</button>
     </div>
 </form>
@@ -52,53 +57,65 @@
         <table class="table table-sm mb-0 align-middle">
             <thead><tr>
                 <th scope="col">When</th><th scope="col">Sender</th><th scope="col">Channel</th>
-                <th scope="col">Message</th><th scope="col">Hops</th><th scope="col">DM</th>
+                <th scope="col">Message</th><th scope="col">Hops</th><th scope="col">Template</th><th scope="col">DM</th>
             </tr></thead>
             <tbody id="wl-hits"></tbody>
         </table>
     </div>
 </div>
 
-<h2 class="h5"><i class="fas fa-sliders me-1"></i> Settings</h2>
-<form class="card mb-5" id="wl-settings" autocomplete="off">
-    <div class="card-body row g-3">
-        <div class="col-12">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="wl-enabled">
-                <label class="form-check-label" for="wl-enabled">Watchlist on</label>
+<form id="wl-settings" autocomplete="off">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <h2 class="h5 mb-0 me-auto"><i class="fas fa-file-lines me-1"></i> Templates</h2>
+        <button class="btn btn-outline-secondary btn-sm" type="button" id="wl-tpl-new"><i class="fas fa-plus me-1"></i>New template</button>
+        <button class="btn btn-outline-secondary btn-sm" type="button" id="wl-tpl-reset"><i class="fas fa-rotate-left me-1"></i>Standard templates</button>
+    </div>
+    <p class="small text-muted mb-1">
+        One template per reason for being on the list. {sender} in the text becomes the name. "Ignore commands": the
+        bot does not answer that sender's commands in channels. Saved with the button at the bottom.
+    </p>
+    <div class="row g-2 mb-4" id="wl-tpls"></div>
+
+    <h2 class="h5"><i class="fas fa-sliders me-1"></i> Settings</h2>
+    <div class="card mb-5">
+        <div class="card-body row g-3">
+            <div class="col-12">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="wl-enabled">
+                    <label class="form-check-label" for="wl-enabled">Watchlist on</label>
+                </div>
             </div>
-        </div>
-        <div class="col-12">
-            <label class="form-label small mb-0" for="wl-text">Text of the DM</label>
-            <textarea class="form-control form-control-sm" id="wl-text" rows="2"></textarea>
-            <div class="form-text"><span id="wl-bytes"></span> · <span>{sender} becomes the name</span> · <span>empty = the standard text</span></div>
-        </div>
-        <div class="col-6 col-md-3">
-            <label class="form-label small mb-0" for="wl-cooldown">At most one DM every (h)</label>
-            <input class="form-control form-control-sm" type="number" min="0" max="8760" id="wl-cooldown">
-        </div>
-        <div class="col-6 col-md-3">
-            <label class="form-label small mb-0" for="wl-delay">Wait before the DM (s)</label>
-            <input class="form-control form-control-sm" type="number" min="0" max="600" id="wl-delay">
-        </div>
-        <div class="col-12 col-md-6">
-            <label class="form-label small mb-0" for="wl-channels">Channels to listen to (empty = all)</label>
-            <input class="form-control form-control-sm" id="wl-channels">
-        </div>
-        <div class="col-12 col-md-6">
-            <div class="form-check form-switch mb-1">
-                <input class="form-check-input" type="checkbox" id="wl-notify">
-                <label class="form-check-label" for="wl-notify">Tell Home Assistant</label>
+            <div class="col-12 col-md-4">
+                <label class="form-label small mb-0" for="wl-default-tpl">Template for senders without one</label>
+                <select class="form-select form-select-sm" id="wl-default-tpl"></select>
             </div>
-            <input class="form-control form-control-sm" id="wl-service" placeholder="telegram_bot.send_message">
-        </div>
-        <div class="col-12 col-md-6">
-            <label class="form-label small mb-0" for="wl-corescope">CoreScope address (links the keys)</label>
-            <input class="form-control form-control-sm" id="wl-corescope" placeholder="https://live.saarmesh.de">
-        </div>
-        <div class="col-12 d-flex flex-wrap gap-2">
-            <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-floppy-disk me-1"></i>Save</button>
-            <button class="btn btn-outline-secondary btn-sm" type="button" id="wl-test"><i class="fas fa-paper-plane me-1"></i>Send a test note</button>
+            <div class="col-6 col-md-4">
+                <label class="form-label small mb-0" for="wl-cooldown">At most one DM every (h)</label>
+                <input class="form-control form-control-sm" type="number" min="0" max="8760" id="wl-cooldown">
+            </div>
+            <div class="col-6 col-md-4">
+                <label class="form-label small mb-0" for="wl-delay">Wait before the DM (s)</label>
+                <input class="form-control form-control-sm" type="number" min="0" max="600" id="wl-delay">
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label small mb-0" for="wl-channels">Channels to listen to (empty = all)</label>
+                <input class="form-control form-control-sm" id="wl-channels">
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label small mb-0" for="wl-corescope">CoreScope address (links the keys)</label>
+                <input class="form-control form-control-sm" id="wl-corescope" placeholder="https://live.saarmesh.de">
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="form-check form-switch mb-1">
+                    <input class="form-check-input" type="checkbox" id="wl-notify">
+                    <label class="form-check-label" for="wl-notify">Tell Home Assistant</label>
+                </div>
+                <input class="form-control form-control-sm" id="wl-service" placeholder="telegram_bot.send_message">
+            </div>
+            <div class="col-12 d-flex flex-wrap gap-2">
+                <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-floppy-disk me-1"></i>Save</button>
+                <button class="btn btn-outline-secondary btn-sm" type="button" id="wl-test"><i class="fas fa-paper-plane me-1"></i>Send a test note</button>
+            </div>
         </div>
     </div>
 </form>
@@ -111,6 +128,7 @@
     // Names and texts come from the mesh: built with textContent only.
     const H = { 'X-Requested-With': 'XMLHttpRequest' };
     let data = null;
+    let tpls = [];   // the templates as edited on the page (saved with the Save button)
 
     function el(tag, text, cls) {
         const n = document.createElement(tag);
@@ -119,7 +137,7 @@
         return n;
     }
     function icon(cls) { return el('i', null, 'fas ' + cls); }
-    // text from the mesh (names, channels, messages): never run through the dashboard translation
+    // text from the mesh or typed by the admin (names, channels, messages, templates): never translated
     function raw(n) { n.setAttribute('data-no-i18n', ''); return n; }
     // confirm() texts are not in the page, so the dashboard translation does not see them
     function T(s) { const d = window.WEBUI_I18N || {}; return Object.prototype.hasOwnProperty.call(d, s) ? d[s] : s; }
@@ -132,6 +150,7 @@
         const box = document.getElementById('wl-message');
         box.replaceChildren();
         if (text) box.appendChild(el('div', text, 'alert ' + (cls || 'alert-danger') + ' py-2'));
+        if (text) box.scrollIntoView({ block: 'nearest' });
     }
     function api(path, body) {
         const opt = body === undefined ? { headers: H } : { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify(body) };
@@ -146,15 +165,43 @@
         const td = el('td', text, 'text-center text-muted py-3'); td.colSpan = cols;
         const tr = el('tr'); tr.appendChild(td); body.replaceChildren(tr);
     }
-
-    // ---- settings <-> form; every save writes the whole [Watchlist] section through the plugin API ----
-    function targetsString(list) {
-        return list.map(function (t) { return t.key ? t.name + '=' + t.key : t.name; }).join(', ');
+    function bytesOf(s) { return new TextEncoder().encode(s || '').length; }
+    function tplLabel(id) {
+        const t = data.templates.find(function (x) { return x.id === id; });
+        return t ? t.label : id;
     }
-    function save(overrides) {
+    function fillSelect(sel, list, value, withDefault) {
+        sel.replaceChildren();
+        if (withDefault) {
+            const o = el('option', 'Standard (' + tplLabel(data.settings.default_template) + ')');
+            o.value = ''; raw(o); sel.appendChild(o);
+        }
+        list.forEach(function (t) { const o = raw(el('option', t.label)); o.value = t.id; sel.appendChild(o); });
+        sel.value = value || '';
+    }
+
+    // ---- saving: every save writes the whole [Watchlist] section through the plugin API ----
+    function targetsString(list) {
+        return list.map(function (t) {
+            return t.tpl ? t.name + '=' + (t.key || '') + '=' + t.tpl : (t.key ? t.name + '=' + t.key : t.name);
+        }).join(', ');
+    }
+    function templatesJson(list) {
+        // '%' would trip configparser's interpolation in the bot: stored as the JSON escape %
+        return JSON.stringify(list.map(function (t) {
+            return { id: t.id, label: t.label, text: t.text, dm: !!t.dm, ignore: !!t.ignore };
+        })).replace(/%/g, '\\u0025');
+    }
+    function currentTargets() {
+        return data.targets.map(function (t) { return { name: t.name, key: t.key, tpl: t.tpl }; });
+    }
+    // refill = false (changes to the senders only): the template editor keeps what is being edited there
+    function save(overrides, refill) {
+        if (refill === undefined) refill = true;
         const s = data.settings;
         const values = Object.assign({
-            targets: s.targets, channels: s.channels, message_dm: s.message_dm,
+            targets: s.targets, channels: s.channels, default_template: s.default_template,
+            templates: templatesJson(data.templates),
             dm_cooldown_hours: s.dm_cooldown_hours, delay_seconds: s.delay_seconds, notify: s.notify,
             ha_notify_service: s.ha_notify_service, corescope_url: s.corescope_url
         }, overrides.values || {});
@@ -162,28 +209,91 @@
         return api('/api/plugins/service/watchlist', { section: 'Watchlist', enabled: enabled, values: values })
             .then(function (b) {
                 say(b.restart_required ? 'Saved. Restart the bot to switch the watchlist on or off.' : 'Saved.', b.restart_required ? 'alert-warning' : 'alert-success');
-                return load(true);
+                return load(refill).then(function () { if (!refill) renderTpls(); });
             });
     }
+
+    // ---- template editor ----
+    function slug(label) {
+        let base = (label || 'baustein').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'baustein';
+        let id = base, n = 2;
+        while (tpls.some(function (t) { return t.id === id; })) id = base + '-' + (n++);
+        return id;
+    }
+    function renderTpls() {
+        const box = document.getElementById('wl-tpls');
+        box.replaceChildren();
+        const used = {};
+        data.targets.forEach(function (t) { used[t.tpl_used] = (used[t.tpl_used] || 0) + 1; });
+        tpls.forEach(function (t, i) {
+            const col = el('div', null, 'col-12 col-lg-6');
+            const card = el('div', null, 'card h-100');
+            const body = el('div', null, 'card-body py-2');
+
+            const head = el('div', null, 'd-flex gap-2 align-items-center mb-1');
+            const label = raw(el('input', null, 'form-control form-control-sm fw-semibold'));
+            label.value = t.label; label.maxLength = 40; label.setAttribute('aria-label', T('Name of the template'));
+            label.addEventListener('input', function () { t.label = label.value.trim() || t.id; });
+            const idTag = raw(el('code', t.id, 'small text-muted text-nowrap'));
+            const del = el('button', null, 'btn btn-outline-danger btn-sm');
+            del.type = 'button'; del.title = 'Delete this template'; del.setAttribute('aria-label', del.title);
+            del.appendChild(icon('fa-trash'));
+            del.disabled = tpls.length <= 1;
+            del.addEventListener('click', function () {
+                if (used[t.id] && !confirm(T('This template is in use. Senders with it get the standard template. Delete it?'))) return;
+                tpls.splice(i, 1); renderTpls();
+            });
+            head.append(label, idTag, del);
+
+            const text = raw(el('textarea', null, 'form-control form-control-sm'));
+            text.rows = 2; text.value = t.text; text.disabled = !t.dm;
+            text.setAttribute('aria-label', T('Text of the DM'));
+            const meta = el('div', null, 'd-flex flex-wrap gap-3 align-items-center small mt-1');
+            const count = el('span', null, '');
+            function recount() {
+                const n = bytesOf(t.text);
+                count.textContent = n + ' / ' + data.settings.max_dm_bytes + ' bytes';
+                count.className = n > data.settings.max_dm_bytes ? 'text-danger fw-semibold' : 'text-muted';
+            }
+            text.addEventListener('input', function () { t.text = text.value; recount(); });
+
+            function sw(key, labelText, onChange) {
+                const wrap = el('div', null, 'form-check form-switch mb-0');
+                const inp = el('input', null, 'form-check-input');
+                inp.type = 'checkbox'; inp.id = 'wl-tpl-' + i + '-' + key; inp.checked = !!t[key];
+                const lab = el('label', labelText, 'form-check-label'); lab.htmlFor = inp.id;
+                inp.addEventListener('change', function () { t[key] = inp.checked; if (onChange) onChange(); });
+                wrap.append(inp, lab);
+                return wrap;
+            }
+            meta.append(sw('dm', 'Send a DM', function () { text.disabled = !t.dm; }), sw('ignore', 'Ignore commands'), count);
+            if (used[t.id]) meta.appendChild(el('span', 'in use: ' + used[t.id], 'badge text-bg-secondary'));
+            recount();
+            body.append(head, text, meta);
+            card.appendChild(body); col.appendChild(card); box.appendChild(col);
+        });
+    }
+    function tplsValid() {
+        const bad = tpls.find(function (t) { return t.dm && (!t.text.trim() || bytesOf(t.text) > data.settings.max_dm_bytes); });
+        if (bad) { say(T('A template with a DM needs a text of at most 158 bytes:') + ' ' + bad.label); return false; }
+        return true;
+    }
+
+    // ---- settings <-> form ----
     function fillForm() {
         const s = data.settings;
+        tpls = data.templates.map(function (t) { return Object.assign({}, t); });
+        renderTpls();
         document.getElementById('wl-enabled').checked = !!s.enabled;
-        document.getElementById('wl-text').value = s.message_dm || '';
-        document.getElementById('wl-text').placeholder = s.default_dm;
+        fillSelect(document.getElementById('wl-default-tpl'), data.templates, s.default_template, false);
         document.getElementById('wl-cooldown').value = s.dm_cooldown_hours;
         document.getElementById('wl-delay').value = s.delay_seconds;
         document.getElementById('wl-channels').value = s.channels || '';
         document.getElementById('wl-notify').checked = !!s.notify;
         document.getElementById('wl-service').value = s.ha_notify_service || '';
         document.getElementById('wl-corescope').value = s.corescope_url || '';
-        bytes();
-    }
-    function bytes() {
-        const t = document.getElementById('wl-text').value || data.settings.default_dm;
-        const n = new TextEncoder().encode(t).length;
-        const out = document.getElementById('wl-bytes');
-        out.textContent = n + ' / 158 bytes';
-        out.className = n > 158 ? 'text-danger fw-semibold' : '';
+        fillSelect(document.getElementById('wl-add-tpl'), data.templates, '', true);
     }
 
     // ---- render ----
@@ -204,7 +314,7 @@
         });
 
         const tb = document.getElementById('wl-targets');
-        if (!data.targets.length) emptyRow(tb, 7, 'Nobody is watched.');
+        if (!data.targets.length) emptyRow(tb, 8, 'Nobody is watched.');
         else {
             tb.replaceChildren();
             data.targets.forEach(function (t, i) {
@@ -212,6 +322,20 @@
                 const name = el('td', null);
                 name.appendChild(raw(el('div', t.name, 'fw-semibold')));
                 if (t.last_sender && t.last_sender !== t.name) name.appendChild(raw(el('div', t.last_sender, 'small text-muted')));
+
+                const tplTd = el('td', null);
+                const sel = el('select', null, 'form-select form-select-sm');
+                sel.setAttribute('aria-label', T('Template'));
+                fillSelect(sel, data.templates, t.tpl, true);
+                sel.addEventListener('change', function () {
+                    const list = currentTargets(); list[i].tpl = sel.value;
+                    save({ values: { targets: targetsString(list) } }, false).catch(function (e) { say('Could not save: ' + e.message); });
+                });
+                tplTd.appendChild(sel);
+                const used = data.templates.find(function (x) { return x.id === t.tpl_used; });
+                if (used && used.ignore) tplTd.appendChild(el('div', 'commands ignored', 'small text-warning'));
+                if (used && !used.dm) tplTd.appendChild(el('div', 'no DM', 'small text-muted'));
+
                 const key = el('td', null, 'font-monospace small');
                 if (!t.key) key.appendChild(el('span', 'none - no DM possible', 'text-warning'));
                 else if (data.settings.corescope_url) {
@@ -224,7 +348,7 @@
                 if (t.last_channel) lastSeen.appendChild(raw(el('div', t.last_channel, 'text-muted')));
                 const lastDm = el('td', t.last_dm ? when(t.last_dm) + ' (' + t.dms + '×)' : '-', 'small text-nowrap');
                 if (t.last_dm_result && t.last_dm_result !== 'gesendet') lastDm.appendChild(raw(el('div', t.last_dm_result, 'text-warning')));
-                const next = el('td', t.next_dm ? when(t.next_dm) : 'with the next message', 'small');
+                const next = el('td', used && !used.dm ? '-' : (t.next_dm ? when(t.next_dm) : 'with the next message'), 'small');
                 const act = el('td', null, 'text-end text-nowrap');
                 if (t.next_dm) {
                     const r = el('button', null, 'btn btn-outline-secondary btn-sm me-1');
@@ -241,24 +365,27 @@
                 del.appendChild(icon('fa-trash'));
                 del.addEventListener('click', function () {
                     if (!confirm(T('Stop watching this sender?') + '\n' + t.name)) return;
-                    const rest = data.targets.filter(function (_, j) { return j !== i; });
-                    save({ values: { targets: targetsString(rest) } }).catch(function (e) { say('Could not save: ' + e.message); });
+                    const rest = currentTargets().filter(function (_, j) { return j !== i; });
+                    save({ values: { targets: targetsString(rest) } }, false).catch(function (e) { say('Could not save: ' + e.message); });
                 });
                 act.appendChild(del);
-                tr.append(name, key, el('td', t.msgs), lastSeen, lastDm, next, act);
+                tr.append(name, tplTd, key, el('td', t.msgs), lastSeen, lastDm, next, act);
                 tb.appendChild(tr);
             });
         }
 
         const hb = document.getElementById('wl-hits');
-        if (!data.hits.length) emptyRow(hb, 6, 'No hits yet.');
+        if (!data.hits.length) emptyRow(hb, 7, 'No hits yet.');
         else {
             hb.replaceChildren();
             data.hits.forEach(function (h) {
                 const tr = el('tr');
                 const rf = h.hops === null || h.hops === undefined ? '-' : h.hops + (h.snr !== null && h.snr !== undefined ? ' · SNR ' + h.snr : '');
+                const tplTd = el('td', null, 'small');
+                if (h.tpl) tplTd.appendChild(raw(el('div', h.tpl)));
+                if (h.ignored) tplTd.appendChild(el('div', 'commands ignored', 'text-warning'));
                 tr.append(el('td', when(h.ts), 'small text-nowrap'), raw(el('td', h.sender, 'fw-semibold')), raw(el('td', h.channel, 'small')),
-                          raw(el('td', h.text, 'small text-break')), el('td', rf, 'small text-nowrap'), raw(el('td', h.dm, 'small')));
+                          raw(el('td', h.text, 'small text-break')), el('td', rf, 'small text-nowrap'), tplTd, raw(el('td', h.dm, 'small')));
                 hb.appendChild(tr);
             });
         }
@@ -277,19 +404,37 @@
         ev.preventDefault();
         const name = document.getElementById('wl-add-name').value.trim().replace(/[,=]/g, '');
         const key = document.getElementById('wl-add-key').value.trim().toLowerCase();
+        const tpl = document.getElementById('wl-add-tpl').value;
         if (!name) return;
-        const list = data.targets.map(function (t) { return { name: t.name, key: t.key }; });
-        list.push({ name: name, key: key });
-        save({ values: { targets: targetsString(list) } }).then(function () {
+        const list = currentTargets();
+        list.push({ name: name, key: key, tpl: tpl });
+        save({ values: { targets: targetsString(list) } }, false).then(function () {
             document.getElementById('wl-add-name').value = ''; document.getElementById('wl-add-key').value = '';
         }).catch(function (e) { say('Could not save: ' + e.message); });
     });
+    document.getElementById('wl-tpl-new').addEventListener('click', function () {
+        tpls.push({ id: slug('baustein'), label: T('New template'), text: '', dm: true, ignore: false });
+        renderTpls();
+    });
+    document.getElementById('wl-tpl-reset').addEventListener('click', function () {
+        if (!confirm(T('Replace all templates with the standard templates? Your own texts are lost (after Save).'))) return;
+        tpls = data.default_templates.map(function (t) { return Object.assign({}, t); });
+        renderTpls();
+    });
     document.getElementById('wl-settings').addEventListener('submit', function (ev) {
         ev.preventDefault();
+        if (!tplsValid()) return;
+        const ids = tpls.map(function (t) { return t.id; });
+        let def = document.getElementById('wl-default-tpl').value;
+        if (ids.indexOf(def) === -1) def = ids[0];
+        // senders whose template was deleted fall back to the standard template
+        const list = currentTargets().map(function (t) { if (t.tpl && ids.indexOf(t.tpl) === -1) t.tpl = ''; return t; });
         save({
             enabled: document.getElementById('wl-enabled').checked,
             values: {
-                message_dm: document.getElementById('wl-text').value.trim(),
+                templates: templatesJson(tpls),
+                default_template: def,
+                targets: targetsString(list),
                 dm_cooldown_hours: document.getElementById('wl-cooldown').value,
                 delay_seconds: document.getElementById('wl-delay').value,
                 channels: document.getElementById('wl-channels').value,
@@ -299,7 +444,6 @@
             }
         }).catch(function (e) { say('Could not save: ' + e.message); });
     });
-    document.getElementById('wl-text').addEventListener('input', bytes);
     document.getElementById('wl-test').addEventListener('click', function () {
         api('/api/watchlist/test', {}).then(function (b) { say('Test note sent (' + b.detail + ').', 'alert-success'); })
             .catch(function (e) { say('Test note failed: ' + e.message); });
@@ -310,6 +454,7 @@
     });
 
     load();
+    // refresh only the tables: the template editor and the form keep what is being typed
     setInterval(function () { if (!document.hidden) load(); }, 60000);
 })();
 </script>

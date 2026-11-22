@@ -70,7 +70,7 @@ def make(extra=None, meta=None, contacts=None):
     bot.meshcore.commands.get_contacts = get_contacts
     w = wl.Watchlist(bot)
 
-    async def fake_notify(message, dm_result):
+    async def fake_notify(message, dm_result, tpl):
         notes.append((message.sender_id, dm_result))
     w._ha_notify = fake_notify
     return w, dms, added, notes
@@ -144,10 +144,50 @@ check(len(dms3) == 1, "after 24 h a DM may go out again")
 
 # --- texts fit ---
 check(len(wl.DEFAULT_DM.encode()) <= 158, "default DM text fits 158 bytes")
+for tpl in wl.DEFAULT_TEMPLATES:
+    check(len(tpl["text"].encode()) <= 158 and (bool(tpl["text"]) == tpl["dm"]), f"template {tpl['id']}: text fits, DM only with a text")
+
+# --- templates per target ---
+check(wl.parse_targets(f"A={KEY}=spam, B==ton, C")
+      == [("a", "A", KEY, "spam"), ("b", "B", "", "ton"), ("c", "C", "", "")], "targets with key and template")
+w, dms, added, notes = make({"targets": f"Führerhauptquartier={KEY}=spam"})
+
+
+async def observe_and_drain(w, m):
+    target = w.observe(m)
+    await drain(w)
+    return target
+target = asyncio.run(observe_and_drain(w, msg()))
+check(target is not None and w.ignores_commands(target), "template spam: commands ignored")
+check(len(dms) == 1 and dms[0][1].startswith("Hallo, du sendest sehr viele"), "template spam: its DM text")
+w, dms, added, notes = make({"targets": f"Führerhauptquartier={KEY}=beobachten"})
+run(w, msg())
+check(not dms and notes and notes[0][1] == "keine (Baustein ohne DM)", "template beobachten: no DM, HA still told")
+w, dms, added, notes = make()
+check(not w.ignores_commands(w.match(msg())) and not w.ignores_commands(None), "standard template name: commands answered")
+w, dms, added, notes = make({"targets": f"Führerhauptquartier={KEY}=gibtsnicht", "default_template": "ton"})
+run(w, msg())
+check(len(dms) == 1 and "respektvollen Ton" in dms[0][1], "unknown template: the default template")
+
+# --- own templates from config, '%' stored as \u0025 ---
+own = '[{"id": "x", "label": "Eigen", "text": "100\\u0025 daneben, {sender}", "dm": true, "ignore": true}]'
+w, dms, added, notes = make({"templates": own, "targets": f"Führerhauptquartier={KEY}"})
+run(w, msg())
+check(len(dms) == 1 and dms[0][1] == "100% daneben, Führerhauptquartier" and w.ignores_commands(w.match(msg())),
+      "own templates from config (with % and {sender})")
+w, *_ = make({"templates": "kaputt"})
+check([t["id"] for t in w.templates] == [t["id"] for t in wl.DEFAULT_TEMPLATES], "broken templates: the defaults")
+
+# --- the old single text (1.5.1-sm.24) is still used ---
+w, dms, *_ = make({"message_dm": "Alter Text"})
+run(w, msg())
+check(dms and dms[0][1] == "Alter Text", "old message_dm: text of the default template")
 
 # --- the hook in the patched handler ---
 src = open("modules/message_handler.py", encoding="utf-8").read()
-check("get_watchlist(self.bot).observe(message)" in src, "hook in message_handler.process_message")
+check("_wl.ignores_commands(_wl.observe(message))" in src, "hook in message_handler.process_message")
+hook = src.index("_wl.ignores_commands(_wl.observe(message))")
+check(src.index("if _wl_mute:", hook) < src.index("check_keywords(message)", hook), "muted senders stop before any command")
 
 if fails:
     print(f"{len(fails)} fouten")

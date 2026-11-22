@@ -5096,6 +5096,8 @@
 "Zero-hop advert sent.": "Zero-Hop-Advert gesendet.",
 "Zero-hop bonus": "Zero-Hop-Bonus",
 "__patterns": [
+["in use: (\\d+)", "in Verwendung: $1"],
+["(\\d+) / (\\d+) bytes", "$1 / $2 Bytes"],
 ["Test note sent \\((.+)\\)\\.", "Test-Meldung gesendet ($1)."],
 ["Test note failed: (.+)", "Test-Meldung fehlgeschlagen: $1"],
 ["Could not load the watchlist: (.+)", "Konnte die Watchlist nicht laden: $1"],
@@ -5634,7 +5636,23 @@
 "Saved. Restart the bot to switch the watchlist on or off.": "Gespeichert. Den Bot neu starten, um die Watchlist ein- oder auszuschalten.",
 "Cooldown reset.": "Abstand zurückgesetzt.",
 "Stop watching this sender?": "Diesen Absender nicht mehr beobachten?",
-"Clear the list of hits? The statistics per sender stay.": "Trefferliste leeren? Die Statistik pro Absender bleibt."
+"Clear the list of hits? The statistics per sender stay.": "Trefferliste leeren? Die Statistik pro Absender bleibt.",
+"Watched senders: when one writes in a channel, the bot sends them one DM per cooldown with the text of their template and tells Home Assistant. Nothing is ever sent in the channel. Refreshes every minute.": "Beobachtete Absender: Schreibt einer davon in einem Kanal, schickt der Bot ihm höchstens eine DM pro Abstand mit dem Text seines Bausteins und meldet es an Home Assistant. Im Kanal wird nie etwas gesendet. Aktualisiert sich jede Minute.",
+"Template": "Baustein",
+"Templates": "Textbausteine",
+"New template": "Neuer Baustein",
+"Standard templates": "Standardbausteine",
+"One template per reason for being on the list. {sender} in the text becomes the name. \"Ignore commands\": the bot does not answer that sender's commands in channels. Saved with the button at the bottom.": "Ein Baustein pro Grund, auf der Liste zu stehen. {sender} im Text wird zum Namen. „Befehle ignorieren“: Der Bot beantwortet die Befehle dieses Absenders in Kanälen nicht. Gespeichert wird mit dem Knopf ganz unten.",
+"Name of the template": "Name des Bausteins",
+"Delete this template": "Diesen Baustein löschen",
+"This template is in use. Senders with it get the standard template. Delete it?": "Dieser Baustein wird verwendet. Absender damit bekommen den Standardbaustein. Trotzdem löschen?",
+"Send a DM": "DM senden",
+"Ignore commands": "Befehle ignorieren",
+"commands ignored": "Befehle ignoriert",
+"no DM": "keine DM",
+"Template for senders without one": "Baustein für Absender ohne eigenen",
+"A template with a DM needs a text of at most 158 bytes:": "Ein Baustein mit DM braucht einen Text mit höchstens 158 Bytes:",
+"Replace all templates with the standard templates? Your own texts are lost (after Save).": "Alle Bausteine durch die Standardbausteine ersetzen? Eigene Texte gehen (nach dem Speichern) verloren."
 },
 "fr": {
 "Newcomer": "Nouveau",

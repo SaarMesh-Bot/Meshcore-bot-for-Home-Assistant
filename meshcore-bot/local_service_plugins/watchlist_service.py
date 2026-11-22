@@ -21,13 +21,15 @@ class WatchlistService(BaseServicePlugin):
 
     settings_schema = [
         {"key": "targets", "label": "Watched senders", "type": "list", "default": [],
-         "help": ("Comma-separated. 'Name' or 'Name=public key' (64 hex characters). The name matches "
-                  "case-insensitively as part of the sender name. A channel message carries no public key: give it "
-                  "here so the DM can be sent (the bot adds the key as a contact when needed).")},
+         "help": ("Comma-separated. 'Name', 'Name=public key' or 'Name=public key=template' (key may be empty). The "
+                  "name matches case-insensitively as part of the sender name. A channel message carries no public "
+                  "key: give it here so the DM can be sent (the bot adds the key as a contact when needed). Easier on "
+                  "the Watchlist page in the menu.")},
         {"key": "channels", "label": "Channels to listen to", "type": "list", "default": [],
          "help": "Empty = every channel. Comma-separated, name exactly as on your radio."},
-        {"key": "message_dm", "label": "Text of the DM", "type": "str", "default": "",
-         "help": "Empty = a standard text. {sender} becomes the name. At most 158 bytes. Nothing goes in the channel."},
+        {"key": "default_template", "label": "Template for senders without one", "type": "str", "default": "name",
+         "help": ("Id of a text template (name, ton, spam, kanal, werbung, beobachten or your own). The templates - DM "
+                  "text, DM yes/no, ignore commands - are edited on the Watchlist page in the menu.")},
         {"key": "dm_cooldown_hours", "label": "At most one DM per sender every", "type": "int", "default": 24,
          "min": 0, "max": 8760, "unit": "h",
          "help": "Kept in the bot's database, so a restart does not start over. 0 = a DM on every message."},

@@ -57,7 +57,10 @@ d = c.get("/api/watchlist", headers=H).get_json()
 check([t["name"] for t in d["targets"]] == ["Führerhauptquartier", "Troll"] and d["targets"][0]["key"] == KEY
       and d["targets"][1]["key"] == "", "targets with and without key")
 check(d["settings"]["enabled"] and d["settings"]["corescope_url"] == "https://live.saarmesh.de"
-      and d["settings"]["default_dm"] == wl.DEFAULT_DM, "settings (CoreScope address without trailing slash)")
+      and d["settings"]["default_template"] == "name", "settings (CoreScope address without trailing slash)")
+check([x["id"] for x in d["templates"]] == ["name", "ton", "spam", "kanal", "werbung", "beobachten"]
+      and d["default_templates"] == wl.DEFAULT_TEMPLATES, "the six standard templates")
+check(d["targets"][0]["tpl_used"] == "name", "sender without template: the default one")
 check(d["hits"] == [] and d["counts"]["targets"] == 2 and d["counts"]["hits_7d"] == 0, "no hits yet")
 
 # ---- hits as the bot records them ----
@@ -89,12 +92,14 @@ check(d["hits"] == [] and d["targets"][0]["msgs"] == 2, "clear hits: list empty,
 
 # ---- saving through the plugin API (as the page does) ----
 r = c.post("/api/plugins/service/watchlist", headers=H, json={"section": "Watchlist", "enabled": True, "values": {
-    "targets": f"Führerhauptquartier={KEY}", "channels": "", "message_dm": "Bitte Namen ändern, {sender}.",
+    "targets": f"Führerhauptquartier={KEY}=eigen", "channels": "", "default_template": "eigen",
+    "templates": '[{"id": "eigen", "label": "Eigen", "text": "Bitte Namen \\u0025 ändern, {sender}.", "dm": true, "ignore": true}]',
     "dm_cooldown_hours": 48, "delay_seconds": 15, "notify": True, "ha_notify_service": "telegram_bot.send_message",
     "corescope_url": "https://live.saarmesh.de"}})
 d = c.get("/api/watchlist", headers=H).get_json()
 check(r.status_code == 200 and [t["name"] for t in d["targets"]] == ["Führerhauptquartier"]
-      and d["settings"]["message_dm"] == "Bitte Namen ändern, {sender}." and d["settings"]["dm_cooldown_hours"] == 48,
+      and d["templates"] == [{"id": "eigen", "label": "Eigen", "text": "Bitte Namen % ändern, {sender}.", "dm": True, "ignore": True}]
+      and d["targets"][0]["tpl"] == "eigen" and d["settings"]["dm_cooldown_hours"] == 48,
       f"saved through the plugin API ({r.status_code})")
 
 # ---- test note: no Supervisor here ----
@@ -104,7 +109,8 @@ check(r.status_code == 502 and "SUPERVISOR_TOKEN" in r.get_json()["detail"], "te
 
 # ---- German texts for the page ----
 de = json.load(open(os.path.join(TREE, "modules", "local_data", "ui_i18n.json"), encoding="utf-8"))["de"]
-check(de.get("Watched senders") == "Beobachtete Absender" and de.get("with the next message"), "German texts for the page")
+check(de.get("Watched senders") == "Beobachtete Absender" and de.get("Templates") == "Textbausteine"
+      and de.get("Ignore commands"), "German texts for the page")
 
 if fails:
     print(f"{len(fails)} fouten")

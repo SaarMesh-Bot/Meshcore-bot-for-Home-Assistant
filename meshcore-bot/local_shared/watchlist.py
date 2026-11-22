@@ -2,31 +2,40 @@
 
 Why: a node with an offensive name (21.11.2026 "Führerhauptquartier" in Public) should get a short, direct request
 to change it, and the operator wants to know when it shows up again - without giving it a stage in the channel.
+People end up on the list for different reasons, so every watched sender has a text template (Baustein): the DM
+text for that reason, whether a DM goes out at all, and whether the bot ignores that sender's commands.
 
 What it does:
 - every channel message whose sender name matches a target is reported to Home Assistant (default
-  telegram_bot.send_message): sender, channel, text, hops, and what happened with the DM;
+  telegram_bot.send_message): sender, channel, text, hops, template, and what happened with the DM;
 - the sender gets one DM per `dm_cooldown_hours` (kept in the bot's database, survives restarts), after
-  `delay_seconds`. A channel message carries no public key, so the DM goes to the key given with the target
-  ("Name=publickey"); when that key is not among the radio's contacts yet, the bot adds it as a contact first.
-  Without a key the DM only works when the name is already a contact. Never anything in the channel.
+  `delay_seconds`, with the text of its template (no DM for a template with dm = false). A channel message carries
+  no public key, so the DM goes to the key given with the target; when that key is not among the radio's contacts
+  yet, the bot adds it as a contact first. Without a key the DM only works when the name is already a contact.
+- with a template that has ignore = true the bot does not answer that sender's commands in channels (the message
+  handler stops after this hook, as it does for other bots). Never anything in the channel.
 
-Config (config.ini, set on the Watchlist card of the Plugins page):
+Config (config.ini, set on the Watchlist page or the Watchlist card of the Plugins page):
 
     [Watchlist]
     enabled = true
-    targets = Führerhauptquartier=7cf26cbf...   ; comma-separated "name" or "name=public key"; the name matches
-                                                 ; case-insensitively as part of the sender name
-    channels =                                   ; empty = every channel
-    message_dm = Hallo, bitte wähl einen anderen Node-Namen ...
+    targets = Führerhauptquartier=7cf26cbf...=name, Troll==spam
+                      ; comma-separated "name", "name=public key" or "name=public key=template id" (key may be
+                      ; empty); the name matches case-insensitively as part of the sender name
+    templates = [{"id": "name", "label": "Name", "text": "...", "dm": true, "ignore": false}, ...]
+                      ; JSON; empty = DEFAULT_TEMPLATES. "%" is stored as \\u0025 (configparser interpolation)
+    default_template = name      ; for targets without a template
+    channels =                   ; empty = every channel
     dm_cooldown_hours = 24
     delay_seconds = 15
     notify = true
     ha_notify_service = telegram_bot.send_message
-    corescope_url =                              ; optional, e.g. https://live.saarmesh.de: the page links keys there
+    corescope_url =              ; optional, e.g. https://live.saarmesh.de: the page links keys there
 
-The Watchlist page (menu, /watchlist) shows the targets with their statistics, the hit log (last MAX_HITS) and the
-settings; statistics and hits live in bot_metadata (STATS_KEY, HITS_KEY).
+`message_dm` (1.5.1-sm.24) is still read: while no templates are saved it is the text of the default template.
+
+The Watchlist page (menu, /watchlist) shows the targets with their statistics, the hit log (last MAX_HITS), the
+templates and the settings; statistics and hits live in bot_metadata (STATS_KEY, HITS_KEY).
 """
 from __future__ import annotations
 
@@ -45,12 +54,28 @@ except ImportError:  # pragma: no cover
 SECTION = "Watchlist"
 DM_KEY = "watchlist.dm_sent"   # bot_metadata: {target name (lower case): unix time of the last DM}
 STATS_KEY = "watchlist.stats"  # bot_metadata: {target name (lower case): {last_seen, msgs, dms, ...}}
-HITS_KEY = "watchlist.hits"    # bot_metadata: [newest first] {ts, target, sender, channel, text, hops, snr, dm}
+HITS_KEY = "watchlist.hits"    # bot_metadata: [newest first] {ts, target, sender, channel, text, hops, snr, dm, tpl}
 MAX_HITS = 200
+MAX_DM_BYTES = 158
 SETTINGS_TTL_SECONDS = 30
 DELAY_JITTER_SECONDS = 5
 DEFAULT_DM = ("Hallo, bitte wähl einen anderen Node-Namen, der jetzige ist hier im Netz nicht erwünscht. "
               "Danke! – SaarMesh")
+DEFAULT_TEMPLATES = [
+    {"id": "name", "label": "Name", "dm": True, "ignore": False, "text": DEFAULT_DM},
+    {"id": "ton", "label": "Ton", "dm": True, "ignore": False,
+     "text": "Hallo, bitte achte im Mesh auf einen respektvollen Ton, Beleidigungen sind hier nicht erwünscht. "
+             "Danke! – SaarMesh"},
+    {"id": "spam", "label": "Spam", "dm": True, "ignore": True,
+     "text": "Hallo, du sendest sehr viele Nachrichten. Bitte weniger, das Funknetz hat nur wenig Kapazität. "
+             "Danke! – SaarMesh"},
+    {"id": "kanal", "label": "Falscher Kanal", "dm": True, "ignore": False,
+     "text": "Hallo, Public ist für kurze Nachrichten an alle. Für Tests und Spiele nutz bitte die passenden Kanäle. "
+             "Danke! – SaarMesh"},
+    {"id": "werbung", "label": "Werbung", "dm": True, "ignore": True,
+     "text": "Hallo, Werbung und Kettenbriefe gehören nicht ins Mesh. Bitte lass das. Danke! – SaarMesh"},
+    {"id": "beobachten", "label": "Nur beobachten", "dm": False, "ignore": False, "text": ""},
+]
 
 
 def _split(value: str) -> list:
@@ -61,15 +86,62 @@ def _norm(name: str) -> str:
     return (name or "").strip().casefold()
 
 
+def _get(cfg: Any, key: str, fallback: str = "") -> str:
+    """A [Watchlist] value without interpolation (texts may contain '%' and '{sender}')."""
+    if not cfg.has_section(SECTION):
+        return fallback
+    return cfg.get(SECTION, key, fallback=fallback, raw=True)
+
+
 def parse_targets(value: str) -> list:
-    """'Name=key, Other' -> [(name lower case, name as written, key or '')]."""
+    """'Name=key=tpl, Other' -> [(name lower case, name as written, key or '', template id or '')]."""
     targets = []
     for item in _split(value):
-        name, _, key = item.partition("=")
-        key = key.strip().lower()
+        parts = item.split("=")
+        name = parts[0].strip()
+        key = parts[1].strip().lower() if len(parts) > 1 else ""
+        tpl = parts[2].strip().lower() if len(parts) > 2 else ""
         if _norm(name):
-            targets.append((_norm(name), name.strip(), key if len(key) == 64 else ""))
+            targets.append((_norm(name), name, key if len(key) == 64 else "", tpl))
     return targets
+
+
+def load_templates(cfg: Any) -> list:
+    """The templates from config ([Watchlist] templates, JSON), else the defaults (with the old message_dm)."""
+    raw = _get(cfg, "templates", "").strip()
+    out = []
+    if raw:
+        try:
+            data = json.loads(raw)
+        except ValueError:
+            data = None
+        seen = set()
+        for t in data if isinstance(data, list) else []:
+            if not isinstance(t, dict):
+                continue
+            tid = str(t.get("id", "")).strip().lower()
+            if not tid or tid in seen or "=" in tid or "," in tid:
+                continue
+            seen.add(tid)
+            out.append({"id": tid, "label": str(t.get("label") or tid).strip(), "text": str(t.get("text") or "").strip(),
+                        "dm": bool(t.get("dm", True)), "ignore": bool(t.get("ignore", False))})
+    if not out:
+        out = [dict(t) for t in DEFAULT_TEMPLATES]
+        old = _get(cfg, "message_dm", "").strip()
+        if old:
+            out[0]["text"] = old
+    return out
+
+
+def default_template_id(cfg: Any, templates: list) -> str:
+    want = _get(cfg, "default_template", "").strip().lower()
+    ids = [t["id"] for t in templates]
+    return want if want in ids else ids[0]
+
+
+def resolve_template(templates: list, default_id: str, tpl_id: str) -> dict:
+    by_id = {t["id"]: t for t in templates}
+    return by_id.get(tpl_id) or by_id.get(default_id) or templates[0]
 
 
 def _load_json(db: Any, key: str, default):
@@ -81,7 +153,8 @@ def _load_json(db: Any, key: str, default):
         return default
 
 
-def record_hit(db: Any, target: str, message: Any, dm_result: str, now: Optional[float] = None) -> None:
+def record_hit(db: Any, target: str, message: Any, dm_result: str, now: Optional[float] = None,
+               template: str = "", ignored: bool = False) -> None:
     """Per-target statistics and the hit log (newest first, at most MAX_HITS), both in the bot's database."""
     now = time.time() if now is None else now
     stats = _load_json(db, STATS_KEY, {})
@@ -101,53 +174,54 @@ def record_hit(db: Any, target: str, message: Any, dm_result: str, now: Optional
     hits.insert(0, {
         "ts": now, "target": target, "sender": st["last_sender"], "channel": st["last_channel"],
         "text": (getattr(message, "content", "") or "")[:300], "hops": _hops(message),
-        "snr": getattr(message, "snr", None), "dm": dm_result,
+        "snr": getattr(message, "snr", None), "dm": dm_result, "tpl": template, "ignored": bool(ignored),
     })
     db.set_metadata(HITS_KEY, json.dumps(hits[:MAX_HITS], ensure_ascii=False))
 
 
 def overview(db: Any, cfg: Any, now: Optional[float] = None) -> dict:
-    """Everything the Watchlist page shows: settings, the targets with their statistics, the hit log."""
+    """Everything the Watchlist page shows: settings, templates, the targets with their statistics, the hit log."""
     now = time.time() if now is None else now
     has = cfg.has_section(SECTION)
-
-    def get(key, fallback=""):
-        return cfg.get(SECTION, key, fallback=fallback, raw=True) if has else fallback
-
     try:
-        cooldown_h = int(float(get("dm_cooldown_hours", "24") or 24))
+        cooldown_h = int(float(_get(cfg, "dm_cooldown_hours", "24") or 24))
     except ValueError:
         cooldown_h = 24
+    templates = load_templates(cfg)
+    default_id = default_template_id(cfg, templates)
     settings = {
         "enabled": cfg.getboolean(SECTION, "enabled", fallback=False) if has else False,
-        "targets": get("targets", ""),
-        "channels": get("channels", ""),
-        "message_dm": get("message_dm", ""),
-        "default_dm": DEFAULT_DM,
+        "targets": _get(cfg, "targets", ""),
+        "channels": _get(cfg, "channels", ""),
+        "default_template": default_id,
         "dm_cooldown_hours": cooldown_h,
-        "delay_seconds": get("delay_seconds", "15"),
+        "delay_seconds": _get(cfg, "delay_seconds", "15"),
         "notify": cfg.getboolean(SECTION, "notify", fallback=True) if has else True,
-        "ha_notify_service": get("ha_notify_service", "telegram_bot.send_message"),
-        "corescope_url": get("corescope_url", "").rstrip("/"),
+        "ha_notify_service": _get(cfg, "ha_notify_service", "telegram_bot.send_message"),
+        "corescope_url": _get(cfg, "corescope_url", "").rstrip("/"),
+        "max_dm_bytes": MAX_DM_BYTES,
     }
     stats = _load_json(db, STATS_KEY, {})
     dm_sent = _load_json(db, DM_KEY, {})
     hits = _load_json(db, HITS_KEY, [])
     targets = []
-    for norm, name, key in parse_targets(settings["targets"]):
+    for norm, name, key, tpl in parse_targets(settings["targets"]):
         st = stats.get(norm) if isinstance(stats.get(norm), dict) else {}
         last_dm = float(dm_sent.get(norm, 0) or 0)
+        t = resolve_template(templates, default_id, tpl)
         targets.append({
-            "id": norm, "name": name, "key": key,
+            "id": norm, "name": name, "key": key, "tpl": tpl, "tpl_used": t["id"],
             "msgs": int(st.get("msgs", 0)), "last_seen": st.get("last_seen"),
             "last_sender": st.get("last_sender"), "last_channel": st.get("last_channel"),
             "dms": int(st.get("dms", 0)), "last_dm": last_dm or None,
             "last_dm_result": st.get("last_dm_result"),
-            "next_dm": (last_dm + cooldown_h * 3600) if last_dm and last_dm + cooldown_h * 3600 > now else None,
+            "next_dm": (last_dm + cooldown_h * 3600) if t["dm"] and last_dm and last_dm + cooldown_h * 3600 > now else None,
         })
     week = now - 7 * 86400
     return {
         "settings": settings,
+        "templates": templates,
+        "default_templates": DEFAULT_TEMPLATES,
         "targets": targets,
         "hits": hits,
         "counts": {
@@ -177,8 +251,7 @@ def send_test_note(cfg: Any) -> tuple:
     """A test note through the configured HA service (called from the web viewer, synchronous). (ok, detail)"""
     import urllib.error
     import urllib.request
-    service = (cfg.get(SECTION, "ha_notify_service", fallback="telegram_bot.send_message", raw=True)
-               if cfg.has_section(SECTION) else "telegram_bot.send_message").strip()
+    service = (_get(cfg, "ha_notify_service", "telegram_bot.send_message") or "").strip()
     token = os.environ.get("SUPERVISOR_TOKEN", "")
     if "." not in service:
         return False, "no Home Assistant service set"
@@ -216,29 +289,27 @@ class Watchlist:
         self._tasks: set = set()
         self._load_settings()
 
-    # ---- settings (re-read every SETTINGS_TTL_SECONDS: a change on the card works without a restart) ----
+    # ---- settings (re-read every SETTINGS_TTL_SECONDS: a change on the page works without a restart) ----
     def _load_settings(self) -> None:
         self._settings_at = time.monotonic()
         cfg = self.bot.config
         has = cfg.has_section(SECTION)
 
-        def get(key, fallback=""):
-            return cfg.get(SECTION, key, fallback=fallback) if has else fallback
-
         def num(key, fallback, low, high):
             try:
-                return max(low, min(high, int(float(get(key, str(fallback)) or fallback))))
+                return max(low, min(high, int(float(_get(cfg, key, str(fallback)) or fallback))))
             except ValueError:
                 return fallback
 
         self.enabled = cfg.getboolean(SECTION, "enabled", fallback=False) if has else False
-        self.targets = parse_targets(get("targets", ""))
-        self.channels = {_norm(c) for c in _split(get("channels", ""))}
-        self.message_dm = get("message_dm", "").strip() or DEFAULT_DM
+        self.targets = parse_targets(_get(cfg, "targets", ""))
+        self.templates = load_templates(cfg)
+        self.default_template = default_template_id(cfg, self.templates)
+        self.channels = {_norm(c) for c in _split(_get(cfg, "channels", ""))}
         self.dm_cooldown = num("dm_cooldown_hours", 24, 0, 24 * 365) * 3600
         self.delay_seconds = num("delay_seconds", 15, 0, 600)
         self.notify = cfg.getboolean(SECTION, "notify", fallback=True) if has else True
-        self.ha_notify_service = (get("ha_notify_service", "telegram_bot.send_message") or "").strip()
+        self.ha_notify_service = (_get(cfg, "ha_notify_service", "telegram_bot.send_message") or "").strip()
 
     def _refresh_settings(self) -> None:
         if time.monotonic() - self._settings_at > SETTINGS_TTL_SECONDS:
@@ -246,6 +317,9 @@ class Watchlist:
                 self._load_settings()
             except Exception:  # noqa: BLE001 - keep the last good settings
                 self._settings_at = time.monotonic()
+
+    def template_for(self, target: tuple) -> dict:
+        return resolve_template(self.templates, self.default_template, target[3])
 
     # ---- when the last DM went out (bot database) ----
     def _dm_sent(self) -> dict:
@@ -279,39 +353,47 @@ class Watchlist:
                 return target
         return None
 
-    def observe(self, message: Any) -> bool:
-        """Called for every channel message. Works in the background; True when the sender is watched."""
+    def observe(self, message: Any) -> Optional[tuple]:
+        """Called for every channel message. Works in the background; the matched target, or None."""
         target = self.match(message)
         if target is None:
-            return False
+            return None
         task = asyncio.ensure_future(self._handle(message, target))
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
-        return True
+        return target
+
+    def ignores_commands(self, target: Optional[tuple]) -> bool:
+        """True when the bot should not answer this target's commands (its template says so)."""
+        return bool(target) and bool(self.template_for(target).get("ignore"))
 
     async def _handle(self, message: Any, target: tuple) -> None:
         key_name = target[0]
-        dm_result = "keine (Abstand %d h)" % (self.dm_cooldown // 3600)
+        tpl = self.template_for(target)
+        if not tpl["dm"] or not tpl["text"]:
+            dm_result = "keine (Baustein ohne DM)"
+        else:
+            dm_result = "keine (Abstand %d h)" % (self.dm_cooldown // 3600)
+            try:
+                now = time.time()
+                due = now - self._dm_sent().get(key_name, 0.0) >= self.dm_cooldown and key_name not in self._pending
+                if due:
+                    self._pending.add(key_name)
+                    try:
+                        if self.delay_seconds:
+                            await asyncio.sleep(self.delay_seconds + random.uniform(0, DELAY_JITTER_SECONDS))
+                        dm_result = await self._send_dm(message, target, tpl["text"])
+                    finally:
+                        self._pending.discard(key_name)
+            except Exception as e:  # noqa: BLE001
+                dm_result = f"Fehler: {e}"
+                self.bot.logger.warning("Watchlist: DM to %s failed: %s", getattr(message, "sender_id", "?"), e)
         try:
-            now = time.time()
-            due = now - self._dm_sent().get(key_name, 0.0) >= self.dm_cooldown and key_name not in self._pending
-            if due:
-                self._pending.add(key_name)
-                try:
-                    if self.delay_seconds:
-                        await asyncio.sleep(self.delay_seconds + random.uniform(0, DELAY_JITTER_SECONDS))
-                    dm_result = await self._send_dm(message, target)
-                finally:
-                    self._pending.discard(key_name)
-        except Exception as e:  # noqa: BLE001
-            dm_result = f"Fehler: {e}"
-            self.bot.logger.warning("Watchlist: DM to %s failed: %s", getattr(message, "sender_id", "?"), e)
-        try:
-            record_hit(self.bot.db_manager, key_name, message, dm_result)
+            record_hit(self.bot.db_manager, key_name, message, dm_result, template=tpl["label"], ignored=bool(tpl["ignore"]))
         except Exception as e:  # noqa: BLE001
             self.bot.logger.info("Watchlist: could not save the hit: %s", e)
         if self.notify:
-            await self._ha_notify(message, dm_result)
+            await self._ha_notify(message, dm_result, tpl)
 
     async def _ensure_contact(self, pubkey: str, name: str) -> None:
         mc = self.bot.meshcore
@@ -330,7 +412,7 @@ class Watchlist:
         except Exception:  # noqa: BLE001
             pass
 
-    async def _send_dm(self, message: Any, target: tuple) -> str:
+    async def _send_dm(self, message: Any, target: tuple, text: str) -> str:
         sender = (getattr(message, "sender_id", "") or "").strip()
         pubkey = (getattr(message, "sender_pubkey", None) or target[2] or "").strip().lower()
         recipient = sender
@@ -341,7 +423,7 @@ class Watchlist:
                 self.bot.logger.info("Watchlist: could not add the contact: %s", e)
             recipient = pubkey
         ok = bool(await self.bot.command_manager.send_dm(
-            recipient, self.message_dm.replace("{sender}", sender), skip_user_rate_limit=True))
+            recipient, text.replace("{sender}", sender), skip_user_rate_limit=True))
         if ok:
             self._remember_dm(target[0], time.time())
             self.bot.logger.info("Watchlist: DM sent to %s", sender)
@@ -349,7 +431,7 @@ class Watchlist:
         self.bot.logger.info("Watchlist: DM to %s not possible", sender)
         return "nicht möglich (kein Kontakt)" if len(pubkey) != 64 else "fehlgeschlagen"
 
-    async def _ha_notify(self, message: Any, dm_result: str) -> None:
+    async def _ha_notify(self, message: Any, dm_result: str, tpl: dict) -> None:
         token = os.environ.get("SUPERVISOR_TOKEN", "")
         if not (aiohttp and token and "." in self.ha_notify_service):
             return
@@ -364,6 +446,7 @@ class Watchlist:
                                      f"SNR {snr}" if snr is not None else "") if x)
         if rf:
             lines.append(rf)
+        lines.append(f"Baustein: {tpl['label']}" + (" • Befehle ignoriert" if tpl.get("ignore") else ""))
         lines.append(f"DM: {dm_result}")
         domain, service = self.ha_notify_service.split(".", 1)
         body = {"title": "👀 Watchlist", "message": "\n".join(lines)}

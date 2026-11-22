@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.1-sm.26
+
+- Watchlist: text templates (Bausteine) - one per reason for being on the list. Each has a DM text, "send a DM"
+  and "ignore commands". Standard: Name, Ton, Spam (ignores commands), Falscher Kanal, Werbung (ignores commands),
+  Nur beobachten (no DM, only the note to Home Assistant). Every watched sender gets a template on the page
+  (`Name=key=template` in `targets`); `default_template` for the others. Templates are edited on the Watchlist page
+  (`templates`, JSON). With "ignore commands" the bot does not answer that sender's commands in channels.
+- The single DM text `message_dm` (sm.24) is still read while no templates are saved.
+
 ## 1.5.1-sm.25
 
 - New page Watchlist in the menu (after Mailbox; admin only): the watched senders with their statistics (messages,
